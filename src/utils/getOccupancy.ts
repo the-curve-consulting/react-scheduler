@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
-import { SchedulerProjectData, OccupancyData, ZoomLevel } from "@/types/global";
+import { SchedulerProjectData, OccupancyData, ZoomLevel, Config } from "@/types/global";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
 import { getHourOccupancy } from "./getHourOccupancy";
 
 export const getOccupancy = (
+  config: Config,
   resource: SchedulerProjectData[][],
   resourceIndex: number,
   focusedDate: dayjs.Dayjs,
@@ -37,10 +38,10 @@ export const getOccupancy = (
 
   switch (zoom) {
     case 1:
-      return getDayOccupancy(occupancy, focusedDate, zoom, includeTakenHoursOnWeekendsInDayView);
+      return getDayOccupancy(config, occupancy, focusedDate, includeTakenHoursOnWeekendsInDayView);
     case 2:
       return getHourOccupancy(occupancy, focusedDate);
     default:
-      return getWeekOccupancy(occupancy, focusedDate, zoom);
+      return getWeekOccupancy(config, occupancy, focusedDate);
   }
 };

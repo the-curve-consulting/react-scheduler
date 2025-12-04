@@ -1,9 +1,10 @@
 import dayjs from "dayjs";
 import { weekWidth, boxHeight, dayWidth, zoom2ColumnWidth } from "@/constants";
-import { Day, Coords, SchedulerProjectData, TooltipData, ZoomLevel } from "@/types/global";
+import { Day, Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
 
 export const getTooltipData = (
+  config: Config,
   startDate: Day,
   cursorPosition: Coords,
   rowsPerPerson: number[],
@@ -44,6 +45,7 @@ export const getTooltipData = (
   const yPos = (rowPosition - 1) * boxHeight + boxHeight;
 
   const disposition = getOccupancy(
+    config,
     resourcesData[resourceIndex],
     resourceIndex,
     focusedDate,

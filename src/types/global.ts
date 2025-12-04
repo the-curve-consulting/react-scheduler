@@ -51,6 +51,16 @@ export type Config = {
    */
   defaultTheme?: "light" | "dark";
   theme?: Theme;
+  /**
+   * max hours per day for showing day overtime. If not set, it will default to
+   * the value defined in constants.ts
+   */
+  maxHoursPerDay?: number;
+  /**
+   * max hours per week for showing week overtime. If not set, it will default to
+   * the value defined in constants.ts
+   */
+  maxHoursPerWeek?: number;
 };
 
 export type Theme = {

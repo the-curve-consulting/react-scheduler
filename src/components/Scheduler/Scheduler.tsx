@@ -85,6 +85,7 @@ const Scheduler = ({
               ref={outsideWrapperRef}>
               <StyledInnerWrapper>
                 <Calendar
+                  config={appConfig}
                   data={data}
                   onTileClick={onTileClick}
                   topBarWidth={topBarWidth ?? 0}
