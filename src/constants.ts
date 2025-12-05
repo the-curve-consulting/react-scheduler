@@ -45,6 +45,7 @@ export const formFieldsIds = {
   isFullscreen: "isFullscreen"
 };
 export const businessDays = 5;
+export const dayStartHour = 9;
 export const maxHoursPerWeek = 40;
 export const maxHoursPerDay = 8;
 export const topRowTextYPos = headerMonthHeight / 2 + 2;

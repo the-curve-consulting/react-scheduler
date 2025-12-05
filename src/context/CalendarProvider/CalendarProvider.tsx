@@ -87,9 +87,9 @@ const CalendarProvider = ({
     []
   );
 
-  const updateTilesCoords = (coords: Coords[]) => {
+  const updateTilesCoords = useCallback((coords: Coords[]) => {
     setTilesCoords(coords);
-  };
+  }, []);
 
   const loadMore = useCallback(
     (direction: Direction) => {
@@ -153,14 +153,14 @@ const CalendarProvider = ({
     setDate(defaultStartDate);
   }, [defaultStartDate, isInitialized, moveHorizontalScroll]);
 
-  const handleGoNext = () => {
+  const handleGoNext = useCallback(() => {
     if (isLoading) return;
 
     setDate((prev) =>
       zoom === 2 ? prev.add(zoom2ButtonJump, "hours") : prev.add(buttonWeeksJump, "weeks")
     );
     onRangeChange?.(range);
-  };
+  }, [isLoading, zoom, onRangeChange, range]);
 
   const handleScrollNext = useCallback(() => {
     if (isLoading) return;
@@ -171,14 +171,14 @@ const CalendarProvider = ({
     }, 300)();
   }, [isLoading, loadMore, moveHorizontalScroll]);
 
-  const handleGoPrev = () => {
+  const handleGoPrev = useCallback(() => {
     if (isLoading) return;
 
     setDate((prev) =>
       zoom === 2 ? prev.subtract(zoom2ButtonJump, "hours") : prev.subtract(buttonWeeksJump, "weeks")
     );
     onRangeChange?.(range);
-  };
+  }, [isLoading, zoom, onRangeChange, range]);
 
   const handleScrollPrev = useCallback(() => {
     if (!isInitialized || isLoading) return;
@@ -197,50 +197,76 @@ const CalendarProvider = ({
     }, 300)();
   }, [isLoading, loadMore, moveHorizontalScroll]);
 
-  const zoomIn = () => changeZoom(zoom + 1);
+  const changeZoom = useCallback(
+    (zoomLevel: number) => {
+      if (!isAvailableZoom(zoomLevel)) return;
+      setZoom(zoomLevel);
+      setCols(getCols(zoomLevel));
+      onRangeChange?.(range);
+    },
+    [onRangeChange, range]
+  );
 
-  const zoomOut = () => changeZoom(zoom - 1);
+  const zoomIn = useCallback(() => changeZoom(zoom + 1), [changeZoom, zoom]);
 
-  const changeZoom = (zoomLevel: number) => {
-    if (!isAvailableZoom(zoomLevel)) return;
-    setZoom(zoomLevel);
-    setCols(getCols(zoomLevel));
-    onRangeChange?.(range);
-  };
+  const zoomOut = useCallback(() => changeZoom(zoom - 1), [changeZoom, zoom]);
 
-  const handleFilterData = () => onFilterData?.();
+  const handleFilterData = useCallback(() => onFilterData?.(), [onFilterData]);
 
   const { Provider } = calendarContext;
 
-  return (
-    <Provider
-      value={{
-        data,
-        config,
-        handleGoNext,
-        handleScrollNext,
-        handleGoPrev,
-        handleScrollPrev,
-        handleGoToday,
-        zoomIn,
-        zoomOut,
-        zoom,
-        isNextZoom,
-        isPrevZoom,
-        date,
-        isLoading,
-        cols,
-        startDate: parsedStartDate,
-        dayOfYear,
-        handleFilterData,
-        tilesCoords,
-        updateTilesCoords,
-        recordsThreshold: maxRecordsPerPage,
-        onClearFilterData
-      }}>
-      {children}
-    </Provider>
+  const contextValue = useMemo(
+    () => ({
+      data,
+      config,
+      handleGoNext,
+      handleScrollNext,
+      handleGoPrev,
+      handleScrollPrev,
+      handleGoToday,
+      zoomIn,
+      zoomOut,
+      zoom,
+      isNextZoom,
+      isPrevZoom,
+      date,
+      isLoading,
+      cols,
+      startDate: parsedStartDate,
+      dayOfYear,
+      handleFilterData,
+      tilesCoords,
+      updateTilesCoords,
+      recordsThreshold: maxRecordsPerPage,
+      onClearFilterData
+    }),
+    [
+      data,
+      config,
+      handleGoNext,
+      handleScrollNext,
+      handleGoPrev,
+      handleScrollPrev,
+      handleGoToday,
+      zoomIn,
+      zoomOut,
+      zoom,
+      isNextZoom,
+      isPrevZoom,
+      date,
+      isLoading,
+      cols,
+      parsedStartDate,
+      dayOfYear,
+      handleFilterData,
+      tilesCoords,
+      updateTilesCoords,
+      maxRecordsPerPage,
+      onClearFilterData
+    ]
   );
+
+  return <Provider value={contextValue}>{children}</Provider>;
 };
 
 const useCalendar = () => useContext(calendarContext);

@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { LocaleType } from "@/context/LocaleProvider/types";
 import { ColorType } from "@/styles";
 
@@ -61,6 +62,10 @@ export type Config = {
    * the value defined in constants.ts
    */
   maxHoursPerWeek?: number;
+  /**
+   * hour at which the first entry of the day starts. If not set, it will default to 9am.
+   */
+  defaultStartHour?: number;
 };
 
 export type Theme = {
@@ -124,6 +129,12 @@ export type SchedulerProjectData = {
    * Background color of the tile, given in rgb color model. If not given, default color (rgb(114, 141,226 )) is set. Optional
    */
   bgColor?: string;
+};
+
+export type SchedulerProjectDayData = {
+  startDateTime: dayjs.Dayjs;
+  endDateTime: dayjs.Dayjs;
+  data: SchedulerProjectData;
 };
 
 export type Day = {

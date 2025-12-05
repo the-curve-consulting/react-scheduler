@@ -1,7 +1,5 @@
 import { FC } from "react";
 import { useTheme } from "styled-components";
-import { useCalendar } from "@/context/CalendarProvider";
-import { getDatesRange } from "@/utils/getDatesRange";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
 import {
@@ -13,9 +11,7 @@ import {
 } from "./styles";
 import { TileProps } from "./types";
 
-const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
-  const { date } = useCalendar();
-  const datesRange = getDatesRange(date, zoom);
+const Tile: FC<TileProps> = ({ row, data, zoom, datesRange, onTileClick }) => {
   const { y, x, width } = getTileProperties(
     row,
     datesRange.startDate,

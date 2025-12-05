@@ -57,8 +57,10 @@ export const usePagination = (data: SchedulerData): UsePaginationData => {
     [end, projectsPerPerson, startIndex]
   );
 
+  const currentPage = useMemo(() => pages[pageNum], [pages, pageNum]);
+
   return {
-    page: pages[pageNum],
+    page: currentPage,
     currentPageNum: pageNum,
     pagesAmount: pages.length,
     projectsPerPerson: projectsPerPage,
