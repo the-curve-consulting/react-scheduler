@@ -1,4 +1,4 @@
-import { FC, memo, useEffect, useMemo, useRef } from "react";
+import { FC, memo, useMemo } from "react";
 import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 import { getDatesRange } from "@/utils/getDatesRange";
@@ -7,27 +7,7 @@ import { Tile, HourlyTile } from "..";
 import { PlacedTiles, TilesProps } from "./types";
 
 const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour }) => {
-  const renderCount = useRef(0);
-  renderCount.current++;
-  console.log(`\n🔄 ========== [Tiles] RENDER #${renderCount.current} ==========`);
-
   const datesRange = useMemo(() => getDatesRange(date, zoom), [date, zoom]);
-
-  useEffect(() => {
-    console.log("📅 Date changed:", date.format());
-  }, [date]);
-
-  useEffect(() => {
-    console.log("📊 Data changed, length:", data.length);
-  }, [data]);
-
-  useEffect(() => {
-    console.log("🔍 Zoom changed:", zoom);
-  }, [zoom]);
-
-  useEffect(() => {
-    console.log("🖱️ onTileClick changed");
-  }, [onTileClick]);
 
   const tiles = useMemo((): PlacedTiles => {
     // Helper: Calculate row offset based on previous person's data
@@ -92,7 +72,6 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
 
     if (zoom === 2) {
       // Hourly view
-      console.log(datesRange);
       return data
         .map((person, personIndex) => {
           rows = calculateRowOffset(personIndex, rows);
