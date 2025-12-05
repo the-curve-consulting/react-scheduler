@@ -1,37 +1,55 @@
 import dayjs from "dayjs";
 import { OccupancyData, SchedulerProjectData } from "@/types/global";
-import { minutesInHour } from "@/constants";
+import { dayStartHour, minutesInHour } from "@/constants";
+
+const SECONDS_IN_HOUR = 3600;
 
 export const getHourOccupancy = (
-  occupancy: SchedulerProjectData[],
-  focusedDate: dayjs.Dayjs
+  resource: SchedulerProjectData[][],
+  focusedDate: dayjs.Dayjs,
+  defaultStartHour?: number
 ): OccupancyData => {
-  let minutes = 0;
-  occupancy.forEach((item) => {
-    const startHour = dayjs(item.startDate).hour();
-    const endHour = dayjs(item.endDate).hour();
-    const tooltipHour = focusedDate.hour();
-    const endMinutes = dayjs(item.endDate).minute();
-    const startMinutes = dayjs(item.startDate).minute();
-    if (startHour < tooltipHour && endHour > tooltipHour) {
-      // Tooltip hour is contained in the event
-      minutes += minutesInHour;
-    } else if (startHour === tooltipHour && endHour === tooltipHour && startMinutes && endMinutes) {
-      // Event is contained in the tooltip hour
-      minutes += endMinutes ? endMinutes - startMinutes : minutesInHour - startMinutes;
-    } else if (startHour === tooltipHour && endHour >= tooltipHour) {
-      // Event start is contained in the tooltip hour
-      minutes += startMinutes ? minutesInHour - startMinutes : minutesInHour;
-    } else if (endHour === tooltipHour && endMinutes) {
-      // Event end is contained in the tooltip hour
-      minutes += endMinutes;
-    }
-  });
+  const hourStart = focusedDate;
+  const hourEnd = focusedDate.add(1, "hour");
 
-  const takenHours = Math.floor(minutes / minutesInHour);
-  const takenMinutes = minutes % minutesInHour;
-  const freeHours = takenHours || takenMinutes ? 0 : 1;
-  const freeMinutes = takenHours ? 0 : takenMinutes ? minutesInHour - takenMinutes : 0;
+  let cumulativeEndTime = focusedDate.hour(defaultStartHour || dayStartHour).minute(0);
+  let totalOccupancySeconds = 0;
+
+  for (const row of resource) {
+    const currentDayProject = row.find((item) =>
+      dayjs(focusedDate).isBetween(item.startDate, item.endDate, "day", "[]")
+    );
+
+    if (!currentDayProject) continue;
+
+    const projectStart = cumulativeEndTime;
+    const projectEnd = projectStart.add(currentDayProject.occupancy, "second");
+    cumulativeEndTime = projectEnd;
+
+    // Check if project overlaps with the focused hour
+    if (projectEnd.isAfter(hourStart) && projectStart.isBefore(hourEnd)) {
+      // Calculate the overlap using min/max to find intersection
+      const overlapStart = projectStart.isBefore(hourStart) ? hourStart : projectStart;
+      const overlapEnd = projectEnd.isAfter(hourEnd) ? hourEnd : projectEnd;
+      const overlapSeconds = overlapEnd.diff(overlapStart, "second");
+
+      totalOccupancySeconds += overlapSeconds;
+
+      // If the entire hour is occupied, we can stop early
+      if (totalOccupancySeconds >= SECONDS_IN_HOUR) {
+        totalOccupancySeconds = SECONDS_IN_HOUR;
+        break;
+      }
+    }
+  }
+
+  const totalMinutes = Math.floor(totalOccupancySeconds / 60);
+  const takenHours = Math.floor(totalMinutes / minutesInHour);
+  const takenMinutes = totalMinutes % minutesInHour;
+
+  const hasOccupancy = takenHours > 0 || takenMinutes > 0;
+  const freeHours = hasOccupancy ? 0 : 1;
+  const freeMinutes = hasOccupancy ? minutesInHour - takenMinutes : 0;
 
   return {
     taken: { hours: takenHours, minutes: takenMinutes },
