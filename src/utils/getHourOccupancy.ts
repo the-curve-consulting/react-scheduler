@@ -47,9 +47,9 @@ export const getHourOccupancy = (
   const takenHours = Math.floor(totalMinutes / minutesInHour);
   const takenMinutes = totalMinutes % minutesInHour;
 
-  const hasOccupancy = takenHours > 0 || takenMinutes > 0;
-  const freeHours = hasOccupancy ? 0 : 1;
-  const freeMinutes = hasOccupancy ? minutesInHour - takenMinutes : 0;
+  const totalFreeMinutes = Math.max(minutesInHour - totalMinutes, 0);
+  const freeHours = Math.floor(totalFreeMinutes / minutesInHour);
+  const freeMinutes = totalFreeMinutes % minutesInHour;
 
   return {
     taken: { hours: takenHours, minutes: takenMinutes },
