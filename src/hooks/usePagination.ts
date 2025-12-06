@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SchedulerData } from "@/types/global";
 import { splitToPages } from "@/utils/splitToPages";
-import { projectsOnGrid } from "@/utils/getProjectsOnGrid";
 import { getTotalRowsPerPage } from "@/utils/getTotalRowsPerPage";
 import { useCalendar } from "@/context/CalendarProvider";
 import { outsideWrapperId } from "@/constants";
+import useProjectsOnGrid from "@/hooks/useProjectsOnGrid";
 import { UsePaginationData } from "./types";
 
 export const usePagination = (data: SchedulerData): UsePaginationData => {
@@ -17,7 +17,7 @@ export const usePagination = (data: SchedulerData): UsePaginationData => {
     outsideWrapper.current = document.getElementById(outsideWrapperId);
   }, []);
 
-  const { projectsPerPerson, rowsPerPerson } = useMemo(() => projectsOnGrid(data), [data]);
+  const { projectsPerPerson, rowsPerPerson } = useProjectsOnGrid(data);
 
   const pages = useMemo(
     () => splitToPages(data, projectsPerPerson, rowsPerPerson, recordsThreshold),

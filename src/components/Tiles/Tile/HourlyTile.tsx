@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, memo } from "react";
 import { useTheme } from "styled-components";
 import { getHourlyTileProperties } from "@/utils/getHourlyTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
@@ -43,4 +43,4 @@ const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, datesRange, onTileClick
   );
 };
 
-export default HourlyTile;
+export default memo(HourlyTile);

@@ -122,7 +122,13 @@ export const Calendar: FC<CalendarProps> = ({
   useEffect(() => {
     if (searchPhrase) return;
 
-    setFilteredData(data);
+    // Avoid unnecessary re-renders when data is the same as filteredData
+    const isSame =
+      data.length === filteredData.length && data.every((item, i) => item === filteredData[i]);
+
+    if (!isSame) {
+      setFilteredData(data);
+    }
   }, [data, searchPhrase]);
 
   return (

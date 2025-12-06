@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useRef } from "react";
+import { forwardRef, memo, useCallback, useEffect, useRef } from "react";
 import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import { boxHeight, canvasWrapperId, leftColumnWidth, outsideWrapperId } from "@/constants";
@@ -98,4 +98,4 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
   );
 });
 
-export default Grid;
+export default memo(Grid);

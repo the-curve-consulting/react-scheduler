@@ -105,7 +105,7 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
         );
       })
       .flat(2);
-  }, [data, zoom, datesRange, onTileClick, defaultStartHour]);
+  }, [data, datesRange, zoom, onTileClick, defaultStartHour]);
 
   return <>{tiles}</>;
 };

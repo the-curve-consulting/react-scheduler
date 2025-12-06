@@ -38,6 +38,9 @@ function App() {
     setRange(range);
   }, []);
 
+  // Note: this is just a demo, so we filter data based on start and end dates of the range.
+  // There is problem here because every update of the filteredData triggers re-render of Grid and Tileset components.
+  // Proposal is to modify data retrieval logic to avoid unnecessary re-renders - like smart pagination.
   const filteredData = useMemo(
     () =>
       mocked.map((person) => ({

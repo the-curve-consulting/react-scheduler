@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
@@ -44,4 +44,4 @@ const Tile: FC<TileProps> = ({ row, data, zoom, datesRange, onTileClick }) => {
   );
 };
 
-export default Tile;
+export default memo(Tile);
