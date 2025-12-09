@@ -1,6 +1,12 @@
-import { SchedulerData, SchedulerItemClickData, SchedulerProjectData } from "@/types/global";
+import {
+  Config,
+  SchedulerData,
+  SchedulerItemClickData,
+  SchedulerProjectData
+} from "@/types/global";
 
 export type CalendarProps = {
+  config: Config;
   data: SchedulerData;
   topBarWidth: number;
   onTileClick?: (data: SchedulerProjectData) => void;

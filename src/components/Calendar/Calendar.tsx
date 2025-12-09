@@ -20,6 +20,7 @@ const initialTooltipData: TooltipData = {
 };
 
 export const Calendar: FC<CalendarProps> = ({
+  config,
   data,
   onTileClick,
   onItemClick,
@@ -64,6 +65,7 @@ export const Calendar: FC<CalendarProps> = ({
           resourceIndex,
           disposition
         } = getTooltipData(
+          config,
           startDate,
           tooltipCoords,
           rowsPerItem,

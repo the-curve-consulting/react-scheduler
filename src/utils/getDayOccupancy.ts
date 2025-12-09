@@ -1,13 +1,14 @@
 import dayjs from "dayjs";
-import { OccupancyData, SchedulerProjectData, TimeUnits } from "@/types/global";
+import { maxHoursPerDay } from "@/constants";
+import { Config, OccupancyData, SchedulerProjectData, TimeUnits } from "@/types/global";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
 
 export const getDayOccupancy = (
+  config: Config,
   occupancy: SchedulerProjectData[],
   focusedDate: dayjs.Dayjs,
-  zoom: number,
   includeTakenHoursOnWeekendsInDayView: boolean
 ): OccupancyData => {
   const focusedDayNum = focusedDate.isoWeekday();
@@ -22,7 +23,12 @@ export const getDayOccupancy = (
   });
 
   const { hours: totalHours, minutes: totalMinutes } = getTotalHoursAndMinutes(getHoursAndMinutes);
-  const { free, overtime } = getTimeOccupancy({ hours: totalHours, minutes: totalMinutes }, zoom);
+
+  const maxHours = config?.maxHoursPerDay || maxHoursPerDay;
+  const { free, overtime } = getTimeOccupancy(maxHours, {
+    hours: totalHours,
+    minutes: totalMinutes
+  });
 
   return {
     taken: { hours: Math.max(0, totalHours), minutes: Math.max(0, totalMinutes) },
