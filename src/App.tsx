@@ -2,7 +2,12 @@ import { useCallback, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { createMockData } from "./mock/appMock";
 import { ParsedDatesRange } from "./utils/getDatesRange";
-import { ConfigFormValues, SchedulerProjectData } from "./types/global";
+import {
+  Config,
+  ConfigFormValues,
+  SchedulerItemClickData,
+  SchedulerProjectData
+} from "./types/global";
 import ConfigPanel from "./components/ConfigPanel";
 import { StyledSchedulerFrame } from "./styles";
 import { Scheduler } from ".";
@@ -33,6 +38,9 @@ function App() {
     setRange(range);
   }, []);
 
+  // Note: this is just a demo, so we filter data based on start and end dates of the range.
+  // There is problem here because every update of the filteredData triggers re-render of Grid and Tileset components.
+  // Proposal is to modify data retrieval logic to avoid unnecessary re-renders - like smart pagination.
   const filteredData = useMemo(
     () =>
       mocked.map((person) => ({
@@ -48,12 +56,30 @@ function App() {
     [mocked, range.endDate, range.startDate]
   );
 
-  const handleFilterData = () => console.log(`Filters button was clicked.`);
+  const handleFilterData = useCallback(() => {
+    console.log(`Filters button was clicked.`);
+  }, []);
 
-  const handleTileClick = (data: SchedulerProjectData) =>
+  const handleTileClick = useCallback((data: SchedulerProjectData) => {
     console.log(
       `Item ${data.title} - ${data.subtitle} was clicked. \n==============\nStart date: ${data.startDate} \n==============\nEnd date: ${data.endDate}\n==============\nOccupancy: ${data.occupancy}`
     );
+  }, []);
+
+  const handleItemClick = useCallback((data: SchedulerItemClickData) => {
+    console.log("clicked: ", data);
+  }, []);
+
+  const config = useMemo(
+    (): Config => ({
+      zoom: 0,
+      maxRecordsPerPage: maxRecordsPerPage,
+      showThemeToggle: true,
+      maxHoursPerDay: 7.5,
+      maxHoursPerWeek: 37.5
+    }),
+    [maxRecordsPerPage]
+  );
 
   return (
     <>
@@ -66,14 +92,8 @@ function App() {
           isLoading={false}
           onTileClick={handleTileClick}
           onFilterData={handleFilterData}
-          config={{
-            zoom: 0,
-            maxRecordsPerPage: maxRecordsPerPage,
-            showThemeToggle: true,
-            maxHoursPerDay: 7.5,
-            maxHoursPerWeek: 37.5
-          }}
-          onItemClick={(data) => console.log("clicked: ", data)}
+          config={config}
+          onItemClick={handleItemClick}
         />
       ) : (
         <StyledSchedulerFrame>
@@ -84,7 +104,7 @@ function App() {
             data={filteredData}
             onTileClick={handleTileClick}
             onFilterData={handleFilterData}
-            onItemClick={(data) => console.log("clicked: ", data)}
+            onItemClick={handleItemClick}
           />
         </StyledSchedulerFrame>
       )}

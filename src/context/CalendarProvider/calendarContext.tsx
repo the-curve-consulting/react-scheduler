@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import dayjs from "dayjs";
+import { dayStartHour } from "@/constants";
 import { CalendarContextType } from "./types";
 
 export const calendarContext = createContext<CalendarContextType>({
@@ -33,6 +34,7 @@ export const calendarContext = createContext<CalendarContextType>({
   dayOfYear: 0,
   recordsThreshold: 0,
   config: {
-    zoom: 0
+    zoom: 0,
+    defaultStartHour: dayStartHour
   }
 });
