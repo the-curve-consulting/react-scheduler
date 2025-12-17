@@ -13,12 +13,15 @@ import { parseDay } from "@/utils/dates";
 import { getCols, getVisibleCols } from "@/utils/getCols";
 import {
   buttonWeeksJump,
+  DATA_CONFIG,
   hoursInDay,
+  leftColumnWidth,
   outsideWrapperId,
   screenWidthMultiplier,
   zoom2ButtonJump
 } from "@/constants";
 import { getCanvasWidth } from "@/utils/getCanvasWidth";
+import { getScrollConfig, getVisibleRangeFromScroll } from "@/utils/scrollHelpers";
 import { calendarContext } from "./calendarContext";
 import { CalendarProviderProps } from "./types";
 dayjs.extend(weekOfYear);
@@ -39,19 +42,64 @@ const CalendarProvider = ({
   onFilterData,
   onClearFilterData
 }: CalendarProviderProps) => {
-  const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
+  const { zoom: configZoom, maxRecordsPerPage = 50, dataLoading } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
-  const [date, setDate] = useState(dayjs());
+  const dataConfig = { ...DATA_CONFIG, ...dataLoading };
+  const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
+
+  const [referenceDate, setReferenceDate] = useState(defaultStartDate);
+  const [scrollPosition, setScrollPosition] = useState(() => scrollConfig.center);
   const [isInitialized, setIsInitialized] = useState(false);
   const [cols, setCols] = useState(getCols(zoom));
+
   const isNextZoom = allZoomLevel[zoom] !== allZoomLevel[allZoomLevel.length - 1];
   const isPrevZoom = zoom !== 0;
-  const range = useMemo(() => getParsedDatesRange(date, zoom), [date, zoom]);
-  const startDate = getDatesRange(date, zoom).startDate;
-  const dayOfYear = dayjs(startDate).dayOfYear();
+
+  const visibleRange = useMemo(() => {
+    const viewportWidth =
+      (document.getElementById(outsideWrapperId)?.clientWidth || 0) - leftColumnWidth;
+    return getVisibleRangeFromScroll(scrollPosition, referenceDate, zoom, viewportWidth, 7);
+  }, [scrollPosition, referenceDate, zoom]);
+
+  const range = useMemo(
+    () => ({ startDate: visibleRange.startDate, endDate: visibleRange.endDate }),
+    [visibleRange]
+  );
+
+  const startDate = visibleRange.startDate;
+  const dayOfYear = startDate.dayOfYear();
   const parsedStartDate = parseDay(startDate);
+
   const outsideWrapper = useRef<HTMLElement | null>(null);
   const [tilesCoords, setTilesCoords] = useState<Coords[]>([{ x: 0, y: 0 }]);
+
+  /**
+   * Reposition scroll range when threshold crossed
+   * Adjusts reference date and scroll position for infinite scroll effect
+   */
+  const repositionScrollRange = useCallback(
+    (direction: "forward" | "backward") => {
+      const container = document.getElementById(outsideWrapperId);
+      if (!container) return;
+
+      const { dateShift, repositionJump, unit } = scrollConfig;
+
+      if (direction === "forward") {
+        // Scrolled too far right, shift reference forward
+        setReferenceDate((prev) => prev.add(dateShift, unit));
+        const newScrollPosition = scrollPosition - repositionJump;
+        setScrollPosition(newScrollPosition);
+        container.scrollTo({ left: newScrollPosition, behavior: "auto" });
+      } else {
+        // Scrolled too far left, shift reference backward
+        setReferenceDate((prev) => prev.subtract(dateShift, unit));
+        const newScrollPosition = scrollPosition + repositionJump;
+        setScrollPosition(newScrollPosition);
+        container.scrollTo({ left: newScrollPosition, behavior: "auto" });
+      }
+    },
+    [scrollPosition, scrollConfig]
+  );
 
   const moveHorizontalScroll = useCallback(
     (direction: Direction, behavior: ScrollBehavior = "auto") => {
@@ -137,7 +185,8 @@ const CalendarProvider = ({
   }, [zoom]);
 
   useEffect(() => {
-    onRangeChange?.(range);
+    const parsedRange = { startDate: range.startDate.toDate(), endDate: range.endDate.toDate() };
+    onRangeChange?.(parsedRange);
   }, [onRangeChange, range]);
 
   useEffect(() => {

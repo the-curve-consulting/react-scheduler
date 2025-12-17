@@ -52,3 +52,17 @@ export const topRowTextYPos = headerMonthHeight / 2 + 2;
 export const middleRowTextYPos = headerWeekHeight / 2 + headerMonthHeight + 1;
 export const buttonWeeksJump = 2;
 export const minutesInHour = 60;
+
+export const SCROLL_CONFIG_DAYS = {
+  containerDays: 3650,
+  repositionJumpDays: 180,
+  repositionThreshold: 0.8 // Reposition at 80% scroll
+};
+
+// Data loading configuration
+export const DATA_CONFIG = {
+  initialLoadDays: 90, // ±90 days on mount (fills weekly view)
+  prefetchDays: 30, // Load ±30 days when prefetching
+  prefetchTriggerDays: 30, // Trigger when < 30 days ahead/behind
+  maxCachedDays: 60 // Garbage collect beyond ±60 days
+};

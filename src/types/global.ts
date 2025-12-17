@@ -66,6 +66,12 @@ export type Config = {
    * hour at which the first entry of the day starts. If not set, it will default to 9am.
    */
   defaultStartHour?: number;
+  dataLoading?: {
+    initialLoadDays?: number;
+    prefetchDays?: number;
+    prefetchTriggerDays?: number;
+    maxCachedDays?: number;
+  };
 };
 
 export type Theme = {
