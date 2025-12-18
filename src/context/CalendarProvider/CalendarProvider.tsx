@@ -5,23 +5,16 @@ import dayOfYear from "dayjs/plugin/dayOfYear";
 import isoWeek from "dayjs/plugin/isoWeek";
 import isBetween from "dayjs/plugin/isBetween";
 import duration from "dayjs/plugin/duration";
-import debounce from "lodash.debounce";
 import { Coords, ZoomLevel, allZoomLevel } from "@/types/global";
 import { isAvailableZoom } from "@/types/guards";
-import { getDatesRange, getParsedDatesRange } from "@/utils/getDatesRange";
 import { parseDay } from "@/utils/dates";
-import { getCols, getVisibleCols } from "@/utils/getCols";
+import { getCols } from "@/utils/getCols";
+import { DATA_CONFIG, leftColumnWidth, outsideWrapperId } from "@/constants";
 import {
-  buttonWeeksJump,
-  DATA_CONFIG,
-  hoursInDay,
-  leftColumnWidth,
-  outsideWrapperId,
-  screenWidthMultiplier,
-  zoom2ButtonJump
-} from "@/constants";
-import { getCanvasWidth } from "@/utils/getCanvasWidth";
-import { getScrollConfig, getVisibleRangeFromScroll } from "@/utils/scrollHelpers";
+  getScrollConfig,
+  getScrollPositionForDate,
+  getVisibleRangeFromScroll
+} from "@/utils/scrollHelpers";
 import { calendarContext } from "./calendarContext";
 import { CalendarProviderProps } from "./types";
 dayjs.extend(weekOfYear);
@@ -43,8 +36,9 @@ const CalendarProvider = ({
   onClearFilterData
 }: CalendarProviderProps) => {
   const { zoom: configZoom, maxRecordsPerPage = 50, dataLoading } = config;
-  const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const dataConfig = { ...DATA_CONFIG, ...dataLoading };
+  const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
 
   const [referenceDate, setReferenceDate] = useState(defaultStartDate);
@@ -101,77 +95,97 @@ const CalendarProvider = ({
     [scrollPosition, scrollConfig]
   );
 
-  const moveHorizontalScroll = useCallback(
-    (direction: Direction, behavior: ScrollBehavior = "auto") => {
-      const canvasWidth = getCanvasWidth();
-      switch (direction) {
-        case "back":
-          return outsideWrapper.current?.scrollTo({
-            behavior,
-            left: canvasWidth / 3
-          });
+  /**
+   * Handle scroll position changes from Grid
+   */
+  const handleScrollChange = useCallback(
+    (newScrollLeft: number) => {
+      setScrollPosition(newScrollLeft);
 
-        case "forward":
-          return outsideWrapper.current?.scrollTo({
-            behavior,
-            left: canvasWidth / 3
-          });
-
-        case "middle": {
-          const leftOffset = canvasWidth / screenWidthMultiplier / 4; // 1/4 of component's width
-          return outsideWrapper.current?.scrollTo({
-            behavior,
-            left: canvasWidth / 2 - leftOffset
-          });
-        }
-
-        default:
-          return outsideWrapper.current?.scrollTo({
-            behavior,
-            left: canvasWidth / 2
-          });
+      if (newScrollLeft > scrollConfig.thresholdHigh) {
+        repositionScrollRange("forward");
+      } else if (newScrollLeft < scrollConfig.thresholdLow) {
+        repositionScrollRange("backward");
       }
     },
-    []
+    [repositionScrollRange, scrollConfig]
   );
 
-  const updateTilesCoords = useCallback((coords: Coords[]) => {
-    setTilesCoords(coords);
-  }, []);
+  /**
+   * Navigate to specific date
+   */
+  const handleGoToDate = useCallback(
+    (targetDate: dayjs.Dayjs) => {
+      const scrollLeft = getScrollPositionForDate(targetDate, referenceDate, zoom);
+      const container = document.getElementById(outsideWrapperId);
 
-  const loadMore = useCallback(
-    (direction: Direction) => {
-      const cols = getVisibleCols(zoom);
-      let offset: number;
-      switch (zoom) {
-        case 0:
-          offset = cols * 7;
-          break;
-        case 1:
-          offset = cols;
-          break;
-        case 2:
-          offset = Math.ceil(cols / hoursInDay);
-          break;
-      }
-      const load = debounce(() => {
-        switch (direction) {
-          case "back":
-            setDate((prev) => prev.subtract(offset, "days"));
-            break;
-          case "forward":
-            setDate((prev) => prev.add(offset, "days"));
-            break;
-          case "middle":
-            setDate(dayjs());
-            break;
-        }
-        onRangeChange?.(range);
-      }, 300);
-      load();
+      container?.scrollTo({ left: scrollLeft, behavior: "smooth" });
+      setScrollPosition(scrollLeft);
     },
-    [onRangeChange, range, zoom]
+    [referenceDate, zoom]
   );
+
+  /**
+   * Go to today
+   */
+  const handleGoToday = useCallback(() => {
+    handleGoToDate(dayjs());
+  }, [handleGoToDate]);
+
+  /**
+   * Next/Prev buttons
+   */
+  const handleGoNext = useCallback(() => {
+    if (isLoading) return;
+
+    const currentCenter = visibleRange.startDate.add(
+      visibleRange.endDate.diff(visibleRange.startDate) / 2,
+      "milliseconds"
+    );
+
+    let nextDate: dayjs.Dayjs;
+    switch (zoom) {
+      case 0:
+        nextDate = currentCenter.add(1, "month");
+        break;
+      case 1:
+        nextDate = currentCenter.add(1, "day");
+        break;
+      case 2:
+        nextDate = currentCenter.add(1, "hour");
+        break;
+      default:
+        nextDate = currentCenter.add(1, "week");
+    }
+
+    handleGoToDate(nextDate);
+  }, [isLoading, visibleRange, zoom, handleGoToDate]);
+
+  const handleGoPrev = useCallback(() => {
+    if (isLoading) return;
+
+    const currentCenter = visibleRange.startDate.add(
+      visibleRange.endDate.diff(visibleRange.startDate) / 2,
+      "milliseconds"
+    );
+
+    let prevDate: dayjs.Dayjs;
+    switch (zoom) {
+      case 0:
+        prevDate = currentCenter.subtract(1, "month");
+        break;
+      case 1:
+        prevDate = currentCenter.subtract(1, "week");
+        break;
+      case 2:
+        prevDate = currentCenter.subtract(1, "day");
+        break;
+      default:
+        prevDate = currentCenter.subtract(1, "week");
+    }
+
+    handleGoToDate(prevDate);
+  }, [isLoading, zoom, visibleRange, handleGoToDate]);
 
   useEffect(() => {
     outsideWrapper.current = document.getElementById(outsideWrapperId);
@@ -185,81 +199,49 @@ const CalendarProvider = ({
   }, [zoom]);
 
   useEffect(() => {
+    if (isInitialized) return;
+
+    const scrollLeft = getScrollPositionForDate(defaultStartDate, referenceDate, zoom);
+    const container = document.getElementById(outsideWrapperId);
+
+    container?.scrollTo({ left: scrollLeft, behavior: "auto" });
+    setScrollPosition(scrollLeft);
+    setIsInitialized(true);
+  }, [defaultStartDate, isInitialized, referenceDate, zoom]);
+
+  useEffect(() => {
     const parsedRange = { startDate: range.startDate.toDate(), endDate: range.endDate.toDate() };
     onRangeChange?.(parsedRange);
   }, [onRangeChange, range]);
 
+  const previousZoom = useRef(zoom);
   useEffect(() => {
-    // when defaultStartDate changes repaint grid
-    setIsInitialized(false);
-  }, [defaultStartDate]);
+    if (previousZoom.current === zoom) return;
 
-  useEffect(() => {
-    if (isInitialized) return;
-
-    moveHorizontalScroll("middle");
-    setIsInitialized(true);
-    setDate(defaultStartDate);
-  }, [defaultStartDate, isInitialized, moveHorizontalScroll]);
-
-  const handleGoNext = useCallback(() => {
-    if (isLoading) return;
-
-    setDate((prev) =>
-      zoom === 2 ? prev.add(zoom2ButtonJump, "hours") : prev.add(buttonWeeksJump, "weeks")
+    const currentCenter = visibleRange.startDate.add(
+      visibleRange.endDate.diff(visibleRange.startDate) / 2,
+      "milliseconds"
     );
-    onRangeChange?.(range);
-  }, [isLoading, zoom, onRangeChange, range]);
 
-  const handleScrollNext = useCallback(() => {
-    if (isLoading) return;
+    handleGoToDate(currentCenter);
+    previousZoom.current = zoom;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
 
-    loadMore("forward");
-    debounce(() => {
-      moveHorizontalScroll("forward");
-    }, 300)();
-  }, [isLoading, loadMore, moveHorizontalScroll]);
+  const changeZoom = useCallback((zoomLevel: number) => {
+    if (!isAvailableZoom(zoomLevel)) return;
+    setZoom(zoomLevel);
+  }, []);
 
-  const handleGoPrev = useCallback(() => {
-    if (isLoading) return;
-
-    setDate((prev) =>
-      zoom === 2 ? prev.subtract(zoom2ButtonJump, "hours") : prev.subtract(buttonWeeksJump, "weeks")
-    );
-    onRangeChange?.(range);
-  }, [isLoading, zoom, onRangeChange, range]);
-
-  const handleScrollPrev = useCallback(() => {
-    if (!isInitialized || isLoading) return;
-    loadMore("back");
-    debounce(() => {
-      moveHorizontalScroll("back");
-    }, 300)();
-  }, [isInitialized, isLoading, loadMore, moveHorizontalScroll]);
-
-  const handleGoToday = useCallback(() => {
-    if (isLoading) return;
-
-    loadMore("middle");
-    debounce(() => {
-      moveHorizontalScroll("middle", "smooth");
-    }, 300)();
-  }, [isLoading, loadMore, moveHorizontalScroll]);
-
-  const changeZoom = useCallback(
-    (zoomLevel: number) => {
-      if (!isAvailableZoom(zoomLevel)) return;
-      setZoom(zoomLevel);
-      onRangeChange?.(range);
-    },
-    [onRangeChange, range]
-  );
+  // Keep old handlers for backward compatibility (but they just call new ones)
+  const handleScrollNext = useCallback(() => handleGoNext(), [handleGoNext]);
+  const handleScrollPrev = useCallback(() => handleGoPrev(), [handleGoPrev]);
 
   const zoomIn = useCallback(() => changeZoom(zoom + 1), [changeZoom, zoom]);
-
   const zoomOut = useCallback(() => changeZoom(zoom - 1), [changeZoom, zoom]);
 
   const handleFilterData = useCallback(() => onFilterData?.(), [onFilterData]);
+  const updateTilesCoords = useCallback((coords: Coords[]) => setTilesCoords(coords), []);
 
   const { Provider } = calendarContext;
 
@@ -277,7 +259,11 @@ const CalendarProvider = ({
       zoom,
       isNextZoom,
       isPrevZoom,
-      date,
+      date: referenceDate,
+      referenceDate,
+      scrollPosition,
+      visibleRange,
+      handleScrollChange,
       isLoading,
       cols,
       startDate: parsedStartDate,
@@ -286,7 +272,8 @@ const CalendarProvider = ({
       tilesCoords,
       updateTilesCoords,
       recordsThreshold: maxRecordsPerPage,
-      onClearFilterData
+      onClearFilterData,
+      dataConfig
     }),
     [
       data,
@@ -301,7 +288,10 @@ const CalendarProvider = ({
       zoom,
       isNextZoom,
       isPrevZoom,
-      date,
+      referenceDate,
+      scrollPosition,
+      visibleRange,
+      handleScrollChange,
       isLoading,
       cols,
       parsedStartDate,
@@ -310,7 +300,8 @@ const CalendarProvider = ({
       tilesCoords,
       updateTilesCoords,
       maxRecordsPerPage,
-      onClearFilterData
+      onClearFilterData,
+      dataConfig
     ]
   );
 
