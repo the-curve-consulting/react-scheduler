@@ -45,15 +45,22 @@ const CalendarProvider = ({
   const [scrollPosition, setScrollPosition] = useState(() => scrollConfig.center);
   const [isInitialized, setIsInitialized] = useState(false);
   const [cols, setCols] = useState(getCols(zoom));
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   const isNextZoom = allZoomLevel[zoom] !== allZoomLevel[allZoomLevel.length - 1];
   const isPrevZoom = zoom !== 0;
 
   const visibleRange = useMemo(() => {
-    const viewportWidth =
-      (document.getElementById(outsideWrapperId)?.clientWidth || 0) - leftColumnWidth;
-    return getVisibleRangeFromScroll(scrollPosition, referenceDate, zoom, viewportWidth, 7);
-  }, [scrollPosition, referenceDate, zoom]);
+    return getVisibleRangeFromScroll(scrollPosition, referenceDate, zoom, viewportWidth);
+  }, [scrollPosition, referenceDate, zoom, viewportWidth]);
+
+  const currentCenterDate = useMemo(() => {
+    // Calculate center from the visible range (same logic as navigation buttons)
+    return visibleRange.startDate.add(
+      visibleRange.endDate.diff(visibleRange.startDate) / 2,
+      "milliseconds"
+    );
+  }, [visibleRange]);
 
   const range = useMemo(
     () => ({ startDate: visibleRange.startDate, endDate: visibleRange.endDate }),
@@ -64,8 +71,9 @@ const CalendarProvider = ({
   const dayOfYear = startDate.dayOfYear();
   const parsedStartDate = parseDay(startDate);
 
-  const outsideWrapper = useRef<HTMLElement | null>(null);
   const [tilesCoords, setTilesCoords] = useState<Coords[]>([{ x: 0, y: 0 }]);
+
+  const previousZoom = useRef(zoom);
 
   /**
    * Reposition scroll range when threshold crossed
@@ -188,12 +196,55 @@ const CalendarProvider = ({
   }, [isLoading, zoom, visibleRange, handleGoToDate]);
 
   useEffect(() => {
-    outsideWrapper.current = document.getElementById(outsideWrapperId);
+    if (previousZoom.current === zoom) return;
+
+    // Calculate center date using the OLD zoom (before it changed)
+    const oldVisibleRange = getVisibleRangeFromScroll(
+      scrollPosition,
+      referenceDate,
+      previousZoom.current, // Use the OLD zoom
+      viewportWidth
+    );
+    const centerDateBeforeChange = oldVisibleRange.startDate.add(
+      oldVisibleRange.endDate.diff(oldVisibleRange.startDate) / 2,
+      "milliseconds"
+    );
+
+    previousZoom.current = zoom;
+
+    // Now scroll to that date with the NEW zoom
+    const scrollLeft = getScrollPositionForDate(centerDateBeforeChange, referenceDate, zoom);
+    const container = document.getElementById(outsideWrapperId);
+    container?.scrollTo({ left: scrollLeft, behavior: "auto" });
+    setScrollPosition(scrollLeft);
+  }, [zoom, scrollPosition, referenceDate, viewportWidth]);
+
+  // Initialize viewport width after DOM is ready
+  useEffect(() => {
+    const updateViewportWidth = () => {
+      const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
+      if (wrapperWidth > 0) {
+        setViewportWidth(wrapperWidth - leftColumnWidth);
+      }
+    };
+    updateViewportWidth();
+
+    // Also try after a small delay in case DOM isn't ready
+    const timeout = setTimeout(updateViewportWidth, 0);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
     setCols(getCols(zoom));
   }, [zoom]);
 
   useEffect(() => {
-    const handleResize = () => setCols(getCols(zoom));
+    const handleResize = () => {
+      const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
+      setViewportWidth(wrapperWidth - leftColumnWidth);
+      setCols(getCols(zoom));
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [zoom]);
@@ -213,20 +264,6 @@ const CalendarProvider = ({
     const parsedRange = { startDate: range.startDate.toDate(), endDate: range.endDate.toDate() };
     onRangeChange?.(parsedRange);
   }, [onRangeChange, range]);
-
-  const previousZoom = useRef(zoom);
-  useEffect(() => {
-    if (previousZoom.current === zoom) return;
-
-    const currentCenter = visibleRange.startDate.add(
-      visibleRange.endDate.diff(visibleRange.startDate) / 2,
-      "milliseconds"
-    );
-
-    handleGoToDate(currentCenter);
-    previousZoom.current = zoom;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom]);
 
   const changeZoom = useCallback((zoomLevel: number) => {
     if (!isAvailableZoom(zoomLevel)) return;
@@ -260,6 +297,8 @@ const CalendarProvider = ({
       isNextZoom,
       isPrevZoom,
       date: referenceDate,
+      currentCenterDate,
+      viewportWidth,
       referenceDate,
       scrollPosition,
       visibleRange,
@@ -288,6 +327,8 @@ const CalendarProvider = ({
       zoom,
       isNextZoom,
       isPrevZoom,
+      currentCenterDate,
+      viewportWidth,
       referenceDate,
       scrollPosition,
       visibleRange,

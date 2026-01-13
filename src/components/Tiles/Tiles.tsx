@@ -1,14 +1,12 @@
 import { FC, memo, useMemo } from "react";
 import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
-import { getDatesRange } from "@/utils/getDatesRange";
 import { dayStartHour } from "@/constants";
+import { isProjectVisible } from "@/utils/scrollHelpers";
 import { Tile, HourlyTile } from "..";
 import { PlacedTiles, TilesProps } from "./types";
 
-const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour }) => {
-  const datesRange = useMemo(() => getDatesRange(date, zoom), [date, zoom]);
-
+const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultStartHour }) => {
   const tiles = useMemo((): PlacedTiles => {
     // Helper: Calculate row offset based on previous person's data
     const calculateRowOffset = (personIndex: number, currentRows: number): number => {
@@ -35,15 +33,19 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
         // it starts after the previous project ends
         const currentStartTime =
           startDateTimes[currentDateString] || currentDate.hour(startHour).minute(0);
-        const currentEndTime = currentStartTime.add(project.occupancy, "second");
+        let currentEndTime = currentStartTime.add(project.occupancy, "second");
         startDateTimes[currentDateString] = currentEndTime;
+        if (currentEndTime.isAfter(visibleRange.endDate)) {
+          currentEndTime = visibleRange.endDate;
+        }
 
         currentDate = currentDate.add(1, "day");
 
         // Skip tiles outside the visible date range to avoid unnecessary rendering
         if (
           currentStartTime.isAfter(currentEndTime) ||
-          currentEndTime.isBefore(datesRange.startDate)
+          currentStartTime.isAfter(visibleRange.endDate) ||
+          currentEndTime.isBefore(visibleRange.startDate)
         ) {
           continue;
         }
@@ -59,7 +61,7 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
             key={`${project.id}-${currentDateString}`}
             row={rowIndex + rowOffset}
             dayData={dayData}
-            datesRange={datesRange}
+            datesRange={visibleRange}
             onTileClick={onTileClick}
           />
         );
@@ -79,9 +81,18 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
           // Note: The projectsPerRow is ensured that no projects overlap on the same day
           const startDateTimes: Record<string, dayjs.Dayjs> = {};
           return person.data.map((projectsPerRow, rowIndex) =>
-            projectsPerRow.map((project) =>
-              renderHourlyTilesForProject(project, rowIndex, rows, startDateTimes)
-            )
+            projectsPerRow
+              .filter((project) =>
+                isProjectVisible(
+                  project.startDate,
+                  project.endDate,
+                  visibleRange.startDate,
+                  visibleRange.endDate
+                )
+              )
+              .map((project) =>
+                renderHourlyTilesForProject(project, rowIndex, rows, startDateTimes)
+              )
           );
         })
         .flat(3);
@@ -92,20 +103,28 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, date, defaultStartHour
       .map((person, personIndex) => {
         rows = calculateRowOffset(personIndex, rows);
         return person.data.map((projectsPerRow, rowIndex) =>
-          projectsPerRow.map((project) => (
-            <Tile
-              key={project.id}
-              row={rowIndex + rows}
-              data={project}
-              datesRange={datesRange}
-              zoom={zoom}
-              onTileClick={onTileClick}
-            />
-          ))
+          projectsPerRow
+            .filter((project) =>
+              isProjectVisible(
+                project.startDate,
+                project.endDate,
+                visibleRange.startDate,
+                visibleRange.endDate
+              )
+            )
+            .map((project) => (
+              <Tile
+                key={project.id}
+                row={rowIndex + rows}
+                data={project}
+                zoom={zoom}
+                onTileClick={onTileClick}
+              />
+            ))
         );
       })
       .flat(2);
-  }, [data, datesRange, zoom, onTileClick, defaultStartHour]);
+  }, [data, visibleRange, zoom, onTileClick, defaultStartHour]);
 
   return <>{tiles}</>;
 };

@@ -18,6 +18,12 @@ export const calendarContext = createContext<CalendarContextType>({
   isNextZoom: false,
   isPrevZoom: false,
   date: dayjs(),
+  currentCenterDate: dayjs(),
+  viewportWidth: 0,
+  referenceDate: dayjs(),
+  scrollPosition: 0,
+  visibleRange: { startDate: dayjs(), endDate: dayjs() },
+  handleScrollChange: () => {},
   isLoading: false,
   cols: 0,
   startDate: {

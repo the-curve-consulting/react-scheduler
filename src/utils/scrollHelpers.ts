@@ -1,10 +1,5 @@
 import dayjs from "dayjs";
-import {
-  dayWidth,
-  SCROLL_CONFIG_DAYS,
-  weekWidth,
-  zoom2ColumnWidth
-} from "@/constants";
+import { dayWidth, SCROLL_CONFIG_DAYS, weekWidth, zoom2ColumnWidth } from "@/constants";
 
 /**
  * Get cell width for zoom level
@@ -106,19 +101,17 @@ export const getOffsetFromScroll = (scrollLeft: number, zoom: number): number =>
  * @param referenceDate - Current reference date (center of scroll range)
  * @param zoom - Current zoom level
  * @param viewportWidth - Viewport width in pixels
- * @param bufferUnits - Buffer units to render outside viewport
  */
 export const getVisibleRangeFromScroll = (
   scrollLeft: number,
   referenceDate: dayjs.Dayjs,
   zoom: number,
-  viewportWidth: number,
-  bufferUnits = 7
+  viewportWidth: number
 ): { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs } => {
   const cellWidth = getCellWidth(zoom);
   const offset = getOffsetFromScroll(scrollLeft, zoom);
   const visibleUnits = Math.ceil(viewportWidth / cellWidth);
-  const unitsFromCenter = Math.floor(visibleUnits / 2) + bufferUnits;
+  const unitsFromCenter = Math.floor(visibleUnits / 2);
 
   let currentCenter: dayjs.Dayjs;
   let startDate: dayjs.Dayjs;
@@ -132,8 +125,8 @@ export const getVisibleRangeFromScroll = (
       break;
     case 1: //Daily
       currentCenter = referenceDate.add(offset, "days");
-      startDate = referenceDate.subtract(unitsFromCenter, "days");
-      endDate = referenceDate.add(unitsFromCenter, "days");
+      startDate = currentCenter.subtract(unitsFromCenter, "days");
+      endDate = currentCenter.add(unitsFromCenter, "days");
       break;
     case 2: //Hourly
       currentCenter = referenceDate.add(offset, "hours");
@@ -142,8 +135,8 @@ export const getVisibleRangeFromScroll = (
       break;
     default:
       currentCenter = referenceDate.add(offset, "days");
-      startDate = referenceDate.subtract(unitsFromCenter, "days");
-      endDate = referenceDate.add(unitsFromCenter, "days");
+      startDate = currentCenter.subtract(unitsFromCenter, "days");
+      endDate = currentCenter.add(unitsFromCenter, "days");
   }
 
   return { startDate, endDate };
@@ -194,4 +187,40 @@ export const isProjectVisible = (
     (start.isBefore(rangeEnd) || start.isSame(rangeEnd)) &&
     (end.isAfter(rangeStart) || end.isSame(rangeStart))
   );
+};
+
+/**
+ * Calculate tile position relative to current center date (SIMPLIFIED APPROACH)
+ * @param tileDate - Date of the tile
+ * @param currentCenterDate - Date currently at viewport center
+ * @param zoom - Current zoom level
+ * @param viewportWidth - Viewport width in pixels
+ * @returns X position in viewport (0 to viewportWidth)
+ */
+export const getTilePositionRelativeToCenter = (
+  tileDate: dayjs.Dayjs,
+  currentCenterDate: dayjs.Dayjs,
+  zoom: number,
+  viewportWidth: number
+): number => {
+  const cellWidth = getCellWidth(zoom);
+  const canvasCenter = viewportWidth / 2;
+
+  let offset: number;
+
+  switch (zoom) {
+    case 0:
+      offset = tileDate.diff(currentCenterDate, "weeks");
+      break;
+    case 1:
+      offset = tileDate.diff(currentCenterDate, "days");
+      break;
+    case 2:
+      offset = tileDate.diff(currentCenterDate, "hours");
+      break;
+    default:
+      offset = tileDate.diff(currentCenterDate, "weeks");
+  }
+
+  return canvasCenter + offset * cellWidth;
 };

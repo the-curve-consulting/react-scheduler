@@ -1,7 +1,8 @@
 import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from "react";
 import debounce from "lodash.debounce";
+import dayjs from "dayjs";
 import { useCalendar } from "@/context/CalendarProvider";
-import { Day, SchedulerData, SchedulerProjectData, TooltipData, ZoomLevel } from "@/types/global";
+import { SchedulerData, SchedulerProjectData, TooltipData, ZoomLevel } from "@/types/global";
 import { getTooltipData } from "@/utils/getTooltipData";
 import { usePagination } from "@/hooks/usePagination";
 import EmptyBox from "../EmptyBox";
@@ -34,6 +35,8 @@ export const Calendar: FC<CalendarProps> = ({
   const {
     zoom,
     startDate,
+    currentCenterDate,
+    viewportWidth,
     config: { includeTakenHoursOnWeekendsInDayView, showTooltip, showThemeToggle }
   } = useCalendar();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -52,10 +55,11 @@ export const Calendar: FC<CalendarProps> = ({
     debounce(
       (
         e: MouseEvent,
-        startDate: Day,
         rowsPerItem: number[],
         projectsPerPerson: SchedulerProjectData[][][],
-        zoom: ZoomLevel
+        zoom: ZoomLevel,
+        currentCenterDate: dayjs.Dayjs,
+        viewportWidth: number
       ) => {
         if (!gridRef.current) return;
         const { left, top } = gridRef.current.getBoundingClientRect();
@@ -66,13 +70,15 @@ export const Calendar: FC<CalendarProps> = ({
           disposition
         } = getTooltipData(
           config,
-          startDate,
           tooltipCoords,
           rowsPerItem,
           projectsPerPerson,
           zoom,
-          includeTakenHoursOnWeekendsInDayView
+          includeTakenHoursOnWeekendsInDayView,
+          currentCenterDate,
+          viewportWidth
         );
+        console.log(x, y, resourceIndex, disposition);
         setTooltipData({ coords: { x, y }, resourceIndex, disposition });
         setIsVisible(true);
       },
@@ -105,7 +111,14 @@ export const Calendar: FC<CalendarProps> = ({
 
   useEffect(() => {
     const handleMouseOver = (e: MouseEvent) =>
-      debouncedHandleMouseOver.current(e, startDate, rowsPerItem, projectsPerPerson, zoom);
+      debouncedHandleMouseOver.current(
+        e,
+        rowsPerItem,
+        projectsPerPerson,
+        zoom,
+        currentCenterDate,
+        viewportWidth
+      );
     const gridArea = gridRef.current;
 
     if (!gridArea) return;
@@ -117,7 +130,16 @@ export const Calendar: FC<CalendarProps> = ({
       gridArea.removeEventListener("mousemove", handleMouseOver);
       gridArea.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [debouncedHandleMouseOver, handleMouseLeave, projectsPerPerson, rowsPerItem, startDate, zoom]);
+  }, [
+    debouncedHandleMouseOver,
+    handleMouseLeave,
+    projectsPerPerson,
+    rowsPerItem,
+    startDate,
+    zoom,
+    currentCenterDate,
+    viewportWidth
+  ]);
 
   useEffect(() => {
     if (searchPhrase) return;

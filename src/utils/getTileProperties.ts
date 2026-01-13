@@ -1,26 +1,39 @@
 import dayjs from "dayjs";
 import { boxHeight, tileYOffset } from "@/constants";
-import { TileProperties } from "@/types/global";
-import { getTileXAndWidth } from "./getTileXAndWidth";
+import { SchedulerProjectData, TileProperties } from "@/types/global";
+import { getCellWidth, getTilePositionRelativeToCenter } from "@/utils/scrollHelpers";
 
 export const getTileProperties = (
   row: number,
-  startDate: dayjs.Dayjs,
-  endDate: dayjs.Dayjs,
-  resourceStartDate: Date,
-  resourceEndDate: Date,
-  zoom: number
+  data: SchedulerProjectData,
+  currentCenterDate: dayjs.Dayjs,
+  zoom: number,
+  viewportWidth: number
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
-  const parsedResourceStartDate = dayjs(resourceStartDate).hour(0).minute(0);
-  const parsedResourceEndDate = dayjs(resourceEndDate).hour(23).minute(59);
+  const tileStartDate = dayjs(data.startDate);
+  const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, viewportWidth);
 
-  return {
-    ...getTileXAndWidth(
-      { startDate: parsedResourceStartDate, endDate: parsedResourceEndDate },
-      { startDate: startDate, endDate: endDate },
-      zoom
-    ),
-    y
-  };
+  // Calculate width based on duration
+  const tileEndDate = dayjs(data.endDate);
+  const cellWidth = getCellWidth(zoom);
+  let duration: number;
+
+  switch (zoom) {
+    case 0:
+      duration = tileEndDate.diff(tileStartDate, "weeks");
+      break;
+    case 1:
+      duration = tileEndDate.diff(tileStartDate, "days");
+      break;
+    case 2:
+      duration = tileEndDate.diff(tileStartDate, "hours");
+      break;
+    default:
+      duration = tileEndDate.diff(tileStartDate, "days");
+  }
+
+  const width = duration * cellWidth;
+
+  return { y, x, width };
 };

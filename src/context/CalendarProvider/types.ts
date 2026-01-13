@@ -20,6 +20,12 @@ export type CalendarContextType = {
   isNextZoom: boolean;
   isPrevZoom: boolean;
   date: dayjs.Dayjs;
+  currentCenterDate: dayjs.Dayjs;
+  viewportWidth: number;
+  referenceDate: dayjs.Dayjs;
+  scrollPosition: number;
+  visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
+  handleScrollChange: (newScrollLeft: number) => void;
   isLoading: boolean;
   cols: number;
   startDate: Day;

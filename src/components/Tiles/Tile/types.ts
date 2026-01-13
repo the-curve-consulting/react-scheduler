@@ -5,7 +5,6 @@ export type TileProps = {
   row: number;
   data: SchedulerProjectData;
   zoom: number;
-  datesRange: DatesRange;
   onTileClick?: (data: SchedulerProjectData) => void;
 };
 
