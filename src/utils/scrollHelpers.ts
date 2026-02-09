@@ -113,6 +113,9 @@ export const getVisibleRangeFromScroll = (
   const visibleUnits = Math.ceil(viewportWidth / cellWidth);
   const unitsFromCenter = Math.floor(visibleUnits / 2);
 
+  // Add buffer to prevent tiles from flickering at edges
+  const buffer = 2;
+
   let currentCenter: dayjs.Dayjs;
   let startDate: dayjs.Dayjs;
   let endDate: dayjs.Dayjs;
@@ -120,23 +123,23 @@ export const getVisibleRangeFromScroll = (
   switch (zoom) {
     case 0: //Weekly
       currentCenter = referenceDate.add(offset, "weeks");
-      startDate = currentCenter.subtract(unitsFromCenter, "weeks");
-      endDate = currentCenter.add(unitsFromCenter, "weeks");
+      startDate = currentCenter.subtract(unitsFromCenter + buffer, "weeks");
+      endDate = currentCenter.add(unitsFromCenter + buffer, "weeks");
       break;
     case 1: //Daily
       currentCenter = referenceDate.add(offset, "days");
-      startDate = currentCenter.subtract(unitsFromCenter, "days");
-      endDate = currentCenter.add(unitsFromCenter, "days");
+      startDate = currentCenter.subtract(unitsFromCenter + buffer, "days");
+      endDate = currentCenter.add(unitsFromCenter + buffer, "days");
       break;
     case 2: //Hourly
       currentCenter = referenceDate.add(offset, "hours");
-      startDate = currentCenter.subtract(unitsFromCenter, "hours");
-      endDate = currentCenter.add(unitsFromCenter, "hours");
+      startDate = currentCenter.subtract(unitsFromCenter + buffer, "hours");
+      endDate = currentCenter.add(unitsFromCenter + buffer, "hours");
       break;
     default:
       currentCenter = referenceDate.add(offset, "days");
-      startDate = currentCenter.subtract(unitsFromCenter, "days");
-      endDate = currentCenter.add(unitsFromCenter, "days");
+      startDate = currentCenter.subtract(unitsFromCenter + buffer, "days");
+      endDate = currentCenter.add(unitsFromCenter + buffer, "days");
   }
 
   return { startDate, endDate };
@@ -190,37 +193,87 @@ export const isProjectVisible = (
 };
 
 /**
- * Calculate tile position relative to current center date (SIMPLIFIED APPROACH)
+ * Calculate tile position relative to current center date
  * @param tileDate - Date of the tile
  * @param currentCenterDate - Date currently at viewport center
  * @param zoom - Current zoom level
- * @param viewportWidth - Viewport width in pixels
- * @returns X position in viewport (0 to viewportWidth)
+ * @param cols - Number of visible columns
+ * @returns X position in pixels
  */
 export const getTilePositionRelativeToCenter = (
   tileDate: dayjs.Dayjs,
   currentCenterDate: dayjs.Dayjs,
   zoom: number,
-  viewportWidth: number
+  cols: number
 ): number => {
   const cellWidth = getCellWidth(zoom);
-  const canvasCenter = viewportWidth / 2;
+  const centerCol = Math.floor(cols / 2);
 
   let offset: number;
 
   switch (zoom) {
     case 0:
-      offset = tileDate.diff(currentCenterDate, "weeks");
-      break;
+      // Weekly view: use day-level precision with ISO weeks (Monday start)
+      offset = tileDate.startOf("day").diff(currentCenterDate.startOf("isoWeek"), "weeks", true);
+      return (centerCol + offset) * cellWidth;
     case 1:
-      offset = tileDate.diff(currentCenterDate, "days");
-      break;
+      // Daily view: use day-level precision
+      offset = tileDate.startOf("day").diff(currentCenterDate.startOf("day"), "days");
+      return (centerCol + offset) * cellWidth;
     case 2:
-      offset = tileDate.diff(currentCenterDate, "hours");
-      break;
+      // Hourly view: use minute-level precision
+      offset = tileDate.diff(currentCenterDate.startOf("hour"), "hours", true);
+      // Add same offset as grid: cellWidth / 2 - 0.5 (for border alignment)
+      return (centerCol + offset) * cellWidth + cellWidth / 2 - 0.5;
     default:
-      offset = tileDate.diff(currentCenterDate, "weeks");
+      offset = tileDate.startOf("day").diff(currentCenterDate.startOf("isoWeek"), "weeks", true);
+      return (centerCol + offset) * cellWidth;
+  }
+};
+
+/**
+ * Calculate the current center date from scroll position using continuous pixel-to-time mapping
+ * This provides accurate center date without discretization to cell boundaries
+ * @param scrollLeft - Current scroll position
+ * @param referenceDate - Reference date (center of scroll range)
+ * @param zoom - Current zoom level
+ * @returns Date at the viewport center
+ */
+export const getCurrentCenterDateFromScroll = (
+  scrollLeft: number,
+  referenceDate: dayjs.Dayjs,
+  zoom: number
+): dayjs.Dayjs => {
+  const scrollConfig = getScrollConfig(zoom);
+  const cellWidth = getCellWidth(zoom);
+  const offsetPx = scrollLeft - scrollConfig.center;
+
+  let centerDate: dayjs.Dayjs;
+
+  switch (zoom) {
+    case 0: {
+      // Weekly - calculate in weeks (continuous for smooth scrolling)
+      const offsetWeeks = offsetPx / cellWidth;
+      centerDate = referenceDate.add(offsetWeeks, "weeks");
+      break;
+    }
+    case 1: {
+      // Daily - calculate in days (continuous for smooth scrolling)
+      const offsetDays = offsetPx / cellWidth;
+      centerDate = referenceDate.add(offsetDays, "days");
+      break;
+    }
+    case 2: {
+      // Hourly - calculate in hours (continuous for smooth scrolling)
+      const offsetHours = offsetPx / cellWidth;
+      centerDate = referenceDate.add(offsetHours, "hours");
+      break;
+    }
+    default: {
+      const offsetDays = offsetPx / cellWidth;
+      centerDate = referenceDate.add(offsetDays, "days");
+    }
   }
 
-  return canvasCenter + offset * cellWidth;
+  return centerDate;
 };

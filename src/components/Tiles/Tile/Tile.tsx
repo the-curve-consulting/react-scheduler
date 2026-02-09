@@ -13,8 +13,8 @@ import {
 import { TileProps } from "./types";
 
 const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
-  const { currentCenterDate, viewportWidth } = useCalendar();
-  const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, viewportWidth);
+  const { currentCenterDate, cols } = useCalendar();
+  const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, cols);
   const { colors } = useTheme();
 
   return (

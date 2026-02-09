@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import { boxHeight, dayWidth } from "@/constants";
 import { Theme } from "@/styles";
 import { getIsBusinessDay } from "../dates";
@@ -9,21 +8,23 @@ export const drawMonthlyView = (
   ctx: CanvasRenderingContext2D,
   rows: number,
   cols: number,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
   theme: Theme
 ) => {
+  // Round to discrete day boundary
+  const centerDay = centerDate.startOf("day");
+  const centerCol = Math.floor(cols / 2);
+
   for (let i = 0; i < rows; i++) {
-    for (let y = 0; y <= cols; y++) {
-      const date = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`).add(
-        y,
-        "days"
-      );
+    for (let j = 0; j <= cols; j++) {
+      const offsetFromCenter = j - centerCol;
+      const date = centerDay.add(offsetFromCenter, "days");
 
       const isCurrentDay = date.isSame(dayjs(), "day");
 
       drawCell(
         ctx,
-        y * dayWidth,
+        j * dayWidth,
         i * boxHeight,
         dayWidth,
         getIsBusinessDay(date),

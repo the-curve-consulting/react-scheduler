@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import { Theme } from "@/styles";
 import { boxHeight, zoom2ColumnWidth } from "@/constants";
 import { getIsBusinessDay } from "../dates";
@@ -9,25 +8,19 @@ export const drawHourlyView = (
   ctx: CanvasRenderingContext2D,
   rows: number,
   cols: number,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
   theme: Theme
 ) => {
-  const date = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth + 1}`);
+  // Round to discrete hour boundary to prevent jumping when scrolling
+  const centerHour = centerDate.startOf("hour");
+  const centerCol = Math.floor(cols / 2);
+
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j <= cols; j++) {
-      let hour;
+      const offsetFromCenter = j - centerCol;
+      const hour = centerHour.add(offsetFromCenter, "hours");
 
-      if (j === Math.floor(cols / 2)) {
-        hour = dayjs();
-      } else if (j > Math.floor(cols / 2)) {
-        // next hours
-        hour = dayjs().add(j - Math.floor(cols / 2), "hours");
-      } else {
-        // previous hours
-        hour = dayjs().subtract(Math.floor(cols / 2) - i, "hours");
-      }
-
-      const isCurrentHour = date.isSame(dayjs(), "day") && hour.isSame(dayjs(), "hour");
+      const isCurrentHour = hour.isSame(dayjs(), "hour");
 
       drawCell(
         ctx,

@@ -37,6 +37,7 @@ export const Calendar: FC<CalendarProps> = ({
     startDate,
     currentCenterDate,
     viewportWidth,
+    cols,
     config: { includeTakenHoursOnWeekendsInDayView, showTooltip, showThemeToggle }
   } = useCalendar();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -59,7 +60,7 @@ export const Calendar: FC<CalendarProps> = ({
         projectsPerPerson: SchedulerProjectData[][][],
         zoom: ZoomLevel,
         currentCenterDate: dayjs.Dayjs,
-        viewportWidth: number
+        cols: number
       ) => {
         if (!gridRef.current) return;
         const { left, top } = gridRef.current.getBoundingClientRect();
@@ -76,9 +77,8 @@ export const Calendar: FC<CalendarProps> = ({
           zoom,
           includeTakenHoursOnWeekendsInDayView,
           currentCenterDate,
-          viewportWidth
+          cols
         );
-        console.log(x, y, resourceIndex, disposition);
         setTooltipData({ coords: { x, y }, resourceIndex, disposition });
         setIsVisible(true);
       },
@@ -117,7 +117,7 @@ export const Calendar: FC<CalendarProps> = ({
         projectsPerPerson,
         zoom,
         currentCenterDate,
-        viewportWidth
+        cols
       );
     const gridArea = gridRef.current;
 
@@ -136,8 +136,9 @@ export const Calendar: FC<CalendarProps> = ({
     projectsPerPerson,
     rowsPerItem,
     startDate,
-    zoom,
     currentCenterDate,
+    cols,
+    zoom,
     viewportWidth
   ]);
 

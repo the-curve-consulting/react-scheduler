@@ -61,7 +61,6 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultS
             key={`${project.id}-${currentDateString}`}
             row={rowIndex + rowOffset}
             dayData={dayData}
-            datesRange={visibleRange}
             onTileClick={onTileClick}
           />
         );

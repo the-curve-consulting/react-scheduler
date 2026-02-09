@@ -6,36 +6,30 @@ import {
   zoom2ColumnWidth,
   zoom2HeaderTopRowHeight
 } from "@/constants";
-import { Day } from "@/types/global";
 import { Theme } from "@/styles";
 import { drawRow } from "../../drawRow";
 
 export const drawZoom2MonthsOnTop = (
   ctx: CanvasRenderingContext2D,
   cols: number,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
   theme: Theme
 ) => {
-  const daysInRange = Math.ceil(cols / hoursInDay);
-  const startDay = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`);
-  const endDate = startDay.add(daysInRange - 1, "days");
-  const startMonth = startDay.month();
-  const endMonth = endDate.add(1, "day").month();
-  const monthsInRange = startMonth === endMonth ? 1 : 2;
+  const centerHour = centerDate.startOf("hour");
+  const centerCol = Math.floor(cols / 2);
+  const firstVisibleHour = centerHour.subtract(centerCol, "hours");
 
-  let xPos = 0.5 * zoom2ColumnWidth;
+  const firstMonth = firstVisibleHour.startOf("month");
+  const hoursBeforeVisible = firstVisibleHour.diff(firstMonth, "hours");
+  let xPos = -hoursBeforeVisible * zoom2ColumnWidth + 0.5 * zoom2ColumnWidth;
 
-  for (let i = 0; i < monthsInRange; i++) {
-    const startDateHour = dayjs(
-      `${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}T${startDate.hour}:00:00`
-    );
-    const firstDayOfAMonth = dayjs(`${startDate.year}-${startDate.month + i + 1}-01T:23:59:59`);
-    const lastDayOfAMonth = firstDayOfAMonth.endOf("month");
-    const monthLabel = lastDayOfAMonth.format("MMMM").toUpperCase();
+  const monthsToShow = Math.ceil((cols + hoursBeforeVisible) / (hoursInDay * 28)) + 2;
 
-    const diff = lastDayOfAMonth.diff(startDateHour, "hour") + 1;
-
-    const width = i === 0 ? diff * zoom2ColumnWidth : cols * zoom2ColumnWidth;
+  for (let i = 0; i < monthsToShow; i++) {
+    const month = firstMonth.add(i, "months");
+    const monthLabel = month.format("MMMM").toUpperCase();
+    const daysInMonth = month.daysInMonth();
+    const width = daysInMonth * hoursInDay * zoom2ColumnWidth;
 
     drawRow(
       {
@@ -50,6 +44,7 @@ export const drawZoom2MonthsOnTop = (
       },
       theme
     );
+
     xPos += width;
   }
 };

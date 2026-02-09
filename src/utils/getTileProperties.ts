@@ -8,11 +8,11 @@ export const getTileProperties = (
   data: SchedulerProjectData,
   currentCenterDate: dayjs.Dayjs,
   zoom: number,
-  viewportWidth: number
+  cols: number
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
   const tileStartDate = dayjs(data.startDate);
-  const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, viewportWidth);
+  const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols);
 
   // Calculate width based on duration
   const tileEndDate = dayjs(data.endDate);

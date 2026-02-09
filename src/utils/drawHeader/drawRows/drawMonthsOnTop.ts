@@ -1,52 +1,44 @@
 import dayjs from "dayjs";
-import { dayWidth, fonts, headerMonthHeight, monthsInYear, topRowTextYPos } from "@/constants";
-import { Day } from "@/types/global";
+import { dayWidth, fonts, headerMonthHeight, topRowTextYPos } from "@/constants";
 import { Theme } from "@/styles";
 import { drawRow } from "../../drawRow";
 
-export const drawMonthsOnTop = (ctx: CanvasRenderingContext2D, startDate: Day, theme: Theme) => {
+export const drawMonthsOnTop = (
+  ctx: CanvasRenderingContext2D,
+  centerDate: dayjs.Dayjs,
+  cols: number,
+  theme: Theme
+) => {
   const yPos = 0;
-  let xPos = 0;
-  let width = 0;
-  let yearIndex = 0;
-  let startMonthIndex = dayjs(
-    `${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`
-  ).month();
-  xPos = -startDate.dayOfMonth * dayWidth + dayWidth;
 
-  for (let i = 0; i < monthsInYear; i++) {
-    if (startMonthIndex > monthsInYear - 1) {
-      startMonthIndex = 0;
-      yearIndex++;
-    }
-    const dayInMonth = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`)
-      .add(i, "months")
-      .daysInMonth();
+  // Round to start of day, then find the month start
+  const centerDay = centerDate.startOf("day");
+  const startDay = centerDay.subtract(cols / 2, "days");
 
-    width = dayInMonth * dayWidth;
+  const firstMonth = startDay.startOf("month");
+  const daysFromMonthStart = startDay.diff(firstMonth, "days");
+  const monthsToShow = Math.ceil(cols / 28);
+  let startPosX = -daysFromMonthStart * dayWidth;
+
+  for (let i = 0; i <= monthsToShow; i++) {
+    const month = firstMonth.add(i, "months");
+    const daysInMonth = month.daysInMonth();
+    const width = daysInMonth * dayWidth;
 
     drawRow(
       {
         ctx,
-        x: xPos,
+        x: startPosX,
         y: yPos,
         width,
         height: headerMonthHeight,
         textYPos: topRowTextYPos,
-        label:
-          dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`)
-            .month(startMonthIndex)
-            .format("MMMM")
-            .toUpperCase() +
-          ` ${dayjs(`${startDate.year + yearIndex}-${startDate.month + 1}-${startDate.dayOfMonth}`)
-            .month(startMonthIndex)
-            .format("YYYY")}`,
+        label: `${month.format("MMMM").toUpperCase()} ${month.format("YYYY")}`,
         font: fonts.topRow
       },
       theme
     );
 
-    xPos += width;
-    startMonthIndex++;
+    startPosX += width;
   }
 };

@@ -6,37 +6,35 @@ import {
   zoom2HeaderMiddleRowHeight,
   zoom2HeaderTopRowHeight
 } from "@/constants";
-import { Day } from "@/types/global";
 import { Theme } from "@/styles";
 import { drawRow } from "../../drawRow";
 
 export const drawZoom2DaysInMiddle = (
   ctx: CanvasRenderingContext2D,
   cols: number,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
   theme: Theme
 ) => {
-  const daysInRange = Math.floor(cols / hoursInDay) + 2;
-
   const width = hoursInDay * zoom2ColumnWidth;
+  const centerHour = centerDate.startOf("hour");
+  const centerCol = Math.floor(cols / 2);
 
-  const startDateHour = dayjs(
-    `${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}T${startDate.hour}:00:00`
-  );
+  const firstVisibleHour = centerHour.subtract(centerCol, "hours");
+  const firstDay = firstVisibleHour.startOf("day");
 
-  const xPosOffset = -startDateHour.hour() * zoom2ColumnWidth;
-  let xPos = xPosOffset + 0.5 * zoom2ColumnWidth;
+  const hoursBeforeVisible = firstVisibleHour.diff(firstDay, "hours");
+  const xPosOffset = -hoursBeforeVisible * zoom2ColumnWidth + 0.5 * zoom2ColumnWidth;
 
-  for (let i = 0; i < daysInRange; i++) {
-    const dayLabel = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`)
-      .add(i, "day")
-      .format("dddd DD.MM.YYYY")
-      .toUpperCase();
+  const daysToShow = Math.ceil((cols + hoursBeforeVisible) / hoursInDay) + 1;
+
+  for (let i = 0; i < daysToShow; i++) {
+    const day = firstDay.add(i, "days");
+    const dayLabel = day.format("dddd DD.MM.YYYY").toUpperCase();
 
     drawRow(
       {
         ctx,
-        x: xPos,
+        x: xPosOffset + i * width,
         y: zoom2HeaderTopRowHeight,
         width,
         height: zoom2HeaderMiddleRowHeight,
@@ -46,6 +44,5 @@ export const drawZoom2DaysInMiddle = (
       },
       theme
     );
-    xPos += width;
   }
 };

@@ -11,7 +11,6 @@ export const StyledInnerWrapper = styled.div`
   margin-left: ${leftColumnWidth};
   display: flex;
   flex-direction: column;
-  contain: paint;
 `;
 
 export const StyledEmptyBoxWrapper = styled.div<{ width: number }>`

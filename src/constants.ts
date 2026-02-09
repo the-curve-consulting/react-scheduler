@@ -26,6 +26,7 @@ export const fonts = {
     number: "600 10px Inter"
   }
 };
+// @deprecated - No longer needed after removing virtual columns approach
 export const screenWidthMultiplier = 3;
 export const dayNameYoffset = 1.6;
 export const dayNumYOffset = 4.5;
@@ -33,6 +34,7 @@ export const monthsInYear = 12;
 export const hoursInDay = 24;
 export const canvasHeaderWrapperId = "reactSchedulerCanvasHeaderWrapper";
 export const canvasWrapperId = "reactSchedulerCanvasWrapper";
+export const gridInnerWrapperId = "reactSchedulerGridInnerWrapper";
 export const canvasId = "reactSchedulerCanvas";
 export const outsideWrapperId = prefixId;
 export const tileYOffset = 4;
@@ -53,6 +55,8 @@ export const topRowTextYPos = headerMonthHeight / 2 + 2;
 export const middleRowTextYPos = headerWeekHeight / 2 + headerMonthHeight + 1;
 export const buttonWeeksJump = 2;
 export const minutesInHour = 60;
+export const secondsInMinute = 60;
+export const daysInWeek = 7;
 
 export const SCROLL_CONFIG_DAYS = {
   containerDays: 3650,

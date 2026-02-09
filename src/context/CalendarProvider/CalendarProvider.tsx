@@ -13,7 +13,8 @@ import { DATA_CONFIG, leftColumnWidth, outsideWrapperId } from "@/constants";
 import {
   getScrollConfig,
   getScrollPositionForDate,
-  getVisibleRangeFromScroll
+  getVisibleRangeFromScroll,
+  getCurrentCenterDateFromScroll
 } from "@/utils/scrollHelpers";
 import { calendarContext } from "./calendarContext";
 import { CalendarProviderProps } from "./types";
@@ -55,12 +56,10 @@ const CalendarProvider = ({
   }, [scrollPosition, referenceDate, zoom, viewportWidth]);
 
   const currentCenterDate = useMemo(() => {
-    // Calculate center from the visible range (same logic as navigation buttons)
-    return visibleRange.startDate.add(
-      visibleRange.endDate.diff(visibleRange.startDate) / 2,
-      "milliseconds"
-    );
-  }, [visibleRange]);
+    // Calculate center date directly from scroll position using continuous pixel-to-time mapping
+    // This ensures accurate alignment between viewport center and date without discretization
+    return getCurrentCenterDateFromScroll(scrollPosition, referenceDate, zoom);
+  }, [scrollPosition, referenceDate, zoom]);
 
   const range = useMemo(
     () => ({ startDate: visibleRange.startDate, endDate: visibleRange.endDate }),

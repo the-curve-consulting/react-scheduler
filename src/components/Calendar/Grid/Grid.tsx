@@ -5,6 +5,7 @@ import {
   boxHeight,
   canvasId,
   canvasWrapperId,
+  gridInnerWrapperId,
   leftColumnWidth,
   outsideWrapperId
 } from "@/constants";
@@ -24,7 +25,8 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
     viewportWidth,
     cols,
     config,
-    startDate
+    startDate,
+    currentCenterDate
   } = useCalendar();
 
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
@@ -42,9 +44,9 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
       resizeCanvas(ctx, width, height);
 
       // Draw grid for visible range
-      drawGrid(ctx, zoom, rows, cols, startDate, theme);
+      drawGrid(ctx, zoom, rows, cols, startDate, currentCenterDate, theme);
     },
-    [cols, startDate, rows, zoom, theme, viewportWidth]
+    [cols, startDate, currentCenterDate, rows, zoom, theme, viewportWidth]
   );
 
   useEffect(() => {
@@ -91,6 +93,7 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
   return (
     <StyledWrapper id={canvasWrapperId} $virtualWidth={scrollConfig.containerWidth}>
       <StyledInnerWrapper
+        id={gridInnerWrapperId}
         $viewportWidth={viewportWidth}
         $leftColumnWidth={leftColumnWidth}
         ref={ref}>

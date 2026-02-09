@@ -1,5 +1,4 @@
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
-import { DatesRange } from "@/utils/getDatesRange";
 
 export type TileProps = {
   row: number;
@@ -11,7 +10,6 @@ export type TileProps = {
 export type HourlyTileProps = {
   row: number;
   dayData: SchedulerProjectDayData;
-  datesRange: DatesRange;
   onTileClick?: (data: SchedulerProjectData) => void;
 };
 

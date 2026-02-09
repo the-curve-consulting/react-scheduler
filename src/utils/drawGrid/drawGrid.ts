@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Day } from "@/types/global";
 import { canvasWrapperId } from "@/constants";
 import { Theme } from "@/styles";
@@ -11,6 +12,7 @@ export const drawGrid = (
   rows: number,
   cols: number,
   parsedStartDate: Day,
+  currentCenterDate: dayjs.Dayjs,
   theme: Theme
 ) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -19,13 +21,13 @@ export const drawGrid = (
 
   switch (zoom) {
     case 0:
-      drawYearlyView(ctx, rows, cols, parsedStartDate, theme);
+      drawYearlyView(ctx, rows, cols, currentCenterDate, theme);
       break;
     case 1:
-      drawMonthlyView(ctx, rows, cols, parsedStartDate, theme);
+      drawMonthlyView(ctx, rows, cols, currentCenterDate, theme);
       break;
     case 2:
-      drawHourlyView(ctx, rows, cols, parsedStartDate, theme);
+      drawHourlyView(ctx, rows, cols, currentCenterDate, theme);
       break;
   }
 };

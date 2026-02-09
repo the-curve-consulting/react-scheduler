@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import {
   dayNameYoffset,
   dayNumYOffset,
@@ -19,7 +18,7 @@ import { getTextStyle } from "../../getTextStyle";
 export const drawDaysOnBottom = (
   ctx: CanvasRenderingContext2D,
   cols: number,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
   theme: Theme
 ) => {
   const dayNameYPos = headerHeight - headerDayHeight / dayNameYoffset;
@@ -27,10 +26,12 @@ export const drawDaysOnBottom = (
   const yPos = headerMonthHeight + headerWeekHeight;
   let xPos = 0;
 
+  const centerDay = centerDate.startOf("day");
+  const centerCol = Math.floor(cols / 2);
+
   for (let i = 0; i < cols; i++) {
-    const day = parseDay(
-      dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`).add(i, "days")
-    );
+    const offsetFromCenter = i - centerCol;
+    const day = parseDay(centerDay.add(offsetFromCenter, "days"));
     drawRow(
       {
         ctx,
