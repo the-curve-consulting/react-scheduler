@@ -65,7 +65,6 @@ const Scheduler = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  if (!outsideWrapperRef.current) null;
   return (
     <>
       <GlobalStyle />

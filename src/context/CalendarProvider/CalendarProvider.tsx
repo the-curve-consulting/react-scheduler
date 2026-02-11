@@ -5,11 +5,11 @@ import dayOfYear from "dayjs/plugin/dayOfYear";
 import isoWeek from "dayjs/plugin/isoWeek";
 import isBetween from "dayjs/plugin/isBetween";
 import duration from "dayjs/plugin/duration";
-import { Coords, ZoomLevel, allZoomLevel } from "@/types/global";
+import { ZoomLevel, allZoomLevel } from "@/types/global";
 import { isAvailableZoom } from "@/types/guards";
 import { parseDay } from "@/utils/dates";
 import { getCols } from "@/utils/getCols";
-import { DATA_CONFIG, leftColumnWidth, outsideWrapperId } from "@/constants";
+import { leftColumnWidth, outsideWrapperId } from "@/constants";
 import {
   getScrollConfig,
   getScrollPositionForDate,
@@ -24,8 +24,6 @@ dayjs.extend(isoWeek);
 dayjs.extend(isBetween);
 dayjs.extend(duration);
 
-type Direction = "back" | "forward" | "middle";
-
 const CalendarProvider = ({
   data,
   children,
@@ -36,9 +34,7 @@ const CalendarProvider = ({
   onFilterData,
   onClearFilterData
 }: CalendarProviderProps) => {
-  const { zoom: configZoom, maxRecordsPerPage = 50, dataLoading } = config;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dataConfig = { ...DATA_CONFIG, ...dataLoading };
+  const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
 
@@ -69,8 +65,6 @@ const CalendarProvider = ({
   const startDate = visibleRange.startDate;
   const dayOfYear = startDate.dayOfYear();
   const parsedStartDate = parseDay(startDate);
-
-  const [tilesCoords, setTilesCoords] = useState<Coords[]>([{ x: 0, y: 0 }]);
 
   const previousZoom = useRef(zoom);
 
@@ -269,15 +263,10 @@ const CalendarProvider = ({
     setZoom(zoomLevel);
   }, []);
 
-  // Keep old handlers for backward compatibility (but they just call new ones)
-  const handleScrollNext = useCallback(() => handleGoNext(), [handleGoNext]);
-  const handleScrollPrev = useCallback(() => handleGoPrev(), [handleGoPrev]);
-
   const zoomIn = useCallback(() => changeZoom(zoom + 1), [changeZoom, zoom]);
   const zoomOut = useCallback(() => changeZoom(zoom - 1), [changeZoom, zoom]);
 
   const handleFilterData = useCallback(() => onFilterData?.(), [onFilterData]);
-  const updateTilesCoords = useCallback((coords: Coords[]) => setTilesCoords(coords), []);
 
   const { Provider } = calendarContext;
 
@@ -286,16 +275,13 @@ const CalendarProvider = ({
       data,
       config,
       handleGoNext,
-      handleScrollNext,
       handleGoPrev,
-      handleScrollPrev,
       handleGoToday,
       zoomIn,
       zoomOut,
       zoom,
       isNextZoom,
       isPrevZoom,
-      date: referenceDate,
       currentCenterDate,
       viewportWidth,
       referenceDate,
@@ -307,19 +293,14 @@ const CalendarProvider = ({
       startDate: parsedStartDate,
       dayOfYear,
       handleFilterData,
-      tilesCoords,
-      updateTilesCoords,
       recordsThreshold: maxRecordsPerPage,
-      onClearFilterData,
-      dataConfig
+      onClearFilterData
     }),
     [
       data,
       config,
       handleGoNext,
-      handleScrollNext,
       handleGoPrev,
-      handleScrollPrev,
       handleGoToday,
       zoomIn,
       zoomOut,
@@ -337,11 +318,8 @@ const CalendarProvider = ({
       parsedStartDate,
       dayOfYear,
       handleFilterData,
-      tilesCoords,
-      updateTilesCoords,
       maxRecordsPerPage,
-      onClearFilterData,
-      dataConfig
+      onClearFilterData
     ]
   );
 

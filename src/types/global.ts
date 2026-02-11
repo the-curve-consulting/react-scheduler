@@ -25,7 +25,6 @@ export type Config = {
    * Language code: "en" | "pl" | "de"
    */
   lang?: LangCodes | string;
-  isFiltersButtonVisible?: boolean;
   maxRecordsPerPage?: number;
   /**
    * property for changing behavior of showing tooltip hours

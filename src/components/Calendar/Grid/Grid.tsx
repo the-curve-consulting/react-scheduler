@@ -25,7 +25,6 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
     viewportWidth,
     cols,
     config,
-    startDate,
     currentCenterDate
   } = useCalendar();
 
@@ -44,9 +43,9 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
       resizeCanvas(ctx, width, height);
 
       // Draw grid for visible range
-      drawGrid(ctx, zoom, rows, cols, startDate, currentCenterDate, theme);
+      drawGrid(ctx, zoom, rows, cols, currentCenterDate, theme);
     },
-    [cols, startDate, currentCenterDate, rows, zoom, theme, viewportWidth]
+    [cols, currentCenterDate, rows, zoom, theme, viewportWidth]
   );
 
   useEffect(() => {

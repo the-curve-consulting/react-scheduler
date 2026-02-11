@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import { canvasWrapperId } from "@/constants";
 import { Theme } from "@/styles";
 import { drawMonthlyView } from "./drawMonthlyView";
@@ -11,7 +10,6 @@ export const drawGrid = (
   zoom: number,
   rows: number,
   cols: number,
-  parsedStartDate: Day,
   currentCenterDate: dayjs.Dayjs,
   theme: Theme
 ) => {
