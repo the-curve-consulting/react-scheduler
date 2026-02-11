@@ -79,7 +79,7 @@ const CalendarProvider = ({
    * Adjusts reference date and scroll position for infinite scroll effect
    */
   const repositionScrollRange = useCallback(
-    (direction: "forward" | "backward") => {
+    (direction: "forward" | "backward", currentScrollLeft: number) => {
       const container = document.getElementById(outsideWrapperId);
       if (!container) return;
 
@@ -88,18 +88,18 @@ const CalendarProvider = ({
       if (direction === "forward") {
         // Scrolled too far right, shift reference forward
         setReferenceDate((prev) => prev.add(dateShift, unit));
-        const newScrollPosition = scrollPosition - repositionJump;
+        const newScrollPosition = currentScrollLeft - repositionJump;
         setScrollPosition(newScrollPosition);
         container.scrollTo({ left: newScrollPosition, behavior: "auto" });
       } else {
         // Scrolled too far left, shift reference backward
         setReferenceDate((prev) => prev.subtract(dateShift, unit));
-        const newScrollPosition = scrollPosition + repositionJump;
+        const newScrollPosition = currentScrollLeft + repositionJump;
         setScrollPosition(newScrollPosition);
         container.scrollTo({ left: newScrollPosition, behavior: "auto" });
       }
     },
-    [scrollPosition, scrollConfig]
+    [scrollConfig]
   );
 
   /**
@@ -107,12 +107,12 @@ const CalendarProvider = ({
    */
   const handleScrollChange = useCallback(
     (newScrollLeft: number) => {
-      setScrollPosition(newScrollLeft);
-
       if (newScrollLeft > scrollConfig.thresholdHigh) {
-        repositionScrollRange("forward");
+        repositionScrollRange("forward", newScrollLeft);
       } else if (newScrollLeft < scrollConfig.thresholdLow) {
-        repositionScrollRange("backward");
+        repositionScrollRange("backward", newScrollLeft);
+      } else {
+        setScrollPosition(newScrollLeft);
       }
     },
     [repositionScrollRange, scrollConfig]

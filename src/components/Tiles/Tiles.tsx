@@ -8,6 +8,9 @@ import { PlacedTiles, TilesProps } from "./types";
 
 const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultStartHour }) => {
   const tiles = useMemo((): PlacedTiles => {
+    const visibleStartDay = visibleRange.startDate.startOf("day");
+    const visibleEndDay = visibleRange.endDate.startOf("day");
+
     // Helper: Calculate row offset based on previous person's data
     const calculateRowOffset = (personIndex: number, currentRows: number): number => {
       if (personIndex === 0) return currentRows;
@@ -22,11 +25,20 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultS
       startDateTimes: Record<string, dayjs.Dayjs>
     ): PlacedTiles => {
       const tilesPerProject: PlacedTiles = [];
-      let currentDate = dayjs(project.startDate);
-      const finalDate = dayjs(project.endDate);
+      const projectStartDay = dayjs(project.startDate).startOf("day");
+      const projectEndDay = dayjs(project.endDate).startOf("day");
+      const iterationStartDay =
+        projectStartDay.isAfter(visibleStartDay) ? projectStartDay : visibleStartDay;
+      const iterationEndDay = projectEndDay.isBefore(visibleEndDay) ? projectEndDay : visibleEndDay;
+
+      if (iterationStartDay.isAfter(iterationEndDay, "day")) {
+        return tilesPerProject;
+      }
+
+      let currentDate = iterationStartDay;
       const startHour = defaultStartHour ?? dayStartHour;
 
-      while (currentDate.isBefore(finalDate) || currentDate.isSame(finalDate, "day")) {
+      while (currentDate.isBefore(iterationEndDay) || currentDate.isSame(iterationEndDay, "day")) {
         const currentDateString = currentDate.format("YYYY-MM-DD");
 
         // Ensure if this project is on the same day as the previously rendered,
