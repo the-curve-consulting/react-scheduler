@@ -5,7 +5,7 @@ export const StyledOuterWrapper = styled.div`
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: 2;
 `;
 
 export const StyledWrapper = styled.div<{ $viewportWidth: number; $leftColumnWidth: number }>`
