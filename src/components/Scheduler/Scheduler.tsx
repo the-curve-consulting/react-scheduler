@@ -4,10 +4,11 @@ import dayjs from "dayjs";
 import { Calendar } from "@/components";
 import CalendarProvider from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
+import { outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
 import { Config } from "@/types/global";
-import { outsideWrapperId } from "@/constants";
 import { SchedulerProps } from "./types";
+import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
 import { StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
 const Scheduler = ({
@@ -15,6 +16,7 @@ const Scheduler = ({
   config,
   startDate,
   onRangeChange,
+  onFetchData,
   onTileClick,
   onFilterData,
   onClearFilterData,
@@ -35,8 +37,17 @@ const Scheduler = ({
 
   const outsideWrapperRef = useRef<HTMLDivElement>(null);
   const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
+
+  const { schedulerData, handleRangeChange } = usePrefetchedSchedulerData({
+    data,
+    dataLoading: appConfig.dataLoading,
+    onFetchData,
+    onRangeChange
+  });
+
   const defaultStartDate = useMemo(() => dayjs(startDate), [startDate]);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
+
   const toggleTheme = () => {
     themeMode === "light" ? setThemeMode("dark") : setThemeMode("light");
   };
@@ -59,9 +70,7 @@ const Scheduler = ({
     };
 
     handleResize();
-
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -71,21 +80,21 @@ const Scheduler = ({
       <ThemeProvider theme={mergedTheme}>
         <LocaleProvider lang={appConfig.lang} translations={appConfig.translations}>
           <CalendarProvider
-            data={data}
+            data={schedulerData}
             isLoading={!!isLoading}
             config={appConfig}
-            onRangeChange={onRangeChange}
+            onRangeChange={handleRangeChange}
             defaultStartDate={defaultStartDate}
             onFilterData={onFilterData}
             onClearFilterData={onClearFilterData}>
             <StyledOutsideWrapper
-              showScroll={!!data.length}
+              showScroll={!!schedulerData.length}
               id={outsideWrapperId}
               ref={outsideWrapperRef}>
               <StyledInnerWrapper>
                 <Calendar
                   config={appConfig}
-                  data={data}
+                  data={schedulerData}
                   onTileClick={onTileClick}
                   topBarWidth={topBarWidth ?? 0}
                   onItemClick={onItemClick}

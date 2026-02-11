@@ -69,6 +69,7 @@ export type Config = {
     initialLoadDays?: number;
     prefetchDays?: number;
     prefetchTriggerDays?: number;
+    prefetchTriggerRatio?: number;
     maxCachedDays?: number;
   };
 };
