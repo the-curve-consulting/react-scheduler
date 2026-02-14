@@ -18,12 +18,19 @@ import {
 } from "@/utils/scrollHelpers";
 import { calendarContext } from "./calendarContext";
 import { CalendarProviderProps } from "./types";
+import { useScrollRebaseController } from "./useScrollRebaseController";
 dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);
 dayjs.extend(isoWeek);
 dayjs.extend(isBetween);
 dayjs.extend(duration);
 
+/**
+ * Provides scheduler calendar state and navigation handlers to descendants.
+ *
+ * @param props Calendar provider properties including data, callbacks and configuration.
+ * @returns Context provider wrapping scheduler UI.
+ */
 const CalendarProvider = ({
   data,
   children,
@@ -67,74 +74,44 @@ const CalendarProvider = ({
   const parsedStartDate = parseDay(startDate);
 
   const previousZoom = useRef(zoom);
+  const { clampScrollLeft, handleScrollChange } = useScrollRebaseController({
+    scrollConfig,
+    viewportWidth,
+    setReferenceDate,
+    setScrollPosition
+  });
 
   /**
-   * Reposition scroll range when threshold crossed
-   * Adjusts reference date and scroll position for infinite scroll effect
-   */
-  const repositionScrollRange = useCallback(
-    (direction: "forward" | "backward", currentScrollLeft: number) => {
-      const container = document.getElementById(outsideWrapperId);
-      if (!container) return;
-
-      const { dateShift, repositionJump, unit } = scrollConfig;
-
-      if (direction === "forward") {
-        // Scrolled too far right, shift reference forward
-        setReferenceDate((prev) => prev.add(dateShift, unit));
-        const newScrollPosition = currentScrollLeft - repositionJump;
-        setScrollPosition(newScrollPosition);
-        container.scrollTo({ left: newScrollPosition, behavior: "auto" });
-      } else {
-        // Scrolled too far left, shift reference backward
-        setReferenceDate((prev) => prev.subtract(dateShift, unit));
-        const newScrollPosition = currentScrollLeft + repositionJump;
-        setScrollPosition(newScrollPosition);
-        container.scrollTo({ left: newScrollPosition, behavior: "auto" });
-      }
-    },
-    [scrollConfig]
-  );
-
-  /**
-   * Handle scroll position changes from Grid
-   */
-  const handleScrollChange = useCallback(
-    (newScrollLeft: number) => {
-      if (newScrollLeft > scrollConfig.thresholdHigh) {
-        repositionScrollRange("forward", newScrollLeft);
-      } else if (newScrollLeft < scrollConfig.thresholdLow) {
-        repositionScrollRange("backward", newScrollLeft);
-      } else {
-        setScrollPosition(newScrollLeft);
-      }
-    },
-    [repositionScrollRange, scrollConfig]
-  );
-
-  /**
-   * Navigate to specific date
+   * Scrolls viewport to a target date while clamping to container boundaries.
+   *
+   * @param targetDate Date that should become visible in the current zoom.
+   * @returns void
    */
   const handleGoToDate = useCallback(
     (targetDate: dayjs.Dayjs) => {
-      const scrollLeft = getScrollPositionForDate(targetDate, referenceDate, zoom);
       const container = document.getElementById(outsideWrapperId);
+      const rawScrollLeft = getScrollPositionForDate(targetDate, referenceDate, zoom);
+      const scrollLeft = clampScrollLeft(rawScrollLeft, container);
 
       container?.scrollTo({ left: scrollLeft, behavior: "smooth" });
       setScrollPosition(scrollLeft);
     },
-    [referenceDate, zoom]
+    [clampScrollLeft, referenceDate, zoom]
   );
 
   /**
-   * Go to today
+   * Navigates viewport to current date/time.
+   *
+   * @returns void
    */
   const handleGoToday = useCallback(() => {
     handleGoToDate(dayjs());
   }, [handleGoToDate]);
 
   /**
-   * Next/Prev buttons
+   * Moves the visible window forward by one logical step for current zoom.
+   *
+   * @returns void
    */
   const handleGoNext = useCallback(() => {
     if (isLoading) return;
@@ -162,6 +139,11 @@ const CalendarProvider = ({
     handleGoToDate(nextDate);
   }, [isLoading, visibleRange, zoom, handleGoToDate]);
 
+  /**
+   * Moves the visible window backward by one logical step for current zoom.
+   *
+   * @returns void
+   */
   const handleGoPrev = useCallback(() => {
     if (isLoading) return;
 
@@ -188,6 +170,11 @@ const CalendarProvider = ({
     handleGoToDate(prevDate);
   }, [isLoading, zoom, visibleRange, handleGoToDate]);
 
+  /**
+   * Preserves center date when zoom changes by recalculating target scroll offset.
+   *
+   * @returns Cleanup-free effect.
+   */
   useEffect(() => {
     if (previousZoom.current === zoom) return;
 
@@ -206,13 +193,18 @@ const CalendarProvider = ({
     previousZoom.current = zoom;
 
     // Now scroll to that date with the NEW zoom
-    const scrollLeft = getScrollPositionForDate(centerDateBeforeChange, referenceDate, zoom);
+    const rawScrollLeft = getScrollPositionForDate(centerDateBeforeChange, referenceDate, zoom);
     const container = document.getElementById(outsideWrapperId);
+    const scrollLeft = clampScrollLeft(rawScrollLeft, container);
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
     setScrollPosition(scrollLeft);
-  }, [zoom, scrollPosition, referenceDate, viewportWidth]);
+  }, [clampScrollLeft, zoom, scrollPosition, referenceDate, viewportWidth]);
 
-  // Initialize viewport width after DOM is ready
+  /**
+   * Initializes viewport width once DOM wrapper is available.
+   *
+   * @returns Cleanup function for delayed width initialization.
+   */
   useEffect(() => {
     const updateViewportWidth = () => {
       const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
@@ -242,22 +234,39 @@ const CalendarProvider = ({
     return () => window.removeEventListener("resize", handleResize);
   }, [zoom]);
 
+  /**
+   * Performs one-time initial scroll positioning based on provided start date.
+   *
+   * @returns void
+   */
   useEffect(() => {
     if (isInitialized) return;
 
-    const scrollLeft = getScrollPositionForDate(defaultStartDate, referenceDate, zoom);
     const container = document.getElementById(outsideWrapperId);
+    const rawScrollLeft = getScrollPositionForDate(defaultStartDate, referenceDate, zoom);
+    const scrollLeft = clampScrollLeft(rawScrollLeft, container);
 
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
     setScrollPosition(scrollLeft);
     setIsInitialized(true);
-  }, [defaultStartDate, isInitialized, referenceDate, zoom]);
+  }, [clampScrollLeft, defaultStartDate, isInitialized, referenceDate, zoom]);
 
+  /**
+   * Emits the currently visible date range through external callback.
+   *
+   * @returns void
+   */
   useEffect(() => {
     const parsedRange = { startDate: range.startDate.toDate(), endDate: range.endDate.toDate() };
     onRangeChange?.(parsedRange);
   }, [onRangeChange, range]);
 
+  /**
+   * Updates zoom level when provided value is supported.
+   *
+   * @param zoomLevel Numeric zoom level candidate.
+   * @returns void
+   */
   const changeZoom = useCallback((zoomLevel: number) => {
     if (!isAvailableZoom(zoomLevel)) return;
     setZoom(zoomLevel);
@@ -326,6 +335,11 @@ const CalendarProvider = ({
   return <Provider value={contextValue}>{children}</Provider>;
 };
 
+/**
+ * Accessor hook for scheduler calendar context.
+ *
+ * @returns Calendar context value exposed by `CalendarProvider`.
+ */
 const useCalendar = () => useContext(calendarContext);
 
 export default CalendarProvider;

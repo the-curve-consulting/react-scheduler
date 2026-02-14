@@ -2,7 +2,10 @@ import dayjs from "dayjs";
 import { dayWidth, SCROLL_CONFIG_DAYS, weekWidth, zoom2ColumnWidth } from "@/constants";
 
 /**
- * Get cell width for zoom level
+ * Resolves timeline cell width for a given zoom level.
+ *
+ * @param zoom Current zoom level.
+ * @returns Cell width in pixels for the selected zoom.
  */
 export const getCellWidth = (zoom: number): number => {
   switch (zoom) {
@@ -17,6 +20,12 @@ export const getCellWidth = (zoom: number): number => {
   }
 };
 
+/**
+ * Builds virtual-scroll geometry and rebase thresholds for a zoom level.
+ *
+ * @param zoom Current zoom level.
+ * @returns Container sizing, rebase jump and date-shift settings for scroll math.
+ */
 export const getScrollConfig = (
   zoom: number
 ): {
@@ -83,10 +92,11 @@ export const getScrollConfig = (
 };
 
 /**
- * Calculate date offset from scroll position
- * @param scrollLeft - Current scroll position
- * @param zoom - Current zoom level
- * @returns Number of units (weeks/days/hours) from scroll center
+ * Calculates timeline offset units from current horizontal scroll.
+ *
+ * @param scrollLeft Current scroll position in pixels.
+ * @param zoom Current zoom level.
+ * @returns Offset in timeline units relative to virtual center.
  */
 export const getOffsetFromScroll = (scrollLeft: number, zoom: number): number => {
   const scrollConfig = getScrollConfig(zoom);
@@ -96,11 +106,13 @@ export const getOffsetFromScroll = (scrollLeft: number, zoom: number): number =>
 };
 
 /**
- * Calculate visible date range from scroll position
- * @param scrollLeft - Current scroll position
- * @param referenceDate - Current reference date (center of scroll range)
- * @param zoom - Current zoom level
- * @param viewportWidth - Viewport width in pixels
+ * Converts horizontal scroll position into currently visible date boundaries.
+ *
+ * @param scrollLeft Current scroll position in pixels.
+ * @param referenceDate Reference date at virtual-scroll center.
+ * @param zoom Current zoom level.
+ * @param viewportWidth Viewport width in pixels.
+ * @returns Start/end dates that should be considered visible (with rendering buffer).
  */
 export const getVisibleRangeFromScroll = (
   scrollLeft: number,
@@ -146,7 +158,12 @@ export const getVisibleRangeFromScroll = (
 };
 
 /**
- * Calculate scroll position for a specific date
+ * Converts a target date into horizontal scroll position for current zoom.
+ *
+ * @param targetDate Date that should be visible.
+ * @param referenceDate Reference date at virtual-scroll center.
+ * @param zoom Current zoom level.
+ * @returns Scroll-left position in pixels for the target date.
  */
 export const getScrollPositionForDate = (
   targetDate: dayjs.Dayjs,
@@ -175,7 +192,13 @@ export const getScrollPositionForDate = (
 };
 
 /**
- * Check if project is visible in date range
+ * Checks whether a project overlaps the given visible range.
+ *
+ * @param projectStart Project start date.
+ * @param projectEnd Project end date.
+ * @param rangeStart Visible range start.
+ * @param rangeEnd Visible range end.
+ * @returns `true` if project intersects range, otherwise `false`.
  */
 export const isProjectVisible = (
   projectStart: Date,
@@ -193,12 +216,13 @@ export const isProjectVisible = (
 };
 
 /**
- * Calculate tile position relative to current center date
- * @param tileDate - Date of the tile
- * @param currentCenterDate - Date currently at viewport center
- * @param zoom - Current zoom level
- * @param cols - Number of visible columns
- * @returns X position in pixels
+ * Calculates horizontal tile position relative to viewport center date.
+ *
+ * @param tileDate Tile start date.
+ * @param currentCenterDate Date currently centered in viewport.
+ * @param zoom Current zoom level.
+ * @param cols Number of visible columns.
+ * @returns Tile x-position in pixels inside the grid.
  */
 export const getTilePositionRelativeToCenter = (
   tileDate: dayjs.Dayjs,
@@ -232,12 +256,12 @@ export const getTilePositionRelativeToCenter = (
 };
 
 /**
- * Calculate the current center date from scroll position using continuous pixel-to-time mapping
- * This provides accurate center date without discretization to cell boundaries
- * @param scrollLeft - Current scroll position
- * @param referenceDate - Reference date (center of scroll range)
- * @param zoom - Current zoom level
- * @returns Date at the viewport center
+ * Maps scroll position back to exact center date using continuous pixel-to-time conversion.
+ *
+ * @param scrollLeft Current scroll position in pixels.
+ * @param referenceDate Reference date at virtual-scroll center.
+ * @param zoom Current zoom level.
+ * @returns Date/time currently centered in viewport.
  */
 export const getCurrentCenterDateFromScroll = (
   scrollLeft: number,

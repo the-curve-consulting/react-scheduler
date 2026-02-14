@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
-import { weekWidth, boxHeight, dayWidth, zoom2ColumnWidth } from "@/constants";
+import { boxHeight, zoom2ColumnWidth } from "@/constants";
 import { Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
+import { getCellWidth } from "./scrollHelpers";
 
 export const getTooltipData = (
   config: Config,
@@ -15,26 +16,27 @@ export const getTooltipData = (
 ): TooltipData => {
   let focusedDate: dayjs.Dayjs;
   const centerCol = Math.floor(cols / 2);
+  const cellWidth = getCellWidth(zoom);
 
   let adjustedX = cursorPosition.x;
-  let columnIndex = Math.floor(adjustedX / dayWidth);
-  let xPos = columnIndex * dayWidth;
+  let columnIndex = Math.floor(adjustedX / cellWidth);
+  let xPos = columnIndex * cellWidth;
   switch (zoom) {
     case 0: {
-      columnIndex = Math.floor(adjustedX / weekWidth);
+      columnIndex = Math.floor(adjustedX / cellWidth);
       const centerWeek = currentCenterDate.startOf("isoWeek");
       const offsetFromCenter = columnIndex - centerCol;
       focusedDate = centerWeek.add(offsetFromCenter, "weeks");
-      xPos = columnIndex * weekWidth;
+      xPos = columnIndex * cellWidth;
       break;
     }
 
     case 1: {
-      columnIndex = Math.floor(adjustedX / dayWidth);
+      columnIndex = Math.floor(adjustedX / cellWidth);
       const centerDay = currentCenterDate.startOf("day");
       const offsetFromCenter = columnIndex - centerCol;
       focusedDate = centerDay.add(offsetFromCenter, "days");
-      xPos = columnIndex * dayWidth;
+      xPos = columnIndex * cellWidth;
       break;
     }
 

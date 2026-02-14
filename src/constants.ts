@@ -65,3 +65,14 @@ export const DATA_CONFIG = {
   prefetchTriggerRatio: 0.8, // Trigger prefetch near 80% of cached range
   maxCachedDays: 60 // Garbage collect beyond ±60 days
 };
+
+export const SCROLL_REBASE_CONFIG = {
+  rearmFallbackPx: 200,
+  rearmMinPx: 120,
+  rearmMaxPx: 600,
+  rearmViewportRatio: 0.25,
+  rearmStreakGrowth: 0.75,
+  rearmMaxViewportMultiplier: 1.5,
+  rearmMaxFallbackPx: 1200,
+  idleResetMs: 180
+} as const;
