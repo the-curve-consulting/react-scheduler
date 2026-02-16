@@ -33,25 +33,23 @@ const Tooltip: FC<TooltipProps> = ({ tooltipData, zoom }) => {
   }
 
   useLayoutEffect(() => {
-    // re calculate tooltip width before repaint
     if (!tooltipRef.current) return;
 
     const { width: tooltipWidth } = tooltipRef.current.getBoundingClientRect();
+    const gridWrapper = document.getElementById("reactSchedulerGridInnerWrapper");
+    const gridRect = gridWrapper?.getBoundingClientRect();
 
-    let xOffset;
-    switch (zoom) {
-      case 2:
-        xOffset = tooltipWidth / 2 + width;
-        break;
-      default:
-        xOffset = tooltipWidth / 2 + width / 2;
-        break;
-    }
-    tooltipRef.current.style.left = `${coords.x - xOffset}px`;
-    tooltipRef.current.style.top = `${coords.y + 8}px`;
+    if (!gridRect) return;
 
-    // disposition.overtime affects tooltip's width, thus it's needed to recalculate it's coords whenever overtime changes
-  }, [coords.x, width, disposition.overtime, coords.y, zoom]);
+    // Zoom 2 has additional offset of half cell width
+    const xOffset = zoom === 2 ? tooltipWidth / 2 - width : tooltipWidth / 2 - width / 2;
+    const viewportX = gridRect.left + coords.x;
+    const viewportY = gridRect.top + coords.y;
+
+    // Try positioning at bottom of cell instead of top
+    tooltipRef.current.style.left = `${viewportX - xOffset}px`;
+    tooltipRef.current.style.top = `${viewportY - 56 + 8}px`;
+  }, [coords.x, coords.y, width, zoom, disposition.overtime]);
 
   return (
     <StyledTooltipWrapper ref={tooltipRef}>

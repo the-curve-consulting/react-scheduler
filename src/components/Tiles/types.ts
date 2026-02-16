@@ -5,7 +5,7 @@ export type TilesProps = {
   zoom: number;
   data: PaginatedSchedulerData;
   onTileClick?: (data: SchedulerProjectData) => void;
-  date: dayjs.Dayjs;
+  visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
   defaultStartHour?: number;
 };
 

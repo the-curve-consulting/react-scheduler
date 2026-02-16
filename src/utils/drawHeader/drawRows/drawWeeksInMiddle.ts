@@ -1,38 +1,36 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import {
   dayWidth,
   fonts,
   headerMonthHeight,
   headerWeekHeight,
-  middleRowTextYPos,
-  weeksInYear
+  middleRowTextYPos
 } from "@/constants";
 import { drawRow } from "@/utils/drawRow";
 import { Theme } from "@/styles";
 
 export const drawWeeksInMiddle = (
   ctx: CanvasRenderingContext2D,
-  startDate: Day,
+  centerDate: dayjs.Dayjs,
+  cols: number,
   weekLabel: string,
   theme: Theme
 ) => {
   const width = 7 * dayWidth;
   const yPos = headerMonthHeight;
 
-  const weeksThreshold = ctx.canvas.width / width + width;
-  const startWeek = startDate.weekOfYear;
-  let xPos = 0;
+  const centerDay = centerDate.startOf("day");
+  const centerCol = Math.floor(cols / 2);
 
-  for (let i = 0; i < weeksThreshold; i++) {
-    const day = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`).day();
-    let weekIndex = (startWeek + i) % weeksInYear;
+  const firstVisibleDay = centerDay.subtract(centerCol, "days");
+  const firstWeekStart = firstVisibleDay.startOf("week").add(1, "day");
+  const daysBeforeVisible = firstVisibleDay.diff(firstWeekStart, "days");
+  let xPos = -daysBeforeVisible * dayWidth;
+  const weeksToShow = Math.ceil((ctx.canvas.width + daysBeforeVisible * dayWidth) / width) + 1;
 
-    if (weekIndex <= 0) {
-      weekIndex += weeksInYear;
-    }
-
-    if (day !== 1 && i === 0) xPos = -day * dayWidth + dayWidth;
+  for (let i = 0; i < weeksToShow; i++) {
+    const weekStart = firstWeekStart.add(i, "weeks");
+    const weekNumber = weekStart.week();
 
     drawRow(
       {
@@ -42,7 +40,7 @@ export const drawWeeksInMiddle = (
         width,
         height: headerWeekHeight,
         textYPos: middleRowTextYPos,
-        label: `${weekLabel.toUpperCase()} ${weekIndex}`,
+        label: `${weekLabel.toUpperCase()} ${weekNumber}`,
         font: fonts.middleRow
       },
       theme

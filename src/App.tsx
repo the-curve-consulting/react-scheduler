@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { createMockData } from "./mock/appMock";
 import { ParsedDatesRange } from "./utils/getDatesRange";
@@ -13,6 +13,9 @@ import { StyledSchedulerFrame } from "./styles";
 import { Scheduler } from ".";
 
 function App() {
+  const rangeUpdateTimeoutRef = useRef<number | null>(null);
+  const pendingRangeRef = useRef<ParsedDatesRange | null>(null);
+
   const [values, setValues] = useState<ConfigFormValues>({
     peopleCount: 15,
     projectsPerYear: 5,
@@ -34,8 +37,32 @@ function App() {
     endDate: new Date()
   });
 
-  const handleRangeChange = useCallback((range: ParsedDatesRange) => {
-    setRange(range);
+  useEffect(
+    () => () => {
+      if (rangeUpdateTimeoutRef.current !== null) {
+        window.clearTimeout(rangeUpdateTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const handleRangeChange = useCallback((nextRange: ParsedDatesRange) => {
+    pendingRangeRef.current = nextRange;
+    if (rangeUpdateTimeoutRef.current !== null) {
+      window.clearTimeout(rangeUpdateTimeoutRef.current);
+    }
+
+    rangeUpdateTimeoutRef.current = window.setTimeout(() => {
+      const pendingRange = pendingRangeRef.current;
+      if (!pendingRange) return;
+
+      setRange((prev) => {
+        const isSameRange =
+          prev.startDate.getTime() === pendingRange.startDate.getTime() &&
+          prev.endDate.getTime() === pendingRange.endDate.getTime();
+        return isSameRange ? prev : pendingRange;
+      });
+    }, 120);
   }, []);
 
   // Note: this is just a demo, so we filter data based on start and end dates of the range.

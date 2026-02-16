@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Day } from "@/types/global";
 import { Theme } from "@/styles";
 import { drawDaysOnBottom } from "./drawRows/drawDaysOnBottom";
@@ -15,6 +16,7 @@ export const drawHeader = (
   zoom: number,
   cols: number,
   startDate: Day,
+  currentCenterDate: dayjs.Dayjs,
   weekLabel: string,
   dayOfYear: number,
   theme: Theme
@@ -26,14 +28,14 @@ export const drawHeader = (
       drawWeeksOnBottom(ctx, cols, startDate, weekLabel, theme);
       break;
     case 1:
-      drawMonthsOnTop(ctx, startDate, theme);
-      drawWeeksInMiddle(ctx, startDate, weekLabel, theme);
-      drawDaysOnBottom(ctx, cols, startDate, theme);
+      drawMonthsOnTop(ctx, currentCenterDate, cols, theme);
+      drawWeeksInMiddle(ctx, currentCenterDate, cols, weekLabel, theme);
+      drawDaysOnBottom(ctx, cols, currentCenterDate, theme);
       break;
     case 2:
-      drawZoom2MonthsOnTop(ctx, cols, startDate, theme);
-      drawZoom2DaysInMiddle(ctx, cols, startDate, theme);
-      drawZoom2HoursOnBottom(ctx, cols, startDate, theme);
+      drawZoom2MonthsOnTop(ctx, cols, currentCenterDate, theme);
+      drawZoom2DaysInMiddle(ctx, cols, currentCenterDate, theme);
+      drawZoom2HoursOnBottom(ctx, cols, currentCenterDate, theme);
       break;
   }
 };

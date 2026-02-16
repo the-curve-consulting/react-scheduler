@@ -1,27 +1,20 @@
 import dayjs from "dayjs";
-import { boxHeight, tileYOffset } from "@/constants";
+import { boxHeight, tileYOffset, zoom2ColumnWidth } from "@/constants";
 import { TileProperties } from "@/types/global";
-import { getTileXAndWidth } from "./getTileXAndWidth";
+import { getTilePositionRelativeToCenter } from "./scrollHelpers";
 
 export const getHourlyTileProperties = (
   row: number,
-  startDate: dayjs.Dayjs,
-  endDate: dayjs.Dayjs,
+  currentCenterDate: dayjs.Dayjs,
+  cols: number,
   resourceStartDate: dayjs.Dayjs,
   resourceEndDate: dayjs.Dayjs
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
-  const rangeStartHour = startDate.hour();
-  const rangeEndHour = endDate.hour();
-  const parsedStartDate = dayjs(startDate).hour(rangeStartHour).minute(0);
-  const parsedEndDate = dayjs(endDate).hour(rangeEndHour).minute(0);
+  const x = getTilePositionRelativeToCenter(resourceStartDate, currentCenterDate, 2, cols);
 
-  return {
-    ...getTileXAndWidth(
-      { startDate: resourceStartDate, endDate: resourceEndDate },
-      { startDate: parsedStartDate, endDate: parsedEndDate },
-      2
-    ),
-    y
-  };
+  const durationHours = resourceEndDate.diff(resourceStartDate, "hours", true);
+  const width = durationHours * zoom2ColumnWidth;
+
+  return { y, x, width };
 };

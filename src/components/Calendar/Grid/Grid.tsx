@@ -1,97 +1,110 @@
-import { forwardRef, memo, useCallback, useEffect, useRef } from "react";
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
-import { boxHeight, canvasWrapperId, leftColumnWidth, outsideWrapperId } from "@/constants";
+import {
+  boxHeight,
+  canvasId,
+  canvasWrapperId,
+  gridInnerWrapperId,
+  leftColumnWidth,
+  outsideWrapperId
+} from "@/constants";
 import { Loader, Tiles } from "@/components";
 import { useCalendar } from "@/context/CalendarProvider";
 import { resizeCanvas } from "@/utils/resizeCanvas";
-import { getCanvasWidth } from "@/utils/getCanvasWidth";
+import { getScrollConfig } from "@/utils/scrollHelpers";
 import { GridProps } from "./types";
-import { StyledCanvas, StyledInnerWrapper, StyledSpan, StyledWrapper } from "./styles";
+import { StyledCanvas, StyledInnerWrapper, StyledWrapper } from "./styles";
 
-const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
-  { zoom, rows, data, onTileClick },
-  ref
-) {
-  const { handleScrollNext, handleScrollPrev, date, isLoading, cols, startDate, config } =
-    useCalendar();
+const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, onTileClick }, ref) {
+  const {
+    handleScrollChange,
+    visibleRange,
+    zoom,
+    isLoading,
+    viewportWidth,
+    cols,
+    config,
+    currentCenterDate
+  } = useCalendar();
+
+  const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const refRight = useRef<HTMLSpanElement>(null);
-  const refLeft = useRef<HTMLSpanElement>(null);
-
   const theme = useTheme();
+  const lastScrollLeft = useRef(0);
 
   const handleResize = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const width = getCanvasWidth();
+      // Don't draw if viewport width is not initialized yet
+      if (viewportWidth === 0) return;
+
+      const width = viewportWidth;
       const height = rows * boxHeight + 1;
       resizeCanvas(ctx, width, height);
-      drawGrid(ctx, zoom, rows, cols, startDate, theme);
+
+      // Draw grid for visible range
+      drawGrid(ctx, zoom, rows, cols, currentCenterDate, theme);
     },
-    [cols, startDate, rows, zoom, theme]
+    [cols, currentCenterDate, rows, zoom, theme, viewportWidth]
   );
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    const onResize = () => handleResize(ctx);
-
-    window.addEventListener("resize", onResize);
-
-    return () => window.removeEventListener("resize", onResize);
-  }, [handleResize]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.style.letterSpacing = "1px";
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     handleResize(ctx);
-  }, [date, rows, zoom, handleResize]);
+  }, [visibleRange, rows, zoom, handleResize, viewportWidth]);
 
+  // Scroll listener
   useEffect(() => {
-    if (!refRight.current) return;
-    const observerRight = new IntersectionObserver(
-      (e) => (e[0].isIntersecting ? handleScrollNext() : null),
-      { root: document.getElementById(outsideWrapperId) }
-    );
-    observerRight.observe(refRight.current);
+    const container = document.getElementById(outsideWrapperId);
+    if (!container) return;
 
-    return () => observerRight.disconnect();
-  }, [handleScrollNext]);
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const currentScrollLeft = target.scrollLeft;
 
-  useEffect(() => {
-    if (!refLeft.current) return;
-    const observerLeft = new IntersectionObserver(
-      (e) => (e[0].isIntersecting ? handleScrollPrev() : null),
-      {
-        root: document.getElementById(outsideWrapperId),
-        rootMargin: `0px 0px 0px -${leftColumnWidth}px`
+      //Only trigger if the horizontal position has actually changed
+      if (currentScrollLeft !== lastScrollLeft.current) {
+        lastScrollLeft.current = currentScrollLeft;
+        handleScrollChange(currentScrollLeft);
       }
-    );
-    observerLeft.observe(refLeft.current);
+    };
 
-    return () => observerLeft.disconnect();
-  }, [handleScrollPrev]);
+    // Throttle to 60fps
+    let ticking = false;
+    const throttledScroll = (e: Event) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll(e);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    container.addEventListener("scroll", throttledScroll);
+    return () => container.removeEventListener("scroll", throttledScroll);
+  }, [handleScrollChange]);
 
   return (
-    <StyledWrapper id={canvasWrapperId}>
-      <StyledInnerWrapper ref={ref}>
-        <StyledSpan position="left" ref={refLeft} />
+    <StyledWrapper id={canvasWrapperId} $virtualWidth={scrollConfig.containerWidth}>
+      <StyledInnerWrapper
+        id={gridInnerWrapperId}
+        $viewportWidth={viewportWidth}
+        $leftColumnWidth={leftColumnWidth}
+        ref={ref}>
         <Loader isLoading={isLoading} position="left" />
-        <StyledCanvas ref={canvasRef} />
+        <StyledCanvas id={canvasId} ref={canvasRef} />
         <Tiles
           data={data}
           zoom={zoom}
+          visibleRange={visibleRange}
           onTileClick={onTileClick}
-          date={date}
           defaultStartHour={config.defaultStartHour}
         />
-        <StyledSpan ref={refRight} position="right" />
         <Loader isLoading={isLoading} position="right" />
       </StyledInnerWrapper>
     </StyledWrapper>

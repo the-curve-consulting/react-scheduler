@@ -2,6 +2,7 @@ import { FC, memo } from "react";
 import { useTheme } from "styled-components";
 import { getHourlyTileProperties } from "@/utils/getHourlyTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
+import { useCalendar } from "@/context/CalendarProvider";
 import {
   StyledDescription,
   StyledStickyWrapper,
@@ -11,11 +12,12 @@ import {
 } from "./styles";
 import { HourlyTileProps } from "./types";
 
-const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, datesRange, onTileClick }) => {
+const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, onTileClick }) => {
+  const { currentCenterDate, cols } = useCalendar();
   const { y, x, width } = getHourlyTileProperties(
     row,
-    datesRange.startDate,
-    datesRange.endDate,
+    currentCenterDate,
+    cols,
     dayData.startDateTime,
     dayData.endDateTime
   );

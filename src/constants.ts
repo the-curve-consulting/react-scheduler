@@ -15,8 +15,6 @@ export const zoom2HeaderMiddleRowHeight = 16;
 export const zoom2HeaderBottomRowHeight = 40;
 export const zoom2HeaderHeight =
   zoom2HeaderTopRowHeight + zoom2HeaderMiddleRowHeight + zoom2HeaderBottomRowHeight;
-export const zoom2ButtonJump = 1;
-export const weeksInYear = 52;
 export const navHeight = 44;
 export const fonts = {
   topRow: "600 14px Inter",
@@ -26,13 +24,14 @@ export const fonts = {
     number: "600 10px Inter"
   }
 };
-export const screenWidthMultiplier = 3;
 export const dayNameYoffset = 1.6;
 export const dayNumYOffset = 4.5;
 export const monthsInYear = 12;
 export const hoursInDay = 24;
 export const canvasHeaderWrapperId = "reactSchedulerCanvasHeaderWrapper";
 export const canvasWrapperId = "reactSchedulerCanvasWrapper";
+export const gridInnerWrapperId = "reactSchedulerGridInnerWrapper";
+export const canvasId = "reactSchedulerCanvas";
 export const outsideWrapperId = prefixId;
 export const tileYOffset = 4;
 export const tileHeight = 48;
@@ -50,5 +49,30 @@ export const maxHoursPerWeek = 40;
 export const maxHoursPerDay = 8;
 export const topRowTextYPos = headerMonthHeight / 2 + 2;
 export const middleRowTextYPos = headerWeekHeight / 2 + headerMonthHeight + 1;
-export const buttonWeeksJump = 2;
 export const minutesInHour = 60;
+
+export const SCROLL_CONFIG_DAYS = {
+  containerDays: 3650,
+  repositionJumpDays: 180,
+  repositionThreshold: 0.8 // Reposition at 80% scroll
+};
+
+// Data loading configuration
+export const DATA_CONFIG = {
+  initialLoadDays: 90, // ±90 days on mount (fills weekly view)
+  prefetchDays: 30, // Load ±30 days when prefetching
+  prefetchTriggerDays: 30, // Trigger when < 30 days ahead/behind
+  prefetchTriggerRatio: 0.8, // Trigger prefetch near 80% of cached range
+  maxCachedDays: 60 // Garbage collect beyond ±60 days
+};
+
+export const SCROLL_REBASE_CONFIG = {
+  rearmFallbackPx: 200,
+  rearmMinPx: 120,
+  rearmMaxPx: 600,
+  rearmViewportRatio: 0.25,
+  rearmStreakGrowth: 0.75,
+  rearmMaxViewportMultiplier: 1.5,
+  rearmMaxFallbackPx: 1200,
+  idleResetMs: 180
+} as const;

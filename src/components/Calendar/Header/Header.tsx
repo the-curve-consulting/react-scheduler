@@ -1,32 +1,40 @@
 import { FC, useCallback, useEffect, useRef } from "react";
 import { useTheme } from "styled-components";
-import { headerHeight, canvasHeaderWrapperId, zoom2HeaderHeight } from "@/constants";
+import {
+  headerHeight,
+  canvasHeaderWrapperId,
+  zoom2HeaderHeight,
+  leftColumnWidth
+} from "@/constants";
 import { useCalendar } from "@/context/CalendarProvider";
 import { useLanguage } from "@/context/LocaleProvider";
 import { drawHeader } from "@/utils/drawHeader/drawHeader";
 import { resizeCanvas } from "@/utils/resizeCanvas";
-import { getCanvasWidth } from "@/utils/getCanvasWidth";
 import { HeaderProps } from "./types";
 import { StyledCanvas, StyledOuterWrapper, StyledWrapper } from "./styles";
 import Topbar from "./Topbar";
 
 const Header: FC<HeaderProps> = ({ zoom, topBarWidth, showThemeToggle, toggleTheme }) => {
   const { week } = useLanguage();
-  const { date, cols, dayOfYear, startDate } = useCalendar();
+  const { cols, dayOfYear, startDate, currentCenterDate, viewportWidth } = useCalendar();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const theme = useTheme();
 
   const handleResize = useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const width = getCanvasWidth();
+      // Don't draw if viewport width is not initialized yet
+      if (viewportWidth === 0) return;
+
+      // Header canvas width must match Grid canvas width (viewport width)
+      const width = viewportWidth;
       const currentHeaderHeight = zoom === 2 ? zoom2HeaderHeight : headerHeight;
       const height = currentHeaderHeight + 1;
       resizeCanvas(ctx, width, height);
 
-      drawHeader(ctx, zoom, cols, startDate, week, dayOfYear, theme);
+      drawHeader(ctx, zoom, cols, startDate, currentCenterDate, week, dayOfYear, theme);
     },
-    [cols, dayOfYear, startDate, week, zoom, theme]
+    [cols, dayOfYear, startDate, currentCenterDate, week, zoom, theme, viewportWidth]
   );
 
   useEffect(() => {
@@ -47,12 +55,15 @@ const Header: FC<HeaderProps> = ({ zoom, topBarWidth, showThemeToggle, toggleThe
     if (!ctx) return;
 
     handleResize(ctx);
-  }, [date, zoom, handleResize]);
+  }, [zoom, handleResize, viewportWidth]);
 
   return (
     <StyledOuterWrapper>
       <Topbar width={topBarWidth} showThemeToggle={showThemeToggle} toggleTheme={toggleTheme} />
-      <StyledWrapper id={canvasHeaderWrapperId}>
+      <StyledWrapper
+        id={canvasHeaderWrapperId}
+        $viewportWidth={viewportWidth}
+        $leftColumnWidth={leftColumnWidth}>
         <StyledCanvas ref={canvasRef} />
       </StyledWrapper>
     </StyledOuterWrapper>

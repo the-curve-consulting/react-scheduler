@@ -1,48 +1,73 @@
 import dayjs from "dayjs";
-import { weekWidth, boxHeight, dayWidth, zoom2ColumnWidth } from "@/constants";
-import { Day, Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/types/global";
+import { boxHeight, zoom2ColumnWidth } from "@/constants";
+import { Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
+import { getCellWidth } from "./scrollHelpers";
 
 export const getTooltipData = (
   config: Config,
-  startDate: Day,
   cursorPosition: Coords,
   rowsPerPerson: number[],
   resourcesData: SchedulerProjectData[][][],
   zoom: ZoomLevel,
-  includeTakenHoursOnWeekendsInDayView = false
+  includeTakenHoursOnWeekendsInDayView = false,
+  currentCenterDate: dayjs.Dayjs,
+  cols: number
 ): TooltipData => {
-  let timeUnit: dayjs.ManipulateType = "weeks";
-  let currBoxWidth;
-  switch (zoom) {
-    case 0:
-      timeUnit = "weeks";
-      currBoxWidth = weekWidth;
-      break;
-    case 1:
-      timeUnit = "days";
-      currBoxWidth = dayWidth;
-      break;
-    case 2:
-      timeUnit = "hours";
-      currBoxWidth = zoom2ColumnWidth;
-      break;
-  }
-  const column =
-    zoom === 2
-      ? Math.ceil((cursorPosition.x - 0.5 * currBoxWidth) / currBoxWidth)
-      : Math.ceil(cursorPosition.x / currBoxWidth);
-  const focusedDate = dayjs(
-    `${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}T${startDate.hour}:00:00`
-  ).add(column - 1, timeUnit);
+  let focusedDate: dayjs.Dayjs;
+  const centerCol = Math.floor(cols / 2);
+  const cellWidth = getCellWidth(zoom);
 
-  const rowPosition = Math.ceil(cursorPosition.y / boxHeight);
+  let adjustedX = cursorPosition.x;
+  let columnIndex = Math.floor(adjustedX / cellWidth);
+  let xPos = columnIndex * cellWidth;
+  switch (zoom) {
+    case 0: {
+      columnIndex = Math.floor(adjustedX / cellWidth);
+      const centerWeek = currentCenterDate.startOf("isoWeek");
+      const offsetFromCenter = columnIndex - centerCol;
+      focusedDate = centerWeek.add(offsetFromCenter, "weeks");
+      xPos = columnIndex * cellWidth;
+      break;
+    }
+
+    case 1: {
+      columnIndex = Math.floor(adjustedX / cellWidth);
+      const centerDay = currentCenterDate.startOf("day");
+      const offsetFromCenter = columnIndex - centerCol;
+      focusedDate = centerDay.add(offsetFromCenter, "days");
+      xPos = columnIndex * cellWidth;
+      break;
+    }
+
+    case 2: {
+      // Account for initial half cell offset in hourly grid
+      adjustedX = cursorPosition.x - zoom2ColumnWidth / 2;
+      columnIndex = Math.floor(adjustedX / zoom2ColumnWidth);
+
+      const centerHour = currentCenterDate.startOf("hour");
+      const offsetFromCenter = columnIndex - centerCol;
+      focusedDate = centerHour.add(offsetFromCenter, "hours");
+      xPos = columnIndex * zoom2ColumnWidth;
+      break;
+    }
+
+    default: {
+      const centerDay = currentCenterDate.startOf("day");
+      const offsetFromCenter = columnIndex - centerCol;
+      focusedDate = centerDay.add(offsetFromCenter, "days");
+    }
+  }
+
+  // Calculate row index (0-based) for positioning
+  const rowIndex = Math.floor(cursorPosition.y / boxHeight);
+  const yPos = rowIndex * boxHeight;
+
+  const rowPosition = rowIndex + 1;
   const resourceIndex = rowsPerPerson.findIndex((_, index, array) => {
     const sumOfRows = array.slice(0, index + 1).reduce((acc, cur) => acc + cur, 0);
     return sumOfRows >= rowPosition;
   });
-  const xPos = zoom === 2 ? (column + 1) * currBoxWidth : column * currBoxWidth;
-  const yPos = (rowPosition - 1) * boxHeight + boxHeight;
 
   const disposition = getOccupancy(
     config,

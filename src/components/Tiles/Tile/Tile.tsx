@@ -2,6 +2,7 @@ import { FC, memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
+import { useCalendar } from "@/context/CalendarProvider";
 import {
   StyledDescription,
   StyledStickyWrapper,
@@ -11,16 +12,9 @@ import {
 } from "./styles";
 import { TileProps } from "./types";
 
-const Tile: FC<TileProps> = ({ row, data, zoom, datesRange, onTileClick }) => {
-  const { y, x, width } = getTileProperties(
-    row,
-    datesRange.startDate,
-    datesRange.endDate,
-    data.startDate,
-    data.endDate,
-    zoom
-  );
-
+const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
+  const { currentCenterDate, cols } = useCalendar();
+  const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, cols);
   const { colors } = useTheme();
 
   return (
