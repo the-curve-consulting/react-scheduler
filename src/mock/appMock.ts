@@ -28,13 +28,10 @@ export const generateProjects = (
   amountOfDscWords = 5,
   title: string
 ): SchedulerProjectData[] => {
-  const startYear = dayjs()
-    .subtract(Math.floor(years / 2), "years")
-    .get("year");
+  const yearsPerSide = Math.max(0, Math.floor(years));
+  const startYear = dayjs().subtract(yearsPerSide, "years").get("year");
 
-  const endYear = dayjs()
-    .add(Math.floor(years / 2), "years")
-    .get("year");
+  const endYear = dayjs().add(yearsPerSide, "years").get("year");
 
   const data = [];
   const bgColor = `rgb(${Math.ceil(Math.random() * 255)},${Math.ceil(

@@ -14,7 +14,14 @@ import { useCalendar } from "@/context/CalendarProvider";
 import { resizeCanvas } from "@/utils/resizeCanvas";
 import { getScrollConfig } from "@/utils/scrollHelpers";
 import { GridProps } from "./types";
-import { StyledCanvas, StyledInnerWrapper, StyledWrapper } from "./styles";
+import {
+  StyledBlockingContent,
+  StyledBlockingOverlay,
+  StyledCanvas,
+  StyledInnerWrapper,
+  StyledTilesLayer,
+  StyledWrapper
+} from "./styles";
 
 const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, onTileClick }, ref) {
   const {
@@ -22,6 +29,7 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
     visibleRange,
     zoom,
     isLoading,
+    loadingState,
     viewportWidth,
     cols,
     config,
@@ -89,6 +97,10 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
     return () => container.removeEventListener("scroll", throttledScroll);
   }, [handleScrollChange]);
 
+  const isLeftLoading = isLoading || loadingState.blocking || loadingState.backward;
+  const isRightLoading = isLoading || loadingState.blocking || loadingState.forward;
+  const isBlocking = isLoading || loadingState.blocking;
+
   return (
     <StyledWrapper id={canvasWrapperId} $virtualWidth={scrollConfig.containerWidth}>
       <StyledInnerWrapper
@@ -96,16 +108,23 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
         $viewportWidth={viewportWidth}
         $leftColumnWidth={leftColumnWidth}
         ref={ref}>
-        <Loader isLoading={isLoading} position="left" />
+        <Loader isLoading={isLeftLoading} position="left" />
         <StyledCanvas id={canvasId} ref={canvasRef} />
-        <Tiles
-          data={data}
-          zoom={zoom}
-          visibleRange={visibleRange}
-          onTileClick={onTileClick}
-          defaultStartHour={config.defaultStartHour}
-        />
-        <Loader isLoading={isLoading} position="right" />
+        <StyledTilesLayer $isInteractive={!isBlocking}>
+          <Tiles
+            data={data}
+            zoom={zoom}
+            visibleRange={visibleRange}
+            onTileClick={onTileClick}
+            defaultStartHour={config.defaultStartHour}
+          />
+        </StyledTilesLayer>
+        {isBlocking ? (
+          <StyledBlockingOverlay>
+            <StyledBlockingContent>Loading data...</StyledBlockingContent>
+          </StyledBlockingOverlay>
+        ) : null}
+        <Loader isLoading={isRightLoading} position="right" />
       </StyledInnerWrapper>
     </StyledWrapper>
   );

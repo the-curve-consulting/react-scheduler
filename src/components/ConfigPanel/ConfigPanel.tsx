@@ -77,7 +77,7 @@ const ConfigPanel: FC<ConfigPanelProps> = ({ values, onSubmit }) => {
             type="number"
             onChange={handleChange}
             min={0}
-            title="How many years back and forward? Default: 0"
+            title="How many years back and forward? Default: 5"
           />
         </StyledInnerWrapper>
         <StyledInnerWrapper>

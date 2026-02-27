@@ -7,7 +7,7 @@ import LocaleProvider from "@/context/LocaleProvider";
 import { outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
 import { Config } from "@/types/global";
-import { SchedulerProps } from "./types";
+import { emptySchedulerFetchLoadingState, SchedulerProps } from "./types";
 import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
 import { StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
@@ -38,12 +38,18 @@ const Scheduler = ({
   const outsideWrapperRef = useRef<HTMLDivElement>(null);
   const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
 
-  const { schedulerData, handleRangeChange } = usePrefetchedSchedulerData({
+  const { schedulerData, fetchLoadingState, handleRangeChange } = usePrefetchedSchedulerData({
     data,
     dataLoading: appConfig.dataLoading,
     onFetchData,
     onRangeChange
   });
+
+  const externalLoading = !!isLoading;
+  const effectiveLoading = externalLoading || fetchLoadingState.blocking;
+  const calendarLoadingState = externalLoading
+    ? { any: true, blocking: true, forward: true, backward: true }
+    : fetchLoadingState ?? emptySchedulerFetchLoadingState;
 
   const defaultStartDate = useMemo(() => dayjs(startDate), [startDate]);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
@@ -81,7 +87,8 @@ const Scheduler = ({
         <LocaleProvider lang={appConfig.lang} translations={appConfig.translations}>
           <CalendarProvider
             data={schedulerData}
-            isLoading={!!isLoading}
+            isLoading={effectiveLoading}
+            loadingState={calendarLoadingState}
             config={appConfig}
             onRangeChange={handleRangeChange}
             defaultStartDate={defaultStartDate}

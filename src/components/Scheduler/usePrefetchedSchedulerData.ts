@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Config, SchedulerData } from "@/types/global";
+import { Config, SchedulerData, SchedulerFetchLoadingState } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
-import { FetchDataDirection, FetchDataParams } from "./types";
+import { FetchDataParams } from "./types";
+import { getNormalisedDataLoadingConfig } from "./dataPrefetch/config";
+import { createFetchPlan, isAbortError } from "./dataPrefetch/planner";
 import {
-  DayjsRange,
   getDataRangeFromProjects,
-  getNormalizedDataLoadingConfig,
-  getPrefetchFlags,
-  getPrefetchRequest,
+  getRangeSpanDays,
   getRetentionRange,
+  intersectRanges,
   mergeSchedulerData,
+  mergeRanges,
+  toDayjsRange,
+  toParsedRange,
   trimDataToRange
-} from "./dataPrefetchUtils";
+} from "./dataPrefetch/rangeUtils";
+import {
+  emptyFetchLoadingState,
+  getFetchLoadingStateForRequest
+} from "./dataPrefetch/loadingState";
+import { DayjsRange, FetchPlan } from "./dataPrefetch/types";
 
 type UsePrefetchedSchedulerDataParams = {
   data: SchedulerData;
@@ -22,104 +30,272 @@ type UsePrefetchedSchedulerDataParams = {
 
 type UsePrefetchedSchedulerDataResult = {
   schedulerData: SchedulerData;
+  fetchLoadingState: SchedulerFetchLoadingState;
   handleRangeChange: (range: ParsedDatesRange) => void;
 };
 
+type ActiveRequestState = {
+  key: string;
+  controller: AbortController;
+};
+
+/**
+ * Checks whether a fetch plan has already been handled in current lifecycle.
+ *
+ * @param plan Candidate plan.
+ * @param activePlan Currently active request.
+ * @param pendingPlan Debounced queued request.
+ * @param settledPlanKey Last settled request key.
+ * @returns `true` when candidate should be skipped.
+ */
+const isPlanAlreadyHandled = (
+  plan: FetchPlan,
+  activePlan: ActiveRequestState | null,
+  pendingPlan: FetchPlan | null,
+  settledPlanKey: string | null
+) => {
+  return (
+    plan.key === settledPlanKey || plan.key === activePlan?.key || plan.key === pendingPlan?.key
+  );
+};
+
+/**
+ * Resolves retention half-range so cache always covers visible width plus prefetch margin.
+ *
+ * @param visibleRange Current visible range.
+ * @param maxCachedDays Configured minimum cache half-range.
+ * @param prefetchDays Prefetch chunk size used as coverage margin.
+ * @returns Effective cache half-range in days.
+ */
+const getEffectiveMaxCachedDays = (
+  visibleRange: ParsedDatesRange,
+  maxCachedDays: number,
+  prefetchDays: number
+): number => {
+  const visibleSpanDays = getRangeSpanDays(toDayjsRange(visibleRange));
+  const minRequiredForCoverage = Math.ceil(visibleSpanDays / 2) + prefetchDays;
+  return Math.max(maxCachedDays, minRequiredForCoverage);
+};
+
+/**
+ * Orchestrates scheduler data prefetch lifecycle for edge-scroll and hard-jump scenarios.
+ *
+ * @param params Hook inputs with source data, config and optional fetch callback.
+ * @returns Cached scheduler data, fetch loading state and range-change handler.
+ */
 export const usePrefetchedSchedulerData = ({
   data,
   dataLoading,
   onFetchData,
   onRangeChange
 }: UsePrefetchedSchedulerDataParams): UsePrefetchedSchedulerDataResult => {
-  const prefetchConfig = useMemo(() => getNormalizedDataLoadingConfig(dataLoading), [dataLoading]);
+  const prefetchConfig = useMemo(() => getNormalisedDataLoadingConfig(dataLoading), [dataLoading]);
   const [cachedData, setCachedData] = useState<SchedulerData>(data);
+  const [fetchLoadingState, setFetchLoadingState] =
+    useState<SchedulerFetchLoadingState>(emptyFetchLoadingState);
 
   const previousExternalDataRef = useRef<SchedulerData>(data);
+  const loadedRangeRef = useRef<DayjsRange | null>(
+    onFetchData ? getDataRangeFromProjects(data) : null
+  );
   const hasPrunedInitialCacheRef = useRef(false);
   const visibleRangeRef = useRef<ParsedDatesRange | null>(null);
   const requestSessionRef = useRef(0);
-  const inFlightRef = useRef<Record<FetchDataDirection, boolean>>({
-    backward: false,
-    forward: false
-  });
-  const lastRequestedEdgeRef = useRef<Record<FetchDataDirection, number | null>>({
-    backward: null,
-    forward: null
-  });
+  const requestTimerRef = useRef<number | null>(null);
+  const pendingPlanRef = useRef<FetchPlan | null>(null);
+  const activeRequestRef = useRef<ActiveRequestState | null>(null);
+  const lastSettledPlanKeyRef = useRef<string | null>(null);
 
   const schedulerData = onFetchData ? cachedData : data;
-  const dataRange = useMemo(
-    () => (onFetchData ? getDataRangeFromProjects(schedulerData) : null),
-    [onFetchData, schedulerData]
+
+  /**
+   * Builds retention range for a visible window using adaptive cache sizing.
+   *
+   * @param visibleRange Current visible range.
+   * @returns Retention range for cache pruning and loaded-range bounds.
+   */
+  const getRetentionRangeForVisible = useCallback(
+    (visibleRange: ParsedDatesRange) =>
+      getRetentionRange(
+        visibleRange,
+        getEffectiveMaxCachedDays(
+          visibleRange,
+          prefetchConfig.maxCachedDays,
+          prefetchConfig.prefetchDays
+        )
+      ),
+    [prefetchConfig.maxCachedDays, prefetchConfig.prefetchDays]
   );
 
-  useEffect(() => {
-    const resetPrefetchState = () => {
+  /**
+   * Clears pending request debounce timer.
+   *
+   * @returns void
+   */
+  const clearRequestTimer = useCallback(() => {
+    if (requestTimerRef.current === null) return;
+    window.clearTimeout(requestTimerRef.current);
+    requestTimerRef.current = null;
+  }, []);
+
+  /**
+   * Aborts currently running fetch request.
+   *
+   * @returns void
+   */
+  const abortActiveRequest = useCallback(() => {
+    if (!activeRequestRef.current) return;
+    activeRequestRef.current.controller.abort();
+    activeRequestRef.current = null;
+  }, []);
+
+  /**
+   * Resets prefetch state when source data changes or prefetch is disabled.
+   *
+   * @param nextData Fresh cache baseline.
+   * @returns void
+   */
+  const resetPrefetchState = useCallback(
+    (nextData: SchedulerData) => {
       requestSessionRef.current += 1;
       hasPrunedInitialCacheRef.current = false;
       visibleRangeRef.current = null;
-      inFlightRef.current = { backward: false, forward: false };
-      lastRequestedEdgeRef.current = { backward: null, forward: null };
-    };
+      pendingPlanRef.current = null;
+      lastSettledPlanKeyRef.current = null;
+      loadedRangeRef.current = onFetchData ? getDataRangeFromProjects(nextData) : null;
+      clearRequestTimer();
+      abortActiveRequest();
+      setFetchLoadingState(emptyFetchLoadingState);
+      setCachedData(nextData);
+    },
+    [abortActiveRequest, clearRequestTimer, onFetchData]
+  );
 
+  useEffect(() => {
     if (!onFetchData) {
-      setCachedData(data);
       previousExternalDataRef.current = data;
-      resetPrefetchState();
+      resetPrefetchState(data);
       return;
     }
 
     if (previousExternalDataRef.current !== data) {
       previousExternalDataRef.current = data;
-      setCachedData(data);
-      resetPrefetchState();
+      resetPrefetchState(data);
     }
-  }, [data, onFetchData]);
+  }, [data, onFetchData, resetPrefetchState]);
 
-  const fetchAndMergeData = useCallback(
-    async (direction: FetchDataDirection, requestRange: DayjsRange, edgeValue: number) => {
-      if (!onFetchData || inFlightRef.current[direction]) return;
-      if (lastRequestedEdgeRef.current[direction] === edgeValue) return;
+  /**
+   * Executes request plan with cancellation/session guards and merges fetched rows.
+   *
+   * @param plan Planned request payload.
+   * @returns Promise resolved when request lifecycle completes.
+   */
+  const executeFetchPlan = useCallback(
+    async (plan: FetchPlan) => {
+      if (!onFetchData) return;
 
-      inFlightRef.current[direction] = true;
-      lastRequestedEdgeRef.current[direction] = edgeValue;
       const currentSession = requestSessionRef.current;
+      const controller = new AbortController();
+
+      abortActiveRequest();
+      activeRequestRef.current = { key: plan.key, controller };
+      setFetchLoadingState(getFetchLoadingStateForRequest(plan.reason, plan.direction));
+
+      let settled = false;
 
       try {
         const fetchedRows = await onFetchData({
-          direction,
-          range: {
-            startDate: requestRange.startDate.toDate(),
-            endDate: requestRange.endDate.toDate()
-          }
+          direction: plan.direction,
+          reason: plan.reason,
+          signal: controller.signal,
+          range: toParsedRange(plan.range)
         });
 
-        if (!fetchedRows.length || currentSession !== requestSessionRef.current) {
+        if (controller.signal.aborted || currentSession !== requestSessionRef.current) {
           return;
         }
 
+        settled = true;
+        loadedRangeRef.current = mergeRanges(loadedRangeRef.current, plan.range);
         const latestVisibleRange = visibleRangeRef.current;
+        const retentionRange = latestVisibleRange
+          ? getRetentionRangeForVisible(latestVisibleRange)
+          : null;
+
+        if (retentionRange) {
+          loadedRangeRef.current = intersectRanges(loadedRangeRef.current, retentionRange);
+        }
+
+        if (!fetchedRows.length) return;
+
         setCachedData((previousData) => {
           const mergedData = mergeSchedulerData(previousData, fetchedRows);
-          if (!latestVisibleRange) return mergedData;
+          if (!retentionRange) return mergedData;
 
-          const retentionRange = getRetentionRange(
-            latestVisibleRange,
-            prefetchConfig.maxCachedDays
-          );
           return trimDataToRange(mergedData, retentionRange);
         });
       } catch (error) {
+        if (isAbortError(error)) return;
+        settled = true;
         if (import.meta.env.DEV) {
           console.error("[Scheduler] Failed to prefetch data", error);
         }
       } finally {
-        inFlightRef.current[direction] = false;
+        if (activeRequestRef.current?.key === plan.key) {
+          activeRequestRef.current = null;
+          setFetchLoadingState(emptyFetchLoadingState);
+        }
+
+        if (settled) {
+          lastSettledPlanKeyRef.current = plan.key;
+        }
       }
     },
-    [onFetchData, prefetchConfig.maxCachedDays]
+    [abortActiveRequest, getRetentionRangeForVisible, onFetchData]
   );
 
+  /**
+   * Queues plan for execution and applies debounce for prefetch requests.
+   *
+   * @param plan Planned request payload.
+   * @returns void
+   */
+  const scheduleFetchPlan = useCallback(
+    (plan: FetchPlan) => {
+      if (!onFetchData) return;
+      if (
+        isPlanAlreadyHandled(
+          plan,
+          activeRequestRef.current,
+          pendingPlanRef.current,
+          lastSettledPlanKeyRef.current
+        )
+      ) {
+        return;
+      }
+
+      pendingPlanRef.current = plan;
+      clearRequestTimer();
+
+      const debounceMs = plan.reason === "prefetch" ? prefetchConfig.requestDebounceMs : 0;
+      requestTimerRef.current = window.setTimeout(() => {
+        const nextPlan = pendingPlanRef.current;
+        pendingPlanRef.current = null;
+        requestTimerRef.current = null;
+
+        if (!nextPlan) return;
+        void executeFetchPlan(nextPlan);
+      }, debounceMs);
+    },
+    [clearRequestTimer, executeFetchPlan, onFetchData, prefetchConfig.requestDebounceMs]
+  );
+
+  /**
+   * Handles visible-range updates and schedules data fetch when needed.
+   *
+   * @param range Visible range emitted by calendar.
+   * @returns void
+   */
   const handleRangeChange = useCallback(
     (range: ParsedDatesRange) => {
       onRangeChange?.(range);
@@ -129,39 +305,26 @@ export const usePrefetchedSchedulerData = ({
 
       if (!hasPrunedInitialCacheRef.current) {
         hasPrunedInitialCacheRef.current = true;
-        const initialRetentionRange = getRetentionRange(range, prefetchConfig.maxCachedDays);
+        const initialRetentionRange = getRetentionRangeForVisible(range);
         setCachedData((previousData) => trimDataToRange(previousData, initialRetentionRange));
+        loadedRangeRef.current = intersectRanges(loadedRangeRef.current, initialRetentionRange);
       }
 
-      if (!dataRange) return;
+      const plan = createFetchPlan(range, loadedRangeRef.current, prefetchConfig);
+      if (!plan) return;
 
-      const prefetchFlags = getPrefetchFlags(range, dataRange, {
-        prefetchTriggerRatio: prefetchConfig.prefetchTriggerRatio,
-        prefetchTriggerDays: prefetchConfig.prefetchTriggerDays
-      });
-
-      if (prefetchFlags.backward) {
-        const backwardRequest = getPrefetchRequest(
-          "backward",
-          dataRange,
-          prefetchConfig.prefetchDays
-        );
-
-        void fetchAndMergeData("backward", backwardRequest.range, backwardRequest.edgeValue);
-      }
-
-      if (prefetchFlags.forward) {
-        const forwardRequest = getPrefetchRequest(
-          "forward",
-          dataRange,
-          prefetchConfig.prefetchDays
-        );
-
-        void fetchAndMergeData("forward", forwardRequest.range, forwardRequest.edgeValue);
-      }
+      scheduleFetchPlan(plan);
     },
-    [dataRange, fetchAndMergeData, onFetchData, onRangeChange, prefetchConfig]
+    [getRetentionRangeForVisible, onFetchData, onRangeChange, prefetchConfig, scheduleFetchPlan]
   );
 
-  return { schedulerData, handleRangeChange };
+  useEffect(
+    () => () => {
+      clearRequestTimer();
+      abortActiveRequest();
+    },
+    [abortActiveRequest, clearRequestTimer]
+  );
+
+  return { schedulerData, fetchLoadingState, handleRangeChange };
 };
