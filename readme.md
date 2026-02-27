@@ -47,55 +47,57 @@ import "@bitnoi.se/react-scheduler/dist/style.css";
 2. Import Scheduler component into your project
 
 ```ts
-import { Scheduler, SchedulerData } from "@bitnoi.se/react-scheduler";
+import { useCallback, useState } from "react";
 import dayjs from "dayjs";
+import { Scheduler, SchedulerData } from "@bitnoi.se/react-scheduler";
 
-default export function Component() {
+type FetchParams = {
+  range: { startDate: Date; endDate: Date };
+  direction: "backward" | "forward";
+  reason: "initial" | "prefetch" | "jump";
+  signal?: AbortSignal;
+};
+
+export default function Component() {
   const [filterButtonState, setFilterButtonState] = useState(0);
 
-  const [range, setRange] = useState({
-    startDate: new Date(),
-    endDate: new Date()
-  });
+  // Called by Scheduler on initial render, prefetch and hard jumps.
+  const handleFetchData = useCallback(
+    async ({ range, signal }: FetchParams): Promise<SchedulerData> => {
+      if (signal?.aborted) {
+        return [];
+      }
 
-  const handleRangeChange = useCallback((range) => {
-    setRange(range);
-  }, []);
-
-  // Filtering events that are included in current date range
-  // Example can be also found on video https://youtu.be/9oy4rTVEfBQ?t=118&si=52BGKSIYz6bTZ7fx
-  // and in the react-scheduler repo App.tsx file https://github.com/Bitnoise/react-scheduler/blob/master/src/App.tsx
-  const filteredMockedSchedulerData = mockedSchedulerData.map((person) => ({
+      return mockedSchedulerData.map((person) => ({
         ...person,
-        data: person.data.filter(
-          (project) =>
-            // we use "dayjs" for date calculations, but feel free to use library of your choice
-            dayjs(project.startDate).isBetween(range.startDate, range.endDate) ||
-            dayjs(project.endDate).isBetween(range.startDate, range.endDate) ||
-            (dayjs(project.startDate).isBefore(range.startDate, "day") &&
-              dayjs(project.endDate).isAfter(range.endDate, "day"))
-        )
-      }))
+        data: person.data.filter((project) => {
+          const start = dayjs(project.startDate);
+          const end = dayjs(project.endDate);
+
+          return (
+            start.isBetween(range.startDate, range.endDate, null, "[]") ||
+            end.isBetween(range.startDate, range.endDate, null, "[]") ||
+            (start.isBefore(range.startDate, "day") && end.isAfter(range.endDate, "day"))
+          );
+        })
+      }));
+    },
+    []
+  );
 
   return (
     <section>
       <Scheduler
-        data={filteredMockedSchedulerData}
-        isLoading={isLoading}
-        onRangeChange={handleRangeChange}
+        data={[]}
+        onFetchData={handleFetchData}
+        onRangeChange={(range) => console.log("visible range", range)}
         onTileClick={(clickedResource) => console.log(clickedResource)}
         onItemClick={(item) => console.log(item)}
-        onFilterData={() => {
-          // Some filtering logic...
-          setFilterButtonState(1);
-        }}
-        onClearFilterData={() => {
-          // Some clearing filters logic...
-          setFilterButtonState(0)
-        }}
+        onFilterData={() => setFilterButtonState(1)}
+        onClearFilterData={() => setFilterButtonState(0)}
         config={{
           zoom: 0,
-          filterButtonState,
+          filterButtonState
         }}
       />
     </section>
@@ -162,31 +164,59 @@ const mockedSchedulerData: SchedulerData = [
 
 ##### Scheduler Component Props
 
-| Property Name     | Type       | Arguments                         | Description                                                                                                                       |
-| ----------------- | ---------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| isLoading         | `boolean`  | -                                 | shows loading indicators on scheduler                                                                                             |
-| onRangeChange     | `function` | updated `startDate` and `endDate` | runs whenever user reaches end of currently rendered canvas                                                                       |
-| onTileClick       | `function` | clicked resource data             | detects resource click                                                                                                            |
-| onItemClick       | `function` | clicked left column item data     | detects item click on left column                                                                                                 |
-| onFilterData      | `function` | -                                 | callback firing when filter button was clicked                                                                                    |
-| onClearFilterData | `function` | -                                 | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
-| config            | `Config`   | -                                 | object with scheduler config properties                                                                                           |
+| Property Name     | Type       | Arguments                                            | Description                                                                                                                       |
+| ----------------- | ---------- | ---------------------------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------|
+| data              | `SchedulerData` | -                                               | scheduler rows to display; when using `onFetchData`, you can pass `[]` as initial data                                            |
+| isLoading         | `boolean`  | -                                                    | external loading flag; forces blocking loading state                                                                              |
+| startDate         | `string`   | ISO date string                                      | initial date to center scheduler on mount                                                                                         |
+| onRangeChange     | `function` | updated `startDate` and `endDate`                    | callback fired when visible date range changes (called every scroll event)                                                        |
+| onFetchData       | `function` | `range`, `direction`, `reason`, `signal`             | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
+| onTileClick       | `function` | clicked resource data                                | detects resource click                                                                                                            |
+| onItemClick       | `function` | clicked left column item data                        | detects item click on left column                                                                                                 |
+| onFilterData      | `function` | -                                                    | callback firing when filter button was clicked                                                                                    |
+| onClearFilterData | `function` | -                                                    | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
+| config            | `Config`   | -                                                    | object with scheduler config properties                                                                                           |
+
+##### `onFetchData` callback contract
+
+Return type: `Promise<SchedulerData>`
+
+| Field       | Type                                | Description                                                                 |
+| ----------- | ----------------------------------- | --------------------------------------------------------------------------- |
+| `range`     | `{ startDate: Date; endDate: Date}` | date window requested by scheduler                                          |
+| `direction` | `"backward" \| "forward"`           | side from which scheduler requests additional data                          |
+| `reason`    | `"initial" \| "prefetch" \| "jump"` | why request was created                                                     |
+| `signal`    | `AbortSignal \| undefined`          | abort signal for cancelling stale requests (recommended to handle in fetch) |
 
 ##### Scheduler Config Object
 
 ---
 
 | Property Name                        | Type               | Default     | Description                                                                                                                                                            |
-| ------------------------------------ | ------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ------------------------------------ | ------------------ | ----------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | zoom                                 | `0` or `1` or `2`  | 0           | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
 | filterButtonState                    | `number`           | 0           | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
-| maxRecordsPerPage                    | `number`           | 50          | number of items from `SchedulerData` visible per page                                                                                                                  |
+| maxRecordsPerPage                    | `number`           | 50          | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
 | lang                                 | `en`, `lt` or `pl` | en          | scheduler's language                                                                                                                                                   |
 | includeTakenHoursOnWeekendsInDayView | `boolean`          | `false`     | show weekends as taken when given resource is longer than a week                                                                                                       |
 | showTooltip                          | `boolean`          | `true`      | show tooltip when hovering over tiles                                                                                                                                  |
 | translations                         | `LocaleType[]`     | `undefined` | option to add specific langs translations                                                                                                                              |
 | showThemeToggle                      | `boolean`          | `false`     | show toggle button to switch between light/dark mode                                                                                                                   |
 | defaultTheme                         | `light` or `dark`  | `light`     | scheduler's default theme                                                                                                                                              |
+| dataLoading                          | `DataLoadingConfig`| built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
+
+##### DataLoadingConfig
+
+| Property Name         | Type     | Default | Description                                                   |
+| --------------------- | -------- | ------- | ------------------------------------------------------------- |
+| initialLoadDays       | `number` | `90`    | initial range size (days) requested around first visible date |
+| prefetchDays          | `number` | `60`    | number of days requested for each prefetch                    |
+| prefetchTriggerDays   | `number` | `45`    | day-based threshold for triggering edge prefetch              |
+| prefetchTriggerRatio  | `number` | `0.7`   | ratio-based threshold for triggering edge prefetch            |
+| maxCachedDays         | `number` | `120`   | soft cache half-window retained around current view           |
+| requestDebounceMs     | `number` | `80`    | debounce for rapid prefetch triggers                          |
+| jumpWindowMultiplier  | `number` | `3`     | multiplier for hard-jump fetch window vs visible range        |
+| minJumpWindowDays     | `number` | `45`    | minimum hard-jump fetch window                                |
 
 #### Translation object example
 
