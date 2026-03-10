@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.svg" style="height: 60px" alt="@bitnoise/react-scheduler">
+  <img src="logo.svg" style="height: 60px" alt="@the-curve-consulting/react-scheduler">
   <hr />
   <p align="center">
     ✨ <a href="https://scheduler.bitnoise.pl/">https://scheduler.bitnoise.pl/</a> ✨
@@ -9,9 +9,9 @@
   <div align="center">
     <a href="https://bit.ly/react_scheduler">Youtube Tutorial</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-    <a href="https://www.npmjs.com/package/@bitnoi.se/react-scheduler">npm</a>
+    <a href="https://github.com/the-curve-consulting/react-scheduler">Repository</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-    <a href="https://github.com/Bitnoise/react-scheduler/issues/new">Report an issue</a>
+    <a href="https://github.com/the-curve-consulting/react-scheduler/issues/new">Report an issue</a>
   </div>
 </div>
 <hr />
@@ -31,17 +31,75 @@
 
 ```bash
 # yarn
-yarn add '@bitnoi.se/react-scheduler'
+yarn add '@the-curve-consulting/react-scheduler'
 # npm
-npm install '@bitnoi.se/react-scheduler'
+npm install '@the-curve-consulting/react-scheduler'
 ```
+
+This package expects `react`, `react-dom`, and `styled-components` from the consuming app.
+
+### Releasing to GitHub Packages
+
+This repository is configured to publish `@the-curve-consulting/react-scheduler` to GitHub Packages when you publish a GitHub release.
+
+1. Develop changes on a feature branch and merge them into `master` through a pull request.
+
+2. Check out `master` locally and make sure it is up to date.
+
+3. Update the package version. This creates both a commit and a Git tag:
+
+```bash
+npm version patch
+```
+
+Use `patch`, `minor`, or `major` depending on the change.
+
+4. Push `master` and the new version tag:
+
+```bash
+git push origin master --follow-tags
+```
+
+5. In GitHub, open the repository Releases page and create a new release from the tag that `npm version` created, for example `v0.3.1`.
+
+6. Publishing that release triggers `.github/workflows/publish-package.yml`, which builds the library and publishes it to GitHub Packages using the repository `GITHUB_TOKEN`.
+
+7. After the workflow finishes, verify the package under the repository or org Packages page in GitHub.
+
+### Using in another repository
+
+1. Create a personal access token (classic) with at least `read:packages`.
+
+2. In the consuming repository, add an `.npmrc` file with:
+
+```ini
+@the-curve-consulting:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+```
+
+3. Set `GITHUB_PACKAGES_TOKEN` in your shell, local environment, or CI secrets.
+
+4. Install the package:
+
+```bash
+npm install @the-curve-consulting/react-scheduler
+```
+
+5. Import it in the app:
+
+```ts
+import "@the-curve-consulting/react-scheduler/dist/style.css";
+import { Scheduler } from "@the-curve-consulting/react-scheduler";
+```
+
+`GITHUB_PACKAGES_TOKEN` should be a personal access token (classic) with at least `read:packages`. If the package is private, the token also needs access to the owning org or repository.
 
 ### Example usage
 
 1. import required styles for scheduler
 
 ```ts
-import "@bitnoi.se/react-scheduler/dist/style.css";
+import "@the-curve-consulting/react-scheduler/dist/style.css";
 ```
 
 2. Import Scheduler component into your project
@@ -49,7 +107,7 @@ import "@bitnoi.se/react-scheduler/dist/style.css";
 ```ts
 import { useCallback, useState } from "react";
 import dayjs from "dayjs";
-import { Scheduler, SchedulerData } from "@bitnoi.se/react-scheduler";
+import { Scheduler, SchedulerData } from "@the-curve-consulting/react-scheduler";
 
 type FetchParams = {
   range: { startDate: Date; endDate: Date };
@@ -323,14 +381,14 @@ item that will be visible on the grid as tile and that will be accessible as arg
 
 ### Troubleshooting
 
-- For using Scheduler with RemixJS make sure to add `@bitnoi.se/react-scheduler` to `serverDependenciesToBundle` in `remix.config.js` like so:
+- For using Scheduler with RemixJS make sure to add `@the-curve-consulting/react-scheduler` to `serverDependenciesToBundle` in `remix.config.js` like so:
 
 ```js
 // remix.config.js
 /** @type  {import('@remix-run/dev').AppConfig} */
 module.exports = {
 	// ...
-	serverDependenciesToBundle: [..., "@bitnoi.se/react-scheduler"],
+	serverDependenciesToBundle: [..., "@the-curve-consulting/react-scheduler"],
 };
 ```
 
@@ -338,7 +396,7 @@ module.exports = {
 
 ```ts
 "use client"
-import { Scheduler, SchedulerProps } from "@bitnoi.se/react-scheduler";
+import { Scheduler, SchedulerProps } from "@the-curve-consulting/react-scheduler";
 
 default export function SchedulerClient(props: SchedulerProps) {
 	return <Scheduler {...props} />;
@@ -350,7 +408,7 @@ default export function SchedulerClient(props: SchedulerProps) {
 
 ```ts
 import dynamic from "next/dynamic";
-const Scheduler = dynamic(() => import("@bitnoi.se/react-scheduler").then((mod) => mod.Scheduler), {
+const Scheduler = dynamic(() => import("@the-curve-consulting/react-scheduler").then((mod) => mod.Scheduler), {
   ssr: false
 });
 ```
@@ -380,8 +438,8 @@ export const StyledSchedulerFrame = styled.div`
 
 ### How to contribute
 
-- **Reporting Issues**: If you come across any bugs, glitches, or have any suggestions for improvements, please [open an issue](https://github.com/Bitnoise/react-scheduler/issues) on our GitHub repository. Provide as much detail as possible, including steps to reproduce the issue.
-- **Suggesting Enhancements**: If you have ideas for new features or enhancements, we would love to hear them! You can [open an issue](https://github.com/Bitnoise/react-scheduler/issues) on our GitHub repository and clearly describe your suggestion.
+- **Reporting Issues**: If you come across any bugs, glitches, or have any suggestions for improvements, please [open an issue](https://github.com/the-curve-consulting/react-scheduler/issues) on our GitHub repository. Provide as much detail as possible, including steps to reproduce the issue.
+- **Suggesting Enhancements**: If you have ideas for new features or enhancements, we would love to hear them! You can [open an issue](https://github.com/the-curve-consulting/react-scheduler/issues) on our GitHub repository and clearly describe your suggestion.
 - **Submitting Pull Requests**: If you have developed a fix or a new feature that you would like to contribute, you can submit a pull request. Here's a quick overview of the process:
   - Clone the repository and create your own branch: `git checkout -b feat/your-branch-name`.
   - Implement your changes, following the **code style and guidelines** from [development.md](development.md).

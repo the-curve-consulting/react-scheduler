@@ -18,3 +18,4 @@ stats.html
 
 # Typescript
 *.tsbuildinfo
+vite.config.js
