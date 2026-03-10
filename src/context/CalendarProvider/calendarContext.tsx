@@ -20,6 +20,12 @@ export const calendarContext = createContext<CalendarContextType>({
   visibleRange: { startDate: dayjs(), endDate: dayjs() },
   handleScrollChange: () => {},
   isLoading: false,
+  loadingState: {
+    any: false,
+    blocking: false,
+    forward: false,
+    backward: false
+  },
   cols: 0,
   startDate: {
     hour: 0,

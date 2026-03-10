@@ -35,6 +35,7 @@ const CalendarProvider = ({
   data,
   children,
   isLoading,
+  loadingState = { any: false, blocking: false, forward: false, backward: false },
   config,
   defaultStartDate = dayjs(),
   onRangeChange,
@@ -74,6 +75,7 @@ const CalendarProvider = ({
   const parsedStartDate = parseDay(startDate);
 
   const previousZoom = useRef(zoom);
+  const skipNextRangeEmitRef = useRef(false);
   const { clampScrollLeft, handleScrollChange } = useScrollRebaseController({
     scrollConfig,
     viewportWidth,
@@ -177,6 +179,9 @@ const CalendarProvider = ({
    */
   useEffect(() => {
     if (previousZoom.current === zoom) return;
+    // Zoom updates produce one transient visible range with old scroll/new scale.
+    // Skipping one emission prevents planner from firing a false jump request.
+    skipNextRangeEmitRef.current = true;
 
     // Calculate center date using the OLD zoom (before it changed)
     const oldVisibleRange = getVisibleRangeFromScroll(
@@ -257,6 +262,11 @@ const CalendarProvider = ({
    * @returns void
    */
   useEffect(() => {
+    if (skipNextRangeEmitRef.current) {
+      skipNextRangeEmitRef.current = false;
+      return;
+    }
+
     const parsedRange = { startDate: range.startDate.toDate(), endDate: range.endDate.toDate() };
     onRangeChange?.(parsedRange);
   }, [onRangeChange, range]);
@@ -298,6 +308,7 @@ const CalendarProvider = ({
       visibleRange,
       handleScrollChange,
       isLoading,
+      loadingState,
       cols,
       startDate: parsedStartDate,
       dayOfYear,
@@ -323,6 +334,7 @@ const CalendarProvider = ({
       visibleRange,
       handleScrollChange,
       isLoading,
+      loadingState,
       cols,
       parsedStartDate,
       dayOfYear,

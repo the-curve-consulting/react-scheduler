@@ -71,6 +71,9 @@ export type Config = {
     prefetchTriggerDays?: number;
     prefetchTriggerRatio?: number;
     maxCachedDays?: number;
+    requestDebounceMs?: number;
+    jumpWindowMultiplier?: number;
+    minJumpWindowDays?: number;
   };
 };
 
@@ -219,4 +222,11 @@ export type TooltipData = {
   coords: Coords;
   resourceIndex: number;
   disposition: OccupancyData;
+};
+
+export type SchedulerFetchLoadingState = {
+  any: boolean;
+  blocking: boolean;
+  forward: boolean;
+  backward: boolean;
 };

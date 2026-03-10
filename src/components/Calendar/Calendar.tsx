@@ -5,10 +5,9 @@ import { useCalendar } from "@/context/CalendarProvider";
 import { SchedulerData, SchedulerProjectData, TooltipData, ZoomLevel } from "@/types/global";
 import { getTooltipData } from "@/utils/getTooltipData";
 import { usePagination } from "@/hooks/usePagination";
-import EmptyBox from "../EmptyBox";
 import { Grid, Header, LeftColumn, Tooltip } from "..";
 import { CalendarProps } from "./types";
-import { StyledOuterWrapper, StyledInnerWrapper, StyledEmptyBoxWrapper } from "./styles";
+import { StyledOuterWrapper, StyledInnerWrapper } from "./styles";
 
 const initialTooltipData: TooltipData = {
   coords: { x: 0, y: 0 },
@@ -152,7 +151,7 @@ export const Calendar: FC<CalendarProps> = ({
     if (!isSame) {
       setFilteredData(data);
     }
-  }, [data, searchPhrase]);
+  }, [data, filteredData, searchPhrase]);
 
   return (
     <StyledOuterWrapper>
@@ -174,19 +173,13 @@ export const Calendar: FC<CalendarProps> = ({
           showThemeToggle={showThemeToggle}
           toggleTheme={toggleTheme}
         />
-        {data.length ? (
-          <Grid
-            data={page}
-            zoom={zoom}
-            rows={totalRowsPerPage}
-            ref={gridRef}
-            onTileClick={onTileClick}
-          />
-        ) : (
-          <StyledEmptyBoxWrapper width={topBarWidth}>
-            <EmptyBox />
-          </StyledEmptyBoxWrapper>
-        )}
+        <Grid
+          data={page}
+          zoom={zoom}
+          rows={totalRowsPerPage}
+          ref={gridRef}
+          onTileClick={onTileClick}
+        />
         {showTooltip && isVisible && tooltipData?.resourceIndex > -1 && (
           <Tooltip tooltipData={tooltipData} zoom={zoom} />
         )}

@@ -60,10 +60,13 @@ export const SCROLL_CONFIG_DAYS = {
 // Data loading configuration
 export const DATA_CONFIG = {
   initialLoadDays: 90, // ±90 days on mount (fills weekly view)
-  prefetchDays: 30, // Load ±30 days when prefetching
-  prefetchTriggerDays: 30, // Trigger when < 30 days ahead/behind
-  prefetchTriggerRatio: 0.8, // Trigger prefetch near 80% of cached range
-  maxCachedDays: 60 // Garbage collect beyond ±60 days
+  prefetchDays: 60, // Load ±60 days when prefetching
+  prefetchTriggerDays: 45, // Trigger when < X days ahead/behind
+  prefetchTriggerRatio: 0.7, // Trigger prefetch near X% of cached range
+  maxCachedDays: 120, // Garbage collect beyond ±X days
+  requestDebounceMs: 80, // Debounce rapid range updates before requesting
+  jumpWindowMultiplier: 3, // Hard jump fetch window vs visible range span
+  minJumpWindowDays: 45 // Minimum fetch window for hard jumps
 };
 
 export const SCROLL_REBASE_CONFIG = {

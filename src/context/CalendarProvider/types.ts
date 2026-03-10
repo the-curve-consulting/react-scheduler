@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import dayjs from "dayjs";
-import { Config, Day, SchedulerData, ZoomLevel } from "@/types/global";
+import { Config, Day, SchedulerData, SchedulerFetchLoadingState, ZoomLevel } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
 
 export type CalendarContextType = {
@@ -22,6 +22,7 @@ export type CalendarContextType = {
   visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
   handleScrollChange: (newScrollLeft: number) => void;
   isLoading: boolean;
+  loadingState: SchedulerFetchLoadingState;
   cols: number;
   startDate: Day;
   dayOfYear: number;
@@ -32,6 +33,7 @@ export type CalendarContextType = {
 export type CalendarProviderProps = {
   children: ReactNode;
   isLoading: boolean;
+  loadingState?: SchedulerFetchLoadingState;
   defaultStartDate?: dayjs.Dayjs;
   data?: SchedulerData;
   config: Config;

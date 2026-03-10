@@ -5,9 +5,11 @@ import { ParsedDatesRange } from "./utils/getDatesRange";
 import {
   Config,
   ConfigFormValues,
+  SchedulerData,
   SchedulerItemClickData,
   SchedulerProjectData
 } from "./types/global";
+import { FetchDataParams } from "./components/Scheduler/types";
 import ConfigPanel from "./components/ConfigPanel";
 import { StyledSchedulerFrame } from "./styles";
 import { Scheduler } from ".";
@@ -19,7 +21,7 @@ function App() {
   const [values, setValues] = useState<ConfigFormValues>({
     peopleCount: 15,
     projectsPerYear: 5,
-    yearsCovered: 0,
+    yearsCovered: 5,
     startDate: undefined,
     maxRecordsPerPage: 50,
     isFullscreen: true
@@ -31,6 +33,7 @@ function App() {
     () => createMockData(+peopleCount, +yearsCovered, +projectsPerYear),
     [peopleCount, projectsPerYear, yearsCovered]
   );
+  const emptyData = useMemo<SchedulerData>(() => [], []);
 
   const [range, setRange] = useState<ParsedDatesRange>({
     startDate: new Date(),
@@ -64,6 +67,44 @@ function App() {
       });
     }, 120);
   }, []);
+
+  const handleFetchData = useCallback(
+    async (params: FetchDataParams): Promise<SchedulerData> =>
+      new Promise<SchedulerData>((resolve, reject) => {
+        const { range, signal } = params;
+
+        if (signal?.aborted) {
+          reject(new DOMException("Request aborted", "AbortError"));
+          return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+          signal?.removeEventListener("abort", handleAbort);
+
+          const rowsInRange = mocked.map((person) => ({
+            ...person,
+            data: person.data.filter((project) => {
+              const projectStart = dayjs(project.startDate);
+              const projectEnd = dayjs(project.endDate);
+              const rangeStart = dayjs(range.startDate);
+              const rangeEnd = dayjs(range.endDate);
+
+              return !projectStart.isAfter(rangeEnd) && !projectEnd.isBefore(rangeStart);
+            })
+          }));
+
+          resolve(rowsInRange);
+        }, 5000);
+
+        function handleAbort() {
+          window.clearTimeout(timeoutId);
+          reject(new DOMException("Request aborted", "AbortError"));
+        }
+
+        signal?.addEventListener("abort", handleAbort, { once: true });
+      }),
+    [mocked]
+  );
 
   // Note: this is just a demo, so we filter data based on start and end dates of the range.
   // There is problem here because every update of the filteredData triggers re-render of Grid and Tileset components.
@@ -115,7 +156,8 @@ function App() {
         <Scheduler
           startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
           onRangeChange={handleRangeChange}
-          data={filteredData}
+          onFetchData={handleFetchData}
+          data={emptyData}
           isLoading={false}
           onTileClick={handleTileClick}
           onFilterData={handleFilterData}
