@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import {
   fonts,
   headerDayHeight,
@@ -12,24 +11,23 @@ import { Theme } from "@/styles";
 import { getBoxFillStyle } from "@/utils/getBoxFillStyle";
 import { getTextStyle } from "@/utils/getTextStyle";
 import { drawRow } from "../../drawRow";
+import { getWeeklyHeaderAnchor } from "./getWeeklyHeaderAnchor";
 
 export const drawWeeksOnBottom = (
   ctx: CanvasRenderingContext2D,
   cols: number,
-  startDate: Day,
+  currentCenterDate: dayjs.Dayjs,
   weekLabel: string,
   theme: Theme
 ) => {
+  const { firstVisibleWeek } = getWeeklyHeaderAnchor(currentCenterDate, cols);
   const dayNameYPos = headerHeight - headerDayHeight / 1.6;
   const dayNumYPos = headerHeight - headerDayHeight / 4.5;
   const yPos = headerMonthHeight + headerWeekHeight;
   let xPos = 0;
 
   for (let i = 0; i < cols; i++) {
-    const week = dayjs(`${startDate.year}-${startDate.month + 1}-${startDate.dayOfMonth}`).add(
-      i,
-      "weeks"
-    );
+    const week = firstVisibleWeek.add(i, "weeks");
 
     const isCurrWeek = week.isSame(dayjs(), "week");
     drawRow(

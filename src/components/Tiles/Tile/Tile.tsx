@@ -8,7 +8,8 @@ import {
   StyledStickyWrapper,
   StyledText,
   StyledTextWrapper,
-  StyledTileWrapper
+  StyledTileWrapper,
+  tileTextHorizontalMargin
 } from "./styles";
 import { TileProps } from "./types";
 
@@ -16,6 +17,8 @@ const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
   const { currentCenterDate, cols } = useCalendar();
   const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, cols);
   const { colors } = useTheme();
+  const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
+  const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
   return (
     <StyledTileWrapper
@@ -28,7 +31,7 @@ const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
       }}
       onClick={() => onTileClick?.(data)}>
       <StyledTextWrapper>
-        <StyledStickyWrapper>
+        <StyledStickyWrapper $offset={textOffset}>
           <StyledText bold>{data.title}</StyledText>
           <StyledText>{data.subtitle}</StyledText>
           <StyledDescription>{data.description}</StyledDescription>

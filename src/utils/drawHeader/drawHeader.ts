@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import { Day } from "@/types/global";
 import { Theme } from "@/styles";
 import { drawDaysOnBottom } from "./drawRows/drawDaysOnBottom";
 import { drawMonthsInMiddle } from "./drawRows/drawMonthsInMiddle";
@@ -15,17 +14,15 @@ export const drawHeader = (
   ctx: CanvasRenderingContext2D,
   zoom: number,
   cols: number,
-  startDate: Day,
   currentCenterDate: dayjs.Dayjs,
   weekLabel: string,
-  dayOfYear: number,
   theme: Theme
 ) => {
   switch (zoom) {
     case 0:
-      drawYearsOnTop(ctx, startDate, dayOfYear, theme);
-      drawMonthsInMiddle(ctx, cols, startDate, theme);
-      drawWeeksOnBottom(ctx, cols, startDate, weekLabel, theme);
+      drawYearsOnTop(ctx, cols, currentCenterDate, theme);
+      drawMonthsInMiddle(ctx, cols, currentCenterDate, theme);
+      drawWeeksOnBottom(ctx, cols, currentCenterDate, weekLabel, theme);
       break;
     case 1:
       drawMonthsOnTop(ctx, currentCenterDate, cols, theme);

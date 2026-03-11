@@ -1,7 +1,9 @@
 import styled from "styled-components";
-import { leftColumnWidth, tileHeight } from "@/constants";
+import { tileHeight } from "@/constants";
 import { marginPaddingReset, truncate } from "@/styles";
-import { StyledTextProps } from "./types";
+import { StyledStickyWrapperProps, StyledTextProps } from "./types";
+
+export const tileTextHorizontalMargin = 16;
 
 export const StyledTileWrapper = styled.button`
   ${marginPaddingReset}
@@ -14,15 +16,17 @@ export const StyledTileWrapper = styled.button`
   color: ${({ theme }) => theme.colors.textPrimary};
   width: 100%;
   cursor: pointer;
+  overflow: hidden;
 `;
 
 export const StyledTextWrapper = styled.div`
-  margin: 10px 16px;
+  margin: 10px ${tileTextHorizontalMargin}px;
   position: relative;
   display: flex;
   font-size: 10px;
   letter-spacing: 0.5px;
   line-height: 12px;
+  overflow: hidden;
 `;
 
 export const StyledText = styled.p<StyledTextProps>`
@@ -43,8 +47,7 @@ export const StyledDescription = styled.p`
   ${truncate}
 `;
 
-export const StyledStickyWrapper = styled.div`
-  position: sticky;
-  left: ${leftColumnWidth + 16}px;
-  overflow: hidden;
+export const StyledStickyWrapper = styled.div<StyledStickyWrapperProps>`
+  position: relative;
+  transform: translateX(${({ $offset }) => $offset}px);
 `;
