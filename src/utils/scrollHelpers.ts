@@ -207,7 +207,7 @@ export const isProjectVisible = (
   rangeEnd: dayjs.Dayjs
 ): boolean => {
   const start = dayjs(projectStart);
-  const end = dayjs(projectEnd);
+  const end = dayjs(projectEnd).endOf("day");
 
   return (
     (start.isBefore(rangeEnd) || start.isSame(rangeEnd)) &&

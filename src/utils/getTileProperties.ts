@@ -15,16 +15,18 @@ export const getTileProperties = (
   const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols);
 
   // Calculate width based on duration
-  const tileEndDate = dayjs(data.endDate);
+  const tileEndDate = dayjs(data.endDate).endOf("day");
   const cellWidth = getCellWidth(zoom);
   let duration: number;
 
   switch (zoom) {
-    case 0:
-      duration = tileEndDate.diff(tileStartDate, "weeks");
+    case 0: {
+      const days = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
+      duration = days / 7;
       break;
+    }
     case 1:
-      duration = tileEndDate.diff(tileStartDate, "days");
+      duration = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
       break;
     case 2:
       duration = tileEndDate.diff(tileStartDate, "hours");

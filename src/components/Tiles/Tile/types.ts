@@ -16,3 +16,7 @@ export type HourlyTileProps = {
 export type StyledTextProps = {
   bold?: boolean;
 };
+
+export type StyledStickyWrapperProps = {
+  $offset: number;
+};

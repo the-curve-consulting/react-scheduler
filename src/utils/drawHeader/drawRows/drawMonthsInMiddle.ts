@@ -7,17 +7,18 @@ import {
   monthsInYear,
   singleDayWidth
 } from "@/constants";
-import { Day } from "@/types/global";
 import { getDaysInMonths } from "@/utils/dates";
 import { Theme } from "@/styles";
 import { drawRow } from "../../drawRow";
+import { getWeeklyHeaderAnchor } from "./getWeeklyHeaderAnchor";
 
 export const drawMonthsInMiddle = (
   ctx: CanvasRenderingContext2D,
   cols: number,
-  startDate: Day,
+  currentCenterDate: dayjs.Dayjs,
   theme: Theme
 ) => {
+  const { startDate } = getWeeklyHeaderAnchor(currentCenterDate, cols);
   let xPos = -(startDate.dayOfMonth - 1) * singleDayWidth;
   const yPos = headerMonthHeight;
   const monthIndex = startDate.month;

@@ -8,7 +8,8 @@ import {
   StyledStickyWrapper,
   StyledText,
   StyledTextWrapper,
-  StyledTileWrapper
+  StyledTileWrapper,
+  tileTextHorizontalMargin
 } from "./styles";
 import { HourlyTileProps } from "./types";
 
@@ -23,6 +24,8 @@ const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, onTileClick }) => {
   );
 
   const { colors } = useTheme();
+  const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
+  const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
   return (
     <StyledTileWrapper
@@ -35,7 +38,7 @@ const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, onTileClick }) => {
       }}
       onClick={() => onTileClick?.(dayData.data)}>
       <StyledTextWrapper>
-        <StyledStickyWrapper>
+        <StyledStickyWrapper $offset={textOffset}>
           <StyledText bold>{dayData.data.title}</StyledText>
           <StyledText>{dayData.data.subtitle}</StyledText>
           <StyledDescription>{dayData.data.description}</StyledDescription>
