@@ -107,21 +107,18 @@ import "@the-curve-consulting/react-scheduler/dist/style.css";
 ```ts
 import { useCallback, useState } from "react";
 import dayjs from "dayjs";
-import { Scheduler, SchedulerData } from "@the-curve-consulting/react-scheduler";
-
-type FetchParams = {
-  range: { startDate: Date; endDate: Date };
-  direction: "backward" | "forward";
-  reason: "initial" | "prefetch" | "jump";
-  signal?: AbortSignal;
-};
+import {
+  FetchDataParams,
+  Scheduler,
+  SchedulerData
+} from "@the-curve-consulting/react-scheduler";
 
 export default function Component() {
   const [filterButtonState, setFilterButtonState] = useState(0);
 
   // Called by Scheduler on initial render, prefetch and hard jumps.
   const handleFetchData = useCallback(
-    async ({ range, signal }: FetchParams): Promise<SchedulerData> => {
+    async ({ range, signal }: FetchDataParams): Promise<SchedulerData> => {
       if (signal?.aborted) {
         return [];
       }
@@ -146,7 +143,6 @@ export default function Component() {
   return (
     <section>
       <Scheduler
-        data={[]}
         onFetchData={handleFetchData}
         onRangeChange={(range) => console.log("visible range", range)}
         onTileClick={(clickedResource) => console.log(clickedResource)}
@@ -224,7 +220,8 @@ const mockedSchedulerData: SchedulerData = [
 
 | Property Name     | Type       | Arguments                                            | Description                                                                                                                       |
 | ----------------- | ---------- | ---------------------------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------|
-| data              | `SchedulerData` | -                                               | scheduler rows to display; when using `onFetchData`, you can pass `[]` as initial data                                            |
+| data              | `SchedulerData` | -                                               | scheduler rows to display in static mode                                                                                           |
+| initialData       | `SchedulerData` | -                                               | optional initial cache seed for async mode when using `onFetchData`                                                                |
 | isLoading         | `boolean`  | -                                                    | external loading flag; forces blocking loading state                                                                              |
 | startDate         | `string`   | ISO date string                                      | initial date to center scheduler on mount                                                                                         |
 | onRangeChange     | `function` | updated `startDate` and `endDate`                    | callback fired when visible date range changes (called every scroll event)                                                        |
@@ -234,6 +231,11 @@ const mockedSchedulerData: SchedulerData = [
 | onFilterData      | `function` | -                                                    | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function` | -                                                    | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
 | config            | `Config`   | -                                                    | object with scheduler config properties                                                                                           |
+
+`Scheduler` supports two exclusive data modes:
+
+- static mode: pass `data`
+- async mode: pass `onFetchData` and optionally `initialData`
 
 ##### `onFetchData` callback contract
 

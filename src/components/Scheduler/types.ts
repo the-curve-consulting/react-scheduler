@@ -17,18 +17,30 @@ export type FetchDataParams = {
   signal?: AbortSignal;
 };
 
-export type SchedulerProps = {
-  data: SchedulerData;
+export type SchedulerBaseProps = {
   isLoading?: boolean;
   config?: Config;
   startDate?: string;
   onRangeChange?: (range: ParsedDatesRange) => void;
-  onFetchData?: (params: FetchDataParams) => Promise<SchedulerData>;
   onTileClick?: (data: SchedulerProjectData) => void;
   onFilterData?: () => void;
   onClearFilterData?: () => void;
   onItemClick?: (data: SchedulerItemClickData) => void;
 };
+
+export type SchedulerStaticProps = SchedulerBaseProps & {
+  data: SchedulerData;
+  initialData?: never;
+  onFetchData?: never;
+};
+
+export type SchedulerAsyncProps = SchedulerBaseProps & {
+  onFetchData: (params: FetchDataParams) => Promise<SchedulerData>;
+  initialData?: SchedulerData;
+  data?: never;
+};
+
+export type SchedulerProps = SchedulerStaticProps | SchedulerAsyncProps;
 
 export type StyledOutsideWrapperProps = {
   showScroll: boolean;

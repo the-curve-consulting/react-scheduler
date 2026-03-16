@@ -1,6 +1,18 @@
 import { Scheduler } from "./components";
 import "./styles.css";
-export type { SchedulerProps } from "./components/Scheduler/types";
-export type { SchedulerData, SchedulerProjectData, ZoomLevel, Config } from "./types/global";
+export type {
+  FetchDataParams,
+  SchedulerAsyncProps,
+  SchedulerProps,
+  SchedulerStaticProps
+} from "./components/Scheduler/types";
+export type { ParsedDatesRange } from "./utils/getDatesRange";
+export type {
+  Config,
+  SchedulerData,
+  SchedulerItemClickData,
+  SchedulerProjectData,
+  ZoomLevel
+} from "./types/global";
 
 export { Scheduler };

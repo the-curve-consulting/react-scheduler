@@ -6,23 +6,36 @@ import CalendarProvider from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
 import { outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
-import { Config } from "@/types/global";
-import { emptySchedulerFetchLoadingState, SchedulerProps } from "./types";
+import { Config, SchedulerData } from "@/types/global";
+import {
+  emptySchedulerFetchLoadingState,
+  SchedulerAsyncProps,
+  SchedulerProps
+} from "./types";
 import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
 import { StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
-const Scheduler = ({
-  data,
-  config,
-  startDate,
-  onRangeChange,
-  onFetchData,
-  onTileClick,
-  onFilterData,
-  onClearFilterData,
-  onItemClick,
-  isLoading
-}: SchedulerProps) => {
+const emptySchedulerData: SchedulerData = [];
+
+const isAsyncSchedulerProps = (props: SchedulerProps): props is SchedulerAsyncProps =>
+  typeof (props as SchedulerAsyncProps).onFetchData === "function";
+
+const Scheduler = (props: SchedulerProps) => {
+  const {
+    config,
+    startDate,
+    onRangeChange,
+    onTileClick,
+    onFilterData,
+    onClearFilterData,
+    onItemClick,
+    isLoading
+  } = props;
+  const onFetchData = isAsyncSchedulerProps(props) ? props.onFetchData : undefined;
+  const sourceData = isAsyncSchedulerProps(props)
+    ? props.initialData ?? emptySchedulerData
+    : props.data;
+
   const appConfig: Config = useMemo(
     () => ({
       zoom: 0,
@@ -39,7 +52,7 @@ const Scheduler = ({
   const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
 
   const { schedulerData, fetchLoadingState, handleRangeChange } = usePrefetchedSchedulerData({
-    data,
+    data: sourceData,
     dataLoading: appConfig.dataLoading,
     onFetchData,
     onRangeChange

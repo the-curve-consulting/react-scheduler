@@ -9,10 +9,9 @@ import {
   SchedulerItemClickData,
   SchedulerProjectData
 } from "./types/global";
-import { FetchDataParams } from "./components/Scheduler/types";
 import ConfigPanel from "./components/ConfigPanel";
 import { StyledSchedulerFrame } from "./styles";
-import { Scheduler } from ".";
+import { FetchDataParams, Scheduler } from ".";
 
 function App() {
   const rangeUpdateTimeoutRef = useRef<number | null>(null);
@@ -33,7 +32,6 @@ function App() {
     () => createMockData(+peopleCount, +yearsCovered, +projectsPerYear),
     [peopleCount, projectsPerYear, yearsCovered]
   );
-  const emptyData = useMemo<SchedulerData>(() => [], []);
 
   const [range, setRange] = useState<ParsedDatesRange>({
     startDate: new Date(),
@@ -157,7 +155,6 @@ function App() {
           startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
           onRangeChange={handleRangeChange}
           onFetchData={handleFetchData}
-          data={emptyData}
           isLoading={false}
           onTileClick={handleTileClick}
           onFilterData={handleFilterData}
