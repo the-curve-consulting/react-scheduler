@@ -2,7 +2,10 @@ import { Scheduler } from "./components";
 import "./styles.css";
 export type {
   FetchDataParams,
+  ProjectDeleteUpdate,
+  ProjectUpdate,
   SchedulerAsyncProps,
+  SchedulerHandle,
   SchedulerProps,
   SchedulerStaticProps
 } from "./components/Scheduler/types";

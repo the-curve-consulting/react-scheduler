@@ -1,5 +1,5 @@
 import { ThemeProvider } from "styled-components";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Calendar } from "@/components";
 import CalendarProvider from "@/context/CalendarProvider";
@@ -7,9 +7,12 @@ import LocaleProvider from "@/context/LocaleProvider";
 import { outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
 import { Config, SchedulerData } from "@/types/global";
+import deleteProjectsByIds from "./dataMutations/deleteProjectsByIds";
+import upsertProjectsInRows from "./dataMutations/upsertProjectsInRows";
 import {
   emptySchedulerFetchLoadingState,
   SchedulerAsyncProps,
+  SchedulerHandle,
   SchedulerProps
 } from "./types";
 import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
@@ -20,15 +23,17 @@ const emptySchedulerData: SchedulerData = [];
 const isAsyncSchedulerProps = (props: SchedulerProps): props is SchedulerAsyncProps =>
   typeof (props as SchedulerAsyncProps).onFetchData === "function";
 
-const Scheduler = (props: SchedulerProps) => {
+const Scheduler = forwardRef<SchedulerHandle, SchedulerProps>((props, ref) => {
   const {
     config,
     startDate,
+    dataSourceKey,
     onRangeChange,
     onTileClick,
     onFilterData,
     onClearFilterData,
     onItemClick,
+    transformData,
     isLoading
   } = props;
   const onFetchData = isAsyncSchedulerProps(props) ? props.onFetchData : undefined;
@@ -51,12 +56,32 @@ const Scheduler = (props: SchedulerProps) => {
   const outsideWrapperRef = useRef<HTMLDivElement>(null);
   const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
 
-  const { schedulerData, fetchLoadingState, handleRangeChange } = usePrefetchedSchedulerData({
-    data: sourceData,
-    dataLoading: appConfig.dataLoading,
-    onFetchData,
-    onRangeChange
-  });
+  const { schedulerData, fetchLoadingState, handleRangeChange, invalidate, setSchedulerData } =
+    usePrefetchedSchedulerData({
+      data: sourceData,
+      dataLoading: appConfig.dataLoading,
+      dataSourceKey,
+      onFetchData,
+      onRangeChange
+    });
+  const transformedData = useMemo(
+    () => transformData?.(schedulerData) ?? schedulerData,
+    [schedulerData, transformData]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      invalidate,
+      upsertProjects: (updates) => {
+        setSchedulerData((prev: SchedulerData) => upsertProjectsInRows(prev, updates));
+      },
+      deleteProjects: (updates) => {
+        setSchedulerData((prev: SchedulerData) => deleteProjectsByIds(prev, updates));
+      }
+    }),
+    [invalidate, setSchedulerData]
+  );
 
   const externalLoading = !!isLoading;
   const effectiveLoading = externalLoading || fetchLoadingState.blocking;
@@ -99,7 +124,7 @@ const Scheduler = (props: SchedulerProps) => {
       <ThemeProvider theme={mergedTheme}>
         <LocaleProvider lang={appConfig.lang} translations={appConfig.translations}>
           <CalendarProvider
-            data={schedulerData}
+            data={transformedData}
             isLoading={effectiveLoading}
             loadingState={calendarLoadingState}
             config={appConfig}
@@ -108,13 +133,13 @@ const Scheduler = (props: SchedulerProps) => {
             onFilterData={onFilterData}
             onClearFilterData={onClearFilterData}>
             <StyledOutsideWrapper
-              showScroll={!!schedulerData.length}
+              showScroll={!!transformedData.length}
               id={outsideWrapperId}
               ref={outsideWrapperRef}>
               <StyledInnerWrapper>
                 <Calendar
                   config={appConfig}
-                  data={schedulerData}
+                  data={transformedData}
                   onTileClick={onTileClick}
                   topBarWidth={topBarWidth ?? 0}
                   onItemClick={onItemClick}
@@ -127,6 +152,8 @@ const Scheduler = (props: SchedulerProps) => {
       </ThemeProvider>
     </>
   );
-};
+});
+
+Scheduler.displayName = "Scheduler";
 
 export default Scheduler;

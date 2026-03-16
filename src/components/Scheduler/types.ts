@@ -17,14 +17,32 @@ export type FetchDataParams = {
   signal?: AbortSignal;
 };
 
+export type ProjectUpdate = {
+  rowId: string;
+  projects: SchedulerProjectData[];
+};
+
+export type ProjectDeleteUpdate = {
+  rowId: string;
+  projectIds: string[];
+};
+
+export type SchedulerHandle = {
+  invalidate: () => void;
+  upsertProjects: (updates: ProjectUpdate[]) => void;
+  deleteProjects: (updates: ProjectDeleteUpdate[]) => void;
+};
+
 export type SchedulerBaseProps = {
   isLoading?: boolean;
   config?: Config;
   startDate?: string;
+  dataSourceKey?: string;
   onRangeChange?: (range: ParsedDatesRange) => void;
   onTileClick?: (data: SchedulerProjectData) => void;
   onFilterData?: () => void;
   onClearFilterData?: () => void;
+  transformData?: (data: SchedulerData) => SchedulerData;
   onItemClick?: (data: SchedulerItemClickData) => void;
 };
 

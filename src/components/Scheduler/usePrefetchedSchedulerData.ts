@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Config, SchedulerData, SchedulerFetchLoadingState } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
 import { FetchDataParams } from "./types";
@@ -24,6 +24,7 @@ import { DayjsRange, FetchPlan } from "./dataPrefetch/types";
 type UsePrefetchedSchedulerDataParams = {
   data: SchedulerData;
   dataLoading?: Config["dataLoading"];
+  dataSourceKey?: string;
   onFetchData?: (params: FetchDataParams) => Promise<SchedulerData>;
   onRangeChange?: (range: ParsedDatesRange) => void;
 };
@@ -32,6 +33,8 @@ type UsePrefetchedSchedulerDataResult = {
   schedulerData: SchedulerData;
   fetchLoadingState: SchedulerFetchLoadingState;
   handleRangeChange: (range: ParsedDatesRange) => void;
+  invalidate: () => void;
+  setSchedulerData: Dispatch<SetStateAction<SchedulerData>>;
 };
 
 type ActiveRequestState = {
@@ -86,6 +89,7 @@ const getEffectiveMaxCachedDays = (
 export const usePrefetchedSchedulerData = ({
   data,
   dataLoading,
+  dataSourceKey,
   onFetchData,
   onRangeChange
 }: UsePrefetchedSchedulerDataParams): UsePrefetchedSchedulerDataResult => {
@@ -105,6 +109,7 @@ export const usePrefetchedSchedulerData = ({
   const pendingPlanRef = useRef<FetchPlan | null>(null);
   const activeRequestRef = useRef<ActiveRequestState | null>(null);
   const lastSettledPlanKeyRef = useRef<string | null>(null);
+  const prevDataSourceKeyRef = useRef<string | null>(dataSourceKey ?? null);
 
   const schedulerData = onFetchData ? cachedData : data;
 
@@ -293,16 +298,11 @@ export const usePrefetchedSchedulerData = ({
   /**
    * Handles visible-range updates and schedules data fetch when needed.
    *
-   * @param range Visible range emitted by calendar.
+   * @param range Current visible range.
    * @returns void
    */
-  const handleRangeChange = useCallback(
+  const fetchForRange = useCallback(
     (range: ParsedDatesRange) => {
-      onRangeChange?.(range);
-
-      if (!onFetchData) return;
-      visibleRangeRef.current = range;
-
       if (!hasPrunedInitialCacheRef.current) {
         hasPrunedInitialCacheRef.current = true;
         const initialRetentionRange = getRetentionRangeForVisible(range);
@@ -315,7 +315,47 @@ export const usePrefetchedSchedulerData = ({
 
       scheduleFetchPlan(plan);
     },
-    [getRetentionRangeForVisible, onFetchData, onRangeChange, prefetchConfig, scheduleFetchPlan]
+    [prefetchConfig, scheduleFetchPlan, getRetentionRangeForVisible]
+  );
+
+  /**
+   * Invalidates cache and triggers init data fetch.
+   * @returns void
+   */
+  const invalidate = useCallback(() => {
+    const visibleRange = visibleRangeRef.current;
+
+    if (!onFetchData || !visibleRange) return;
+    resetPrefetchState(data);
+    visibleRangeRef.current = visibleRange;
+    fetchForRange(visibleRange);
+  }, [fetchForRange, resetPrefetchState, onFetchData, data]);
+
+  /**
+   * Invalidates cache when data source key changes.
+   */
+  useEffect(() => {
+    if (!dataSourceKey || prevDataSourceKeyRef.current === dataSourceKey) return;
+    prevDataSourceKeyRef.current = dataSourceKey;
+    invalidate();
+  }, [dataSourceKey, invalidate]);
+
+  /**
+   * Handles visible-range updates and schedules data fetch when needed.
+   *
+   * @param range Visible range emitted by calendar.
+   * @returns void
+   */
+  const handleRangeChange = useCallback(
+    (range: ParsedDatesRange) => {
+      onRangeChange?.(range);
+
+      if (!onFetchData) return;
+      visibleRangeRef.current = range;
+
+      fetchForRange(range);
+    },
+    [onFetchData, onRangeChange, fetchForRange]
   );
 
   useEffect(
@@ -326,5 +366,11 @@ export const usePrefetchedSchedulerData = ({
     [abortActiveRequest, clearRequestTimer]
   );
 
-  return { schedulerData, fetchLoadingState, handleRangeChange };
+  return {
+    schedulerData,
+    fetchLoadingState,
+    handleRangeChange,
+    invalidate,
+    setSchedulerData: setCachedData
+  };
 };

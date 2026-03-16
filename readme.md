@@ -105,16 +105,19 @@ import "@the-curve-consulting/react-scheduler/dist/style.css";
 2. Import Scheduler component into your project
 
 ```ts
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import dayjs from "dayjs";
 import {
   FetchDataParams,
+  ProjectUpdate,
   Scheduler,
-  SchedulerData
+  SchedulerData,
+  SchedulerHandle
 } from "@the-curve-consulting/react-scheduler";
 
 export default function Component() {
   const [filterButtonState, setFilterButtonState] = useState(0);
+  const schedulerRef = useRef<SchedulerHandle>(null);
 
   // Called by Scheduler on initial render, prefetch and hard jumps.
   const handleFetchData = useCallback(
@@ -140,9 +143,14 @@ export default function Component() {
     []
   );
 
+  const handleOptimisticUpdate = (project: ProjectUpdate) => {
+    schedulerRef.current?.upsertProjects([project]);
+  };
+
   return (
     <section>
       <Scheduler
+        ref={schedulerRef}
         onFetchData={handleFetchData}
         onRangeChange={(range) => console.log("visible range", range)}
         onTileClick={(clickedResource) => console.log(clickedResource)}
@@ -224,12 +232,14 @@ const mockedSchedulerData: SchedulerData = [
 | initialData       | `SchedulerData` | -                                               | optional initial cache seed for async mode when using `onFetchData`                                                                |
 | isLoading         | `boolean`  | -                                                    | external loading flag; forces blocking loading state                                                                              |
 | startDate         | `string`   | ISO date string                                      | initial date to center scheduler on mount                                                                                         |
+| dataSourceKey     | `string`   | -                                                    | async cache identity; changing it invalidates cached prefetched data                                                               |
 | onRangeChange     | `function` | updated `startDate` and `endDate`                    | callback fired when visible date range changes (called every scroll event)                                                        |
 | onFetchData       | `function` | `range`, `direction`, `reason`, `signal`             | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
 | onTileClick       | `function` | clicked resource data                                | detects resource click                                                                                                            |
 | onItemClick       | `function` | clicked left column item data                        | detects item click on left column                                                                                                 |
 | onFilterData      | `function` | -                                                    | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function` | -                                                    | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
+| transformData     | `function` | `SchedulerData`                                      | transforms cached scheduler data before rendering, useful for local filtering                                                     |
 | config            | `Config`   | -                                                    | object with scheduler config properties                                                                                           |
 
 `Scheduler` supports two exclusive data modes:
@@ -247,6 +257,43 @@ Return type: `Promise<SchedulerData>`
 | `direction` | `"backward" \| "forward"`           | side from which scheduler requests additional data                          |
 | `reason`    | `"initial" \| "prefetch" \| "jump"` | why request was created                                                     |
 | `signal`    | `AbortSignal \| undefined`          | abort signal for cancelling stale requests (recommended to handle in fetch) |
+
+##### Imperative API
+
+Use `ref` when you want to mutate cached data without invalidating the whole scheduler.
+
+```ts
+import {
+  ProjectDeleteUpdate,
+  ProjectUpdate,
+  SchedulerHandle
+} from "@the-curve-consulting/react-scheduler";
+
+const schedulerRef = useRef<SchedulerHandle>(null);
+
+const optimisticProject: ProjectUpdate = {
+  rowId: "user-1",
+  projects: [project]
+};
+
+schedulerRef.current?.upsertProjects([optimisticProject]);
+
+const deletion: ProjectDeleteUpdate = {
+  rowId: "user-1",
+  projectIds: [project.id]
+};
+
+schedulerRef.current?.deleteProjects([deletion]);
+schedulerRef.current?.invalidate();
+```
+
+Available handle methods:
+
+| Method            | Arguments                 | Description                                          |
+| ----------------- | ------------------------- | ---------------------------------------------------- |
+| `invalidate`      | -                         | clears async cache for the current data source and refetches visible range |
+| `upsertProjects`  | `ProjectUpdate[]`         | creates or updates projects inside existing rows      |
+| `deleteProjects`  | `ProjectDeleteUpdate[]`   | removes projects by id from existing rows             |
 
 ##### Scheduler Config Object
 
