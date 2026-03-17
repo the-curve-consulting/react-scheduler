@@ -5,16 +5,16 @@ import {
   SchedulerProjectData
 } from "@/types/global";
 
-export const splitToPages = (
-  data: SchedulerData,
-  projectsPerPerson: SchedulerProjectData[][][],
+export const splitToPages = <TMeta>(
+  data: SchedulerData<TMeta>,
+  projectsPerPerson: SchedulerProjectData<TMeta>[][][],
   rowsPerPerson: number[],
   recordsThreshold: number
 ) => {
-  const pages: PaginatedSchedulerData[] = [];
+  const pages: PaginatedSchedulerData<TMeta>[] = [];
 
   let leftIndex = 0;
-  let singlePage: PaginatedSchedulerRow[] = [];
+  let singlePage: PaginatedSchedulerRow<TMeta>[] = [];
   let pageRecords = 0;
 
   if (projectsPerPerson.length > recordsThreshold) {

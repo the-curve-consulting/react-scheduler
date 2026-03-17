@@ -1,16 +1,16 @@
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 
-export type TileProps = {
+export type TileProps<TMeta = unknown> = {
   row: number;
-  data: SchedulerProjectData;
+  data: SchedulerProjectData<TMeta>;
   zoom: number;
-  onTileClick?: (data: SchedulerProjectData) => void;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };
 
-export type HourlyTileProps = {
+export type HourlyTileProps<TMeta = unknown> = {
   row: number;
-  dayData: SchedulerProjectDayData;
-  onTileClick?: (data: SchedulerProjectData) => void;
+  dayData: SchedulerProjectDayData<TMeta>;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };
 
 export type StyledTextProps = {
@@ -20,3 +20,9 @@ export type StyledTextProps = {
 export type StyledStickyWrapperProps = {
   $offset: number;
 };
+
+export type TileComponent = <TMeta = unknown>(props: TileProps<TMeta>) => React.ReactElement | null;
+
+export type HourlyTileComponent = <TMeta = unknown>(
+  props: HourlyTileProps<TMeta>
+) => React.ReactElement | null;

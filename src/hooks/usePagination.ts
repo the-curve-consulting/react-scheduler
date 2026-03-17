@@ -7,8 +7,8 @@ import { outsideWrapperId } from "@/constants";
 import useProjectsOnGrid from "@/hooks/useProjectsOnGrid";
 import { UsePaginationData } from "./types";
 
-export const usePagination = (data: SchedulerData): UsePaginationData => {
-  const { recordsThreshold } = useCalendar();
+export const usePagination = <TMeta>(data: SchedulerData<TMeta>): UsePaginationData<TMeta> => {
+  const { recordsThreshold } = useCalendar<TMeta>();
   const [startIndex, setStartIndex] = useState(0);
   const [pageNum, setPage] = useState(0);
   const outsideWrapper = useRef<HTMLElement | null>(null);
@@ -17,10 +17,10 @@ export const usePagination = (data: SchedulerData): UsePaginationData => {
     outsideWrapper.current = document.getElementById(outsideWrapperId);
   }, []);
 
-  const { projectsPerPerson, rowsPerPerson } = useProjectsOnGrid(data);
+  const { projectsPerPerson, rowsPerPerson } = useProjectsOnGrid<TMeta>(data);
 
   const pages = useMemo(
-    () => splitToPages(data, projectsPerPerson, rowsPerPerson, recordsThreshold),
+    () => splitToPages<TMeta>(data, projectsPerPerson, rowsPerPerson, recordsThreshold),
     [data, projectsPerPerson, recordsThreshold, rowsPerPerson]
   );
 

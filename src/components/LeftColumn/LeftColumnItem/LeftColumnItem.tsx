@@ -1,4 +1,3 @@
-import { FC } from "react";
 import { Icon } from "@/components";
 import {
   StyledImage,
@@ -10,7 +9,7 @@ import {
 } from "./styles";
 import { LeftColumnItemProps } from "./types";
 
-const LeftColumnItem: FC<LeftColumnItemProps> = ({ id, item, rows, onItemClick }) => {
+const LeftColumnItem = <TMeta,>({ id, item, rows, onItemClick }: LeftColumnItemProps<TMeta>) => {
   return (
     <StyledWrapper
       title={item.title + " | " + item.subtitle}

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { Config, Day, SchedulerData, SchedulerFetchLoadingState, ZoomLevel } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
 
-export type CalendarContextType = {
+export type CalendarContextType<TMeta = unknown> = {
   handleGoNext: () => void;
   handleGoPrev: () => void;
   handleGoToday: () => void;
@@ -11,7 +11,7 @@ export type CalendarContextType = {
   zoomOut: () => void;
   handleFilterData: () => void;
   onClearFilterData?: () => void;
-  data?: SchedulerData;
+  data?: SchedulerData<TMeta>;
   zoom: ZoomLevel;
   isNextZoom: boolean;
   isPrevZoom: boolean;
@@ -30,12 +30,12 @@ export type CalendarContextType = {
   config: Config;
 };
 
-export type CalendarProviderProps = {
+export type CalendarProviderProps<TMeta = unknown> = {
   children: ReactNode;
   isLoading: boolean;
   loadingState?: SchedulerFetchLoadingState;
   defaultStartDate?: dayjs.Dayjs;
-  data?: SchedulerData;
+  data?: SchedulerData<TMeta>;
   config: Config;
   onRangeChange?: (range: ParsedDatesRange) => void;
   onFilterData?: () => void;

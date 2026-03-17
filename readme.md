@@ -105,119 +105,108 @@ import "@the-curve-consulting/react-scheduler/dist/style.css";
 2. Import Scheduler component into your project
 
 ```ts
-import { useCallback, useRef, useState } from "react";
-import dayjs from "dayjs";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   FetchDataParams,
+  ProjectDeleteUpdate,
   ProjectUpdate,
   Scheduler,
   SchedulerData,
-  SchedulerHandle
+  SchedulerHandle,
+  SchedulerProjectData
 } from "@the-curve-consulting/react-scheduler";
 
-export default function Component() {
-  const [filterButtonState, setFilterButtonState] = useState(0);
-  const schedulerRef = useRef<SchedulerHandle>(null);
+type PlanningMeta = {
+  scenarioId: string;
+  externalId: string;
+};
 
-  // Called by Scheduler on initial render, prefetch and hard jumps.
+export default function Component() {
+  const schedulerRef = useRef<SchedulerHandle<PlanningMeta>>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const scenarioId = "scenario-1";
+
   const handleFetchData = useCallback(
-    async ({ range, signal }: FetchDataParams): Promise<SchedulerData> => {
-      if (signal?.aborted) {
-        return [];
+    async ({ range, signal }: FetchDataParams): Promise<SchedulerData<PlanningMeta>> => {
+      const response = await fetch(
+        `/api/planning?startDate=${range.startDate.toISOString()}&endDate=${range.endDate.toISOString()}&scenarioId=${scenarioId}`,
+        { signal }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load planning data: ${response.status}`);
       }
 
-      return mockedSchedulerData.map((person) => ({
-        ...person,
-        data: person.data.filter((project) => {
-          const start = dayjs(project.startDate);
-          const end = dayjs(project.endDate);
-
-          return (
-            start.isBetween(range.startDate, range.endDate, null, "[]") ||
-            end.isBetween(range.startDate, range.endDate, null, "[]") ||
-            (start.isBefore(range.startDate, "day") && end.isAfter(range.endDate, "day"))
-          );
-        })
-      }));
+      return response.json();
     },
-    []
+    [scenarioId]
   );
 
-  const handleOptimisticUpdate = (project: ProjectUpdate) => {
-    schedulerRef.current?.upsertProjects([project]);
+  const transformData = useCallback(
+    (rows: SchedulerData<PlanningMeta>) =>
+      selectedUserIds.length ? rows.filter((row) => selectedUserIds.includes(row.id)) : rows,
+    [selectedUserIds]
+  );
+
+  const handleTileClick = useCallback((project: SchedulerProjectData<PlanningMeta>) => {
+    console.log(project.meta?.externalId);
+  }, []);
+
+  const optimisticProject: ProjectUpdate<PlanningMeta> = useMemo(
+    () => ({
+      rowId: "user-1",
+      projects: [
+        {
+          id: "project-1",
+          title: "Project A",
+          startDate: new Date("2026-03-01"),
+          endDate: new Date("2026-03-07"),
+          occupancy: 3600,
+          meta: {
+            scenarioId,
+            externalId: "resource-block-1"
+          }
+        }
+      ]
+    }),
+    [scenarioId]
+  );
+
+  const deletion: ProjectDeleteUpdate = {
+    rowId: "user-1",
+    projectIds: ["project-1"]
   };
 
   return (
     <section>
-      <Scheduler
+      <Scheduler<PlanningMeta>
         ref={schedulerRef}
+        dataSourceKey={scenarioId}
         onFetchData={handleFetchData}
+        transformData={transformData}
         onRangeChange={(range) => console.log("visible range", range)}
-        onTileClick={(clickedResource) => console.log(clickedResource)}
+        onTileClick={handleTileClick}
         onItemClick={(item) => console.log(item)}
-        onFilterData={() => setFilterButtonState(1)}
-        onClearFilterData={() => setFilterButtonState(0)}
+        onFilterData={() => setSelectedUserIds(["user-1", "user-2"])}
+        onClearFilterData={() => setSelectedUserIds([])}
         config={{
           zoom: 0,
-          filterButtonState
+          filterButtonState: selectedUserIds.length ? 1 : 0
         }}
       />
+
+      <button onClick={() => schedulerRef.current?.upsertProjects([optimisticProject])}>
+        Optimistically add project
+      </button>
+      <button onClick={() => schedulerRef.current?.deleteProjects([deletion])}>
+        Remove project
+      </button>
+      <button onClick={() => schedulerRef.current?.invalidate()}>
+        Refetch current range
+      </button>
     </section>
   );
 }
-
-const mockedSchedulerData: SchedulerData = [
-  {
-    id: "070ac5b5-8369-4cd2-8ba2-0a209130cc60",
-    label: {
-      icon: "https://picsum.photos/24",
-      title: "Joe Doe",
-      subtitle: "Frontend Developer"
-    },
-    data: [
-      {
-        id: "8b71a8a5-33dd-4fc8-9caa-b4a584ba3762",
-        startDate: new Date("2023-04-13T15:31:24.272Z"),
-        endDate: new Date("2023-08-28T10:28:22.649Z"),
-        occupancy: 3600,
-        title: "Project A",
-        subtitle: "Subtitle A",
-        description: "array indexing Salad West Account",
-        bgColor: "rgb(254,165,177)"
-      },
-      {
-        id: "22fbe237-6344-4c8e-affb-64a1750f33bd",
-        startDate: new Date("2023-10-07T08:16:31.123Z"),
-        endDate: new Date("2023-11-15T21:55:23.582Z"),
-        occupancy: 2852,
-        title: "Project B",
-        subtitle: "Subtitle B",
-        description: "Tuna Home pascal IP drive",
-        bgColor: "rgb(254,165,177)"
-      },
-      {
-        id: "3601c1cd-f4b5-46bc-8564-8c983919e3f5",
-        startDate: new Date("2023-03-30T22:25:14.377Z"),
-        endDate: new Date("2023-09-01T07:20:50.526Z"),
-        occupancy: 1800,
-        title: "Project C",
-        subtitle: "Subtitle C",
-        bgColor: "rgb(254,165,177)"
-      },
-      {
-        id: "b088e4ac-9911-426f-aef3-843d75e714c2",
-        startDate: new Date("2023-10-28T10:08:22.986Z"),
-        endDate: new Date("2023-10-30T12:30:30.150Z"),
-        occupancy: 11111,
-        title: "Project D",
-        subtitle: "Subtitle D",
-        description: "Garden heavy an software Metal",
-        bgColor: "rgb(254,165,177)"
-      }
-    ]
-  }
-];
-
 ```
 
 3. If some problems occur, please see our troubleshooting section below.
@@ -249,7 +238,7 @@ const mockedSchedulerData: SchedulerData = [
 
 ##### `onFetchData` callback contract
 
-Return type: `Promise<SchedulerData>`
+Return type: `Promise<SchedulerData<TMeta>>`
 
 | Field       | Type                                | Description                                                                 |
 | ----------- | ----------------------------------- | --------------------------------------------------------------------------- |
@@ -269,11 +258,22 @@ import {
   SchedulerHandle
 } from "@the-curve-consulting/react-scheduler";
 
-const schedulerRef = useRef<SchedulerHandle>(null);
+type PlanningMeta = {
+  externalId: string;
+};
 
-const optimisticProject: ProjectUpdate = {
+const schedulerRef = useRef<SchedulerHandle<PlanningMeta>>(null);
+
+const optimisticProject: ProjectUpdate<PlanningMeta> = {
   rowId: "user-1",
-  projects: [project]
+  projects: [
+    {
+      ...project,
+      meta: {
+        externalId: "resource-block-1"
+      }
+    }
+  ]
 };
 
 schedulerRef.current?.upsertProjects([optimisticProject]);
@@ -294,6 +294,29 @@ Available handle methods:
 | `invalidate`      | -                         | clears async cache for the current data source and refetches visible range |
 | `upsertProjects`  | `ProjectUpdate[]`         | creates or updates projects inside existing rows      |
 | `deleteProjects`  | `ProjectDeleteUpdate[]`   | removes projects by id from existing rows             |
+
+##### Custom project metadata
+
+`SchedulerProjectData` is generic, so you can attach your own project payload with `meta` and keep it typed in `onFetchData`, `onTileClick`, `transformData`, and the imperative handle API.
+
+```ts
+type TimesheetMeta = {
+  entryId: string;
+  userId: string;
+};
+
+const project: SchedulerProjectData<TimesheetMeta> = {
+  id: "entry-1",
+  title: "Timesheet",
+  startDate: new Date("2026-03-01"),
+  endDate: new Date("2026-03-01"),
+  occupancy: 3600,
+  meta: {
+    entryId: "ts-123",
+    userId: "user-1"
+  }
+};
+```
 
 ##### Scheduler Config Object
 
@@ -427,6 +450,7 @@ item that will be visible on the grid as tile and that will be accessible as arg
 | endDate | `Date` | date for calculating end position for resource |
 | occupancy | `number` | number of seconds resource takes up for given row that will be visible on resource tooltip when hovered |
 | bgColor | `string (optional)` | tile color |
+| meta | `TMeta (optional)` | custom project payload preserved by scheduler and exposed in typed callbacks |
 
 ### Troubleshooting
 

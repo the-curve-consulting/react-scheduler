@@ -21,20 +21,20 @@ import {
 } from "./dataPrefetch/loadingState";
 import { DayjsRange, FetchPlan } from "./dataPrefetch/types";
 
-type UsePrefetchedSchedulerDataParams = {
-  data: SchedulerData;
+type UsePrefetchedSchedulerDataParams<TMeta = unknown> = {
+  data: SchedulerData<TMeta>;
   dataLoading?: Config["dataLoading"];
   dataSourceKey?: string;
-  onFetchData?: (params: FetchDataParams) => Promise<SchedulerData>;
+  onFetchData?: (params: FetchDataParams) => Promise<SchedulerData<TMeta>>;
   onRangeChange?: (range: ParsedDatesRange) => void;
 };
 
-type UsePrefetchedSchedulerDataResult = {
-  schedulerData: SchedulerData;
+type UsePrefetchedSchedulerDataResult<TMeta = unknown> = {
+  schedulerData: SchedulerData<TMeta>;
   fetchLoadingState: SchedulerFetchLoadingState;
   handleRangeChange: (range: ParsedDatesRange) => void;
   invalidate: () => void;
-  setSchedulerData: Dispatch<SetStateAction<SchedulerData>>;
+  setSchedulerData: Dispatch<SetStateAction<SchedulerData<TMeta>>>;
 };
 
 type ActiveRequestState = {
@@ -86,19 +86,19 @@ const getEffectiveMaxCachedDays = (
  * @param params Hook inputs with source data, config and optional fetch callback.
  * @returns Cached scheduler data, fetch loading state and range-change handler.
  */
-export const usePrefetchedSchedulerData = ({
+export const usePrefetchedSchedulerData = <TMeta>({
   data,
   dataLoading,
   dataSourceKey,
   onFetchData,
   onRangeChange
-}: UsePrefetchedSchedulerDataParams): UsePrefetchedSchedulerDataResult => {
+}: UsePrefetchedSchedulerDataParams<TMeta>): UsePrefetchedSchedulerDataResult<TMeta> => {
   const prefetchConfig = useMemo(() => getNormalisedDataLoadingConfig(dataLoading), [dataLoading]);
-  const [cachedData, setCachedData] = useState<SchedulerData>(data);
+  const [cachedData, setCachedData] = useState<SchedulerData<TMeta>>(data);
   const [fetchLoadingState, setFetchLoadingState] =
     useState<SchedulerFetchLoadingState>(emptyFetchLoadingState);
 
-  const previousExternalDataRef = useRef<SchedulerData>(data);
+  const previousExternalDataRef = useRef<SchedulerData<TMeta>>(data);
   const loadedRangeRef = useRef<DayjsRange | null>(
     onFetchData ? getDataRangeFromProjects(data) : null
   );
@@ -161,7 +161,7 @@ export const usePrefetchedSchedulerData = ({
    * @returns void
    */
   const resetPrefetchState = useCallback(
-    (nextData: SchedulerData) => {
+    (nextData: SchedulerData<TMeta>) => {
       requestSessionRef.current += 1;
       hasPrunedInitialCacheRef.current = false;
       visibleRangeRef.current = null;

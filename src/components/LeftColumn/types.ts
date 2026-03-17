@@ -1,7 +1,7 @@
 import { PaginatedSchedulerData, SchedulerItemClickData } from "@/types/global";
 
-export type LeftColumnProps = {
-  data: PaginatedSchedulerData;
+export type LeftColumnProps<TMeta = unknown> = {
+  data: PaginatedSchedulerData<TMeta>;
   rows: number[];
   pageNum: number;
   pagesAmount: number;
@@ -9,7 +9,7 @@ export type LeftColumnProps = {
   onLoadPrevious: () => void;
   searchInputValue: string;
   onSearchInputChange: React.ChangeEventHandler<HTMLInputElement>;
-  onItemClick?: (data: SchedulerItemClickData) => void;
+  onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
 };
 
 export type StyledInputWrapperProps = {

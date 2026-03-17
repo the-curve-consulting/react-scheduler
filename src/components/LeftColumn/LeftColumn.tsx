@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { useState } from "react";
 import { useLanguage } from "@/context/LocaleProvider";
 import Icon from "../Icon";
 import PaginationButton from "../PaginationButton/PaginationButton";
@@ -6,7 +6,7 @@ import { StyledInput, StyledInputWrapper, StyledLeftColumnHeader, StyledWrapper 
 import { LeftColumnProps } from "./types";
 import LeftColumnItem from "./LeftColumnItem/LeftColumnItem";
 
-const LeftColumn: FC<LeftColumnProps> = ({
+const LeftColumn = <TMeta,>({
   data,
   rows,
   onLoadNext,
@@ -16,7 +16,7 @@ const LeftColumn: FC<LeftColumnProps> = ({
   searchInputValue,
   onSearchInputChange,
   onItemClick
-}) => {
+}: LeftColumnProps<TMeta>) => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const { search } = useLanguage();
 

@@ -1,5 +1,13 @@
 import { ThemeProvider } from "styled-components";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+  ForwardedRef,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import dayjs from "dayjs";
 import { Calendar } from "@/components";
 import CalendarProvider from "@/context/CalendarProvider";
@@ -12,18 +20,24 @@ import upsertProjectsInRows from "./dataMutations/upsertProjectsInRows";
 import {
   emptySchedulerFetchLoadingState,
   SchedulerAsyncProps,
+  SchedulerComponent,
   SchedulerHandle,
   SchedulerProps
 } from "./types";
 import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
 import { StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
-const emptySchedulerData: SchedulerData = [];
+const emptySchedulerData: SchedulerData<never> = [];
 
-const isAsyncSchedulerProps = (props: SchedulerProps): props is SchedulerAsyncProps =>
+const isAsyncSchedulerProps = <TMeta,>(
+  props: SchedulerProps<TMeta>
+): props is SchedulerAsyncProps<TMeta> =>
   typeof (props as SchedulerAsyncProps).onFetchData === "function";
 
-const Scheduler = forwardRef<SchedulerHandle, SchedulerProps>((props, ref) => {
+const SchedulerInner = <TMeta,>(
+  props: SchedulerProps<TMeta>,
+  ref: ForwardedRef<SchedulerHandle<TMeta>>
+) => {
   const {
     config,
     startDate,
@@ -74,10 +88,10 @@ const Scheduler = forwardRef<SchedulerHandle, SchedulerProps>((props, ref) => {
     () => ({
       invalidate,
       upsertProjects: (updates) => {
-        setSchedulerData((prev: SchedulerData) => upsertProjectsInRows(prev, updates));
+        setSchedulerData((prev: SchedulerData<TMeta>) => upsertProjectsInRows(prev, updates));
       },
       deleteProjects: (updates) => {
-        setSchedulerData((prev: SchedulerData) => deleteProjectsByIds(prev, updates));
+        setSchedulerData((prev: SchedulerData<TMeta>) => deleteProjectsByIds(prev, updates));
       }
     }),
     [invalidate, setSchedulerData]
@@ -152,8 +166,10 @@ const Scheduler = forwardRef<SchedulerHandle, SchedulerProps>((props, ref) => {
       </ThemeProvider>
     </>
   );
-});
+};
 
-Scheduler.displayName = "Scheduler";
+const SchedulerBase = forwardRef(SchedulerInner);
+SchedulerBase.displayName = "Scheduler";
+const Scheduler = SchedulerBase as SchedulerComponent;
 
 export default Scheduler;

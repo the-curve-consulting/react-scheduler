@@ -82,22 +82,22 @@ export type Theme = {
   dark?: Partial<Record<ColorType, string>>;
 };
 
-export type SchedulerData = SchedulerRow[];
+export type SchedulerData<TMeta = unknown> = SchedulerRow<TMeta>[];
 
-export type SchedulerRow = {
+export type SchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
-  data: SchedulerProjectData[];
+  data: SchedulerProjectData<TMeta>[];
 };
 
-export type SchedulerItemClickData = Omit<SchedulerRow, "data">;
+export type SchedulerItemClickData<TMeta = unknown> = Omit<SchedulerRow<TMeta>, "data">;
 
-export type PaginatedSchedulerData = PaginatedSchedulerRow[];
+export type PaginatedSchedulerData<TMeta = unknown> = PaginatedSchedulerRow<TMeta>[];
 
-export type PaginatedSchedulerRow = {
+export type PaginatedSchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
-  data: SchedulerProjectData[][];
+  data: SchedulerProjectData<TMeta>[][];
 };
 
 export type SchedulerRowLabel = {
@@ -105,7 +105,7 @@ export type SchedulerRowLabel = {
   title: string;
   subtitle: string;
 };
-export type SchedulerProjectData = {
+export type SchedulerProjectData<TMeta = unknown> = {
   /**
    * Unique Id of item
    */
@@ -138,12 +138,16 @@ export type SchedulerProjectData = {
    * Background color of the tile, given in rgb color model. If not given, default color (rgb(114, 141,226 )) is set. Optional
    */
   bgColor?: string;
+  /**
+   * Optional custom data that can be passed to the Scheduler and use in callbacks
+   */
+  meta?: TMeta;
 };
 
-export type SchedulerProjectDayData = {
+export type SchedulerProjectDayData<TMeta = unknown> = {
   startDateTime: dayjs.Dayjs;
   endDateTime: dayjs.Dayjs;
-  data: SchedulerProjectData;
+  data: SchedulerProjectData<TMeta>;
 };
 
 export type Day = {

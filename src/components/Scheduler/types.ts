@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Config,
   SchedulerData,
@@ -17,9 +18,9 @@ export type FetchDataParams = {
   signal?: AbortSignal;
 };
 
-export type ProjectUpdate = {
+export type ProjectUpdate<TMeta = unknown> = {
   rowId: string;
-  projects: SchedulerProjectData[];
+  projects: SchedulerProjectData<TMeta>[];
 };
 
 export type ProjectDeleteUpdate = {
@@ -27,38 +28,44 @@ export type ProjectDeleteUpdate = {
   projectIds: string[];
 };
 
-export type SchedulerHandle = {
+export type SchedulerHandle<TMeta = unknown> = {
   invalidate: () => void;
-  upsertProjects: (updates: ProjectUpdate[]) => void;
+  upsertProjects: (updates: ProjectUpdate<TMeta>[]) => void;
   deleteProjects: (updates: ProjectDeleteUpdate[]) => void;
 };
 
-export type SchedulerBaseProps = {
+export type SchedulerBaseProps<TMeta = unknown> = {
   isLoading?: boolean;
   config?: Config;
   startDate?: string;
   dataSourceKey?: string;
   onRangeChange?: (range: ParsedDatesRange) => void;
-  onTileClick?: (data: SchedulerProjectData) => void;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onFilterData?: () => void;
   onClearFilterData?: () => void;
-  transformData?: (data: SchedulerData) => SchedulerData;
-  onItemClick?: (data: SchedulerItemClickData) => void;
+  transformData?: (data: SchedulerData<TMeta>) => SchedulerData<TMeta>;
+  onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
 };
 
-export type SchedulerStaticProps = SchedulerBaseProps & {
-  data: SchedulerData;
+export type SchedulerStaticProps<TMeta = unknown> = SchedulerBaseProps<TMeta> & {
+  data: SchedulerData<TMeta>;
   initialData?: never;
   onFetchData?: never;
 };
 
-export type SchedulerAsyncProps = SchedulerBaseProps & {
-  onFetchData: (params: FetchDataParams) => Promise<SchedulerData>;
-  initialData?: SchedulerData;
+export type SchedulerAsyncProps<TMeta = unknown> = SchedulerBaseProps<TMeta> & {
+  onFetchData: (params: FetchDataParams) => Promise<SchedulerData<TMeta>>;
+  initialData?: SchedulerData<TMeta>;
   data?: never;
 };
 
-export type SchedulerProps = SchedulerStaticProps | SchedulerAsyncProps;
+export type SchedulerProps<TMeta = unknown> =
+  | SchedulerStaticProps<TMeta>
+  | SchedulerAsyncProps<TMeta>;
+
+export type SchedulerComponent = <TMeta = unknown>(
+  props: SchedulerProps<TMeta> & { ref?: React.ForwardedRef<SchedulerHandle<TMeta>> }
+) => React.ReactElement | null;
 
 export type StyledOutsideWrapperProps = {
   showScroll: boolean;

@@ -1,12 +1,18 @@
-import { FC, memo, useMemo } from "react";
+import { memo, useMemo } from "react";
 import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 import { dayStartHour } from "@/constants";
 import { isProjectVisible } from "@/utils/scrollHelpers";
 import { Tile, HourlyTile } from "..";
-import { PlacedTiles, TilesProps } from "./types";
+import { PlacedTiles, TilesComponent, TilesProps } from "./types";
 
-const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultStartHour }) => {
+const TilesInner = <TMeta,>({
+  data,
+  zoom,
+  onTileClick,
+  visibleRange,
+  defaultStartHour
+}: TilesProps<TMeta>) => {
   const tiles = useMemo((): PlacedTiles => {
     const visibleStartDay = visibleRange.startDate;
     const visibleEndDay = visibleRange.endDate;
@@ -19,7 +25,7 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultS
 
     // Helper: Render hourly tiles for a single project
     const renderHourlyTilesForProject = (
-      project: SchedulerProjectData,
+      project: SchedulerProjectData<TMeta>,
       rowIndex: number,
       rowOffset: number,
       startDateTimes: Record<string, dayjs.Dayjs>
@@ -63,7 +69,7 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultS
           continue;
         }
 
-        const dayData: SchedulerProjectDayData = {
+        const dayData: SchedulerProjectDayData<TMeta> = {
           data: project,
           startDateTime: currentStartTime,
           endDateTime: currentEndTime
@@ -141,4 +147,6 @@ const Tiles: FC<TilesProps> = ({ data, zoom, onTileClick, visibleRange, defaultS
   return <>{tiles}</>;
 };
 
-export default memo(Tiles);
+const Tiles = memo(TilesInner) as TilesComponent;
+
+export default Tiles;

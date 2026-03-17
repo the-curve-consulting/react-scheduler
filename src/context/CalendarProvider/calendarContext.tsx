@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { dayStartHour } from "@/constants";
 import { CalendarContextType } from "./types";
 
-export const calendarContext = createContext<CalendarContextType>({
+export const calendarContext = createContext<CalendarContextType<unknown>>({
   handleGoNext: () => {},
   handleGoPrev: () => {},
   handleGoToday: () => {},

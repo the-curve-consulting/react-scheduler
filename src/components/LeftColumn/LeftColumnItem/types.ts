@@ -1,10 +1,10 @@
 import { SchedulerItemClickData, SchedulerRowLabel } from "@/types/global";
 
-export type LeftColumnItemProps = {
+export type LeftColumnItemProps<TMeta = unknown> = {
   id: string;
   item: SchedulerRowLabel;
   rows: number;
-  onItemClick?: (data: SchedulerItemClickData) => void;
+  onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
 };
 
 export type StyledTextProps = {

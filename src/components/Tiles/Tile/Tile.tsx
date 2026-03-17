@@ -1,4 +1,4 @@
-import { FC, memo } from "react";
+import { memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
@@ -11,10 +11,10 @@ import {
   StyledTileWrapper,
   tileTextHorizontalMargin
 } from "./styles";
-import { TileProps } from "./types";
+import { TileComponent, TileProps } from "./types";
 
-const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
-  const { currentCenterDate, cols } = useCalendar();
+const TileInner = <TMeta,>({ row, data, zoom, onTileClick }: TileProps<TMeta>) => {
+  const { currentCenterDate, cols } = useCalendar<TMeta>();
   const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, cols);
   const { colors } = useTheme();
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
@@ -41,4 +41,6 @@ const Tile: FC<TileProps> = ({ row, data, zoom, onTileClick }) => {
   );
 };
 
-export default memo(Tile);
+const Tile = memo(TileInner) as TileComponent;
+
+export default Tile;

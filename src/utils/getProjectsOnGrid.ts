@@ -1,12 +1,15 @@
 import { SchedulerData, SchedulerProjectData } from "@/types/global";
 import { setProjectsInRows } from "./setProjectsInRows";
 
-type ProjectsData = [projectsPerPerson: SchedulerProjectData[][][], rowsPerPerson: number[]];
+type ProjectsData<TMeta = unknown> = [
+  projectsPerPerson: SchedulerProjectData<TMeta>[][][],
+  rowsPerPerson: number[]
+];
 
-export const projectsOnGrid = (data: SchedulerData) => {
-  const initialProjectsData: ProjectsData = [[], []];
+export const projectsOnGrid = <TMeta>(data: SchedulerData<TMeta>) => {
+  const initialProjectsData: ProjectsData<TMeta> = [[], []];
   const [projectsPerPerson, rowsPerPerson] = data.reduce((acc, curr) => {
-    const projectsInRows = setProjectsInRows(curr.data);
+    const projectsInRows = setProjectsInRows<TMeta>(curr.data);
     acc[0].push(projectsInRows);
     acc[1].push(Math.max(projectsInRows.length, 1));
     return acc;

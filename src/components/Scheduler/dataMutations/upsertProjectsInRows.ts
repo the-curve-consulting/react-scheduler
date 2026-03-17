@@ -1,7 +1,10 @@
 import { SchedulerData } from "@/types/global";
 import { ProjectUpdate } from "../types";
 
-const upsertProjectsInRows = (rows: SchedulerData, updates: ProjectUpdate[]): SchedulerData => {
+const upsertProjectsInRows = <TMeta>(
+  rows: SchedulerData<TMeta>,
+  updates: ProjectUpdate<TMeta>[]
+): SchedulerData<TMeta> => {
   const updatesByRowId = new Map(updates.map((update) => [update.rowId, update.projects]));
 
   return rows.map((row) => {
