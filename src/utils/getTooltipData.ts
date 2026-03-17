@@ -4,11 +4,11 @@ import { Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/
 import { getOccupancy } from "./getOccupancy";
 import { getCellWidth } from "./scrollHelpers";
 
-export const getTooltipData = (
+export const getTooltipData = <TMeta>(
   config: Config,
   cursorPosition: Coords,
   rowsPerPerson: number[],
-  resourcesData: SchedulerProjectData[][][],
+  resourcesData: SchedulerProjectData<TMeta>[][][],
   zoom: ZoomLevel,
   includeTakenHoursOnWeekendsInDayView = false,
   currentCenterDate: dayjs.Dayjs,
@@ -69,7 +69,7 @@ export const getTooltipData = (
     return sumOfRows >= rowPosition;
   });
 
-  const disposition = getOccupancy(
+  const disposition = getOccupancy<TMeta>(
     config,
     resourcesData[resourceIndex],
     resourceIndex,

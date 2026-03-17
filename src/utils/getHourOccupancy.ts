@@ -4,8 +4,8 @@ import { dayStartHour, minutesInHour } from "@/constants";
 
 const SECONDS_IN_HOUR = 3600;
 
-export const getHourOccupancy = (
-  resource: SchedulerProjectData[][],
+export const getHourOccupancy = <TMeta>(
+  resource: SchedulerProjectData<TMeta>[][],
   focusedDate: dayjs.Dayjs,
   defaultStartHour?: number
 ): OccupancyData => {

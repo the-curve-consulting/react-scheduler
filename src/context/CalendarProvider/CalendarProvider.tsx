@@ -17,7 +17,7 @@ import {
   getCurrentCenterDateFromScroll
 } from "@/utils/scrollHelpers";
 import { calendarContext } from "./calendarContext";
-import { CalendarProviderProps } from "./types";
+import { CalendarContextType, CalendarProviderProps } from "./types";
 import { useScrollRebaseController } from "./useScrollRebaseController";
 dayjs.extend(weekOfYear);
 dayjs.extend(dayOfYear);
@@ -31,7 +31,7 @@ dayjs.extend(duration);
  * @param props Calendar provider properties including data, callbacks and configuration.
  * @returns Context provider wrapping scheduler UI.
  */
-const CalendarProvider = ({
+const CalendarProvider = <TMeta,>({
   data,
   children,
   isLoading,
@@ -41,7 +41,7 @@ const CalendarProvider = ({
   onRangeChange,
   onFilterData,
   onClearFilterData
-}: CalendarProviderProps) => {
+}: CalendarProviderProps<TMeta>) => {
   const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
@@ -287,9 +287,7 @@ const CalendarProvider = ({
 
   const handleFilterData = useCallback(() => onFilterData?.(), [onFilterData]);
 
-  const { Provider } = calendarContext;
-
-  const contextValue = useMemo(
+  const contextValue = useMemo<CalendarContextType<TMeta>>(
     () => ({
       data,
       config,
@@ -344,7 +342,7 @@ const CalendarProvider = ({
     ]
   );
 
-  return <Provider value={contextValue}>{children}</Provider>;
+  return <calendarContext.Provider value={contextValue}>{children}</calendarContext.Provider>;
 };
 
 /**
@@ -352,7 +350,8 @@ const CalendarProvider = ({
  *
  * @returns Calendar context value exposed by `CalendarProvider`.
  */
-const useCalendar = () => useContext(calendarContext);
+const useCalendar = <TMeta = unknown,>() =>
+  useContext(calendarContext) as CalendarContextType<TMeta>;
 
 export default CalendarProvider;
 export { useCalendar };

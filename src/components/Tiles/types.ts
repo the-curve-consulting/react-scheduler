@@ -1,12 +1,16 @@
 import dayjs from "dayjs";
 import { PaginatedSchedulerData, SchedulerProjectData } from "@/types/global";
 
-export type TilesProps = {
+export type TilesProps<TMeta = unknown> = {
   zoom: number;
-  data: PaginatedSchedulerData;
-  onTileClick?: (data: SchedulerProjectData) => void;
+  data: PaginatedSchedulerData<TMeta>;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
   defaultStartHour?: number;
 };
+
+export type TilesComponent = <TMeta = unknown>(
+  props: TilesProps<TMeta>
+) => React.ReactElement | null;
 
 export type PlacedTiles = JSX.Element[];

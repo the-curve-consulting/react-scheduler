@@ -1,28 +1,60 @@
 import { ThemeProvider } from "styled-components";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ForwardedRef,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import dayjs from "dayjs";
 import { Calendar } from "@/components";
 import CalendarProvider from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
 import { outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
-import { Config } from "@/types/global";
-import { emptySchedulerFetchLoadingState, SchedulerProps } from "./types";
+import { Config, SchedulerData } from "@/types/global";
+import deleteProjectsByIds from "./dataMutations/deleteProjectsByIds";
+import upsertProjectsInRows from "./dataMutations/upsertProjectsInRows";
+import {
+  emptySchedulerFetchLoadingState,
+  SchedulerAsyncProps,
+  SchedulerComponent,
+  SchedulerHandle,
+  SchedulerProps
+} from "./types";
 import { usePrefetchedSchedulerData } from "./usePrefetchedSchedulerData";
 import { StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
-const Scheduler = ({
-  data,
-  config,
-  startDate,
-  onRangeChange,
-  onFetchData,
-  onTileClick,
-  onFilterData,
-  onClearFilterData,
-  onItemClick,
-  isLoading
-}: SchedulerProps) => {
+const emptySchedulerData: SchedulerData<never> = [];
+
+const isAsyncSchedulerProps = <TMeta,>(
+  props: SchedulerProps<TMeta>
+): props is SchedulerAsyncProps<TMeta> =>
+  typeof (props as SchedulerAsyncProps).onFetchData === "function";
+
+const SchedulerInner = <TMeta,>(
+  props: SchedulerProps<TMeta>,
+  ref: ForwardedRef<SchedulerHandle<TMeta>>
+) => {
+  const {
+    config,
+    startDate,
+    dataSourceKey,
+    onRangeChange,
+    onTileClick,
+    onFilterData,
+    onClearFilterData,
+    onItemClick,
+    transformData,
+    isLoading
+  } = props;
+  const onFetchData = isAsyncSchedulerProps(props) ? props.onFetchData : undefined;
+  const sourceData = isAsyncSchedulerProps(props)
+    ? props.initialData ?? emptySchedulerData
+    : props.data;
+
   const appConfig: Config = useMemo(
     () => ({
       zoom: 0,
@@ -38,12 +70,32 @@ const Scheduler = ({
   const outsideWrapperRef = useRef<HTMLDivElement>(null);
   const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
 
-  const { schedulerData, fetchLoadingState, handleRangeChange } = usePrefetchedSchedulerData({
-    data,
-    dataLoading: appConfig.dataLoading,
-    onFetchData,
-    onRangeChange
-  });
+  const { schedulerData, fetchLoadingState, handleRangeChange, invalidate, setSchedulerData } =
+    usePrefetchedSchedulerData({
+      data: sourceData,
+      dataLoading: appConfig.dataLoading,
+      dataSourceKey,
+      onFetchData,
+      onRangeChange
+    });
+  const transformedData = useMemo(
+    () => transformData?.(schedulerData) ?? schedulerData,
+    [schedulerData, transformData]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      invalidate,
+      upsertProjects: (updates) => {
+        setSchedulerData((prev: SchedulerData<TMeta>) => upsertProjectsInRows(prev, updates));
+      },
+      deleteProjects: (updates) => {
+        setSchedulerData((prev: SchedulerData<TMeta>) => deleteProjectsByIds(prev, updates));
+      }
+    }),
+    [invalidate, setSchedulerData]
+  );
 
   const externalLoading = !!isLoading;
   const effectiveLoading = externalLoading || fetchLoadingState.blocking;
@@ -86,7 +138,7 @@ const Scheduler = ({
       <ThemeProvider theme={mergedTheme}>
         <LocaleProvider lang={appConfig.lang} translations={appConfig.translations}>
           <CalendarProvider
-            data={schedulerData}
+            data={transformedData}
             isLoading={effectiveLoading}
             loadingState={calendarLoadingState}
             config={appConfig}
@@ -95,13 +147,13 @@ const Scheduler = ({
             onFilterData={onFilterData}
             onClearFilterData={onClearFilterData}>
             <StyledOutsideWrapper
-              showScroll={!!schedulerData.length}
+              showScroll={!!transformedData.length}
               id={outsideWrapperId}
               ref={outsideWrapperRef}>
               <StyledInnerWrapper>
                 <Calendar
                   config={appConfig}
-                  data={schedulerData}
+                  data={transformedData}
                   onTileClick={onTileClick}
                   topBarWidth={topBarWidth ?? 0}
                   onItemClick={onItemClick}
@@ -115,5 +167,9 @@ const Scheduler = ({
     </>
   );
 };
+
+const SchedulerBase = forwardRef(SchedulerInner);
+SchedulerBase.displayName = "Scheduler";
+const Scheduler = SchedulerBase as SchedulerComponent;
 
 export default Scheduler;

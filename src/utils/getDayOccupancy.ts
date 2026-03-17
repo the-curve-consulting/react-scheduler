@@ -5,9 +5,9 @@ import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
 
-export const getDayOccupancy = (
+export const getDayOccupancy = <TMeta>(
   config: Config,
-  occupancy: SchedulerProjectData[],
+  occupancy: SchedulerProjectData<TMeta>[],
   focusedDate: dayjs.Dayjs,
   includeTakenHoursOnWeekendsInDayView: boolean
 ): OccupancyData => {

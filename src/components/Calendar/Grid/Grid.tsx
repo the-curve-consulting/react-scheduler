@@ -1,4 +1,4 @@
-import { forwardRef, memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { ForwardedRef, forwardRef, memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import {
@@ -13,7 +13,7 @@ import { Loader, Tiles } from "@/components";
 import { useCalendar } from "@/context/CalendarProvider";
 import { resizeCanvas } from "@/utils/resizeCanvas";
 import { getScrollConfig } from "@/utils/scrollHelpers";
-import { GridProps } from "./types";
+import { GridComponent, GridProps } from "./types";
 import {
   StyledBlockingContent,
   StyledBlockingOverlay,
@@ -23,7 +23,10 @@ import {
   StyledWrapper
 } from "./styles";
 
-const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, onTileClick }, ref) {
+const GridInner = <TMeta,>(
+  { data, rows, onTileClick }: GridProps<TMeta>,
+  ref: ForwardedRef<HTMLDivElement>
+) => {
   const {
     handleScrollChange,
     visibleRange,
@@ -34,7 +37,7 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
     cols,
     config,
     currentCenterDate
-  } = useCalendar();
+  } = useCalendar<TMeta>();
 
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -128,6 +131,9 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid({ rows, data, o
       </StyledInnerWrapper>
     </StyledWrapper>
   );
-});
+};
 
-export default memo(Grid);
+const GridBase = forwardRef(GridInner) as GridComponent;
+const Grid = memo(GridBase) as GridComponent;
+
+export default Grid;

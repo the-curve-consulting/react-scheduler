@@ -10,7 +10,10 @@ import { DayjsRange } from "./types";
  * @param range Inclusive range for overlap.
  * @returns `true` when project intersects range.
  */
-const isProjectInRange = (project: SchedulerProjectData, range: DayjsRange): boolean => {
+const isProjectInRange = <TMeta>(
+  project: SchedulerProjectData<TMeta>,
+  range: DayjsRange
+): boolean => {
   const start = dayjs(project.startDate);
   const end = dayjs(project.endDate);
 
@@ -106,7 +109,7 @@ export const intersectRanges = (
  * @param rows Cached scheduler rows.
  * @returns Global data range or `null` when cache is empty.
  */
-export const getDataRangeFromProjects = (rows: SchedulerData): DayjsRange | null => {
+export const getDataRangeFromProjects = <TMeta>(rows: SchedulerData<TMeta>): DayjsRange | null => {
   let minStartDate: dayjs.Dayjs | null = null;
   let maxEndDate: dayjs.Dayjs | null = null;
 
@@ -136,15 +139,18 @@ export const getDataRangeFromProjects = (rows: SchedulerData): DayjsRange | null
  * @param incomingData Newly fetched rows.
  * @returns Merged scheduler data.
  */
-export const mergeSchedulerData = (
-  currentData: SchedulerData,
-  incomingData: SchedulerData
-): SchedulerData => {
+export const mergeSchedulerData = <TMeta>(
+  currentData: SchedulerData<TMeta>,
+  incomingData: SchedulerData<TMeta>
+): SchedulerData<TMeta> => {
   if (!incomingData.length) return currentData;
 
   const rowsById = new Map<
     string,
-    { label: SchedulerData[number]["label"]; projects: Map<string, SchedulerProjectData> }
+    {
+      label: SchedulerData<TMeta>[number]["label"];
+      projects: Map<string, SchedulerProjectData<TMeta>>;
+    }
   >();
   const rowOrder: string[] = [];
 
@@ -174,7 +180,7 @@ export const mergeSchedulerData = (
     }
   }
 
-  const mergedRows: SchedulerData = [];
+  const mergedRows: SchedulerData<TMeta> = [];
 
   for (const rowId of rowOrder) {
     const row = rowsById.get(rowId);
@@ -197,7 +203,10 @@ export const mergeSchedulerData = (
  * @param range Retention range to keep in memory.
  * @returns Trimmed rows (or original array if unchanged).
  */
-export const trimDataToRange = (rows: SchedulerData, range: DayjsRange): SchedulerData => {
+export const trimDataToRange = <TMeta>(
+  rows: SchedulerData<TMeta>,
+  range: DayjsRange
+): SchedulerData<TMeta> => {
   let changed = false;
 
   const trimmedRows = rows.map((row) => {

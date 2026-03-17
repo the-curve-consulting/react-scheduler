@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import dayjs from "dayjs";
 import { useCalendar } from "@/context/CalendarProvider";
@@ -19,14 +19,14 @@ const initialTooltipData: TooltipData = {
   }
 };
 
-export const Calendar: FC<CalendarProps> = ({
+export const Calendar = <TMeta,>({
   config,
   data,
   onTileClick,
   onItemClick,
   toggleTheme,
   topBarWidth
-}) => {
+}: CalendarProps<TMeta>) => {
   const [tooltipData, setTooltipData] = useState<TooltipData>(initialTooltipData);
   const [filteredData, setFilteredData] = useState(data);
   const [isVisible, setIsVisible] = useState(false);
@@ -38,7 +38,7 @@ export const Calendar: FC<CalendarProps> = ({
     viewportWidth,
     cols,
     config: { includeTakenHoursOnWeekendsInDayView, showTooltip, showThemeToggle }
-  } = useCalendar();
+  } = useCalendar<TMeta>();
   const gridRef = useRef<HTMLDivElement>(null);
   const {
     page,
@@ -50,13 +50,13 @@ export const Calendar: FC<CalendarProps> = ({
     next,
     previous,
     reset
-  } = usePagination(filteredData);
+  } = usePagination<TMeta>(filteredData);
   const debouncedHandleMouseOver = useRef(
     debounce(
       (
         e: MouseEvent,
         rowsPerItem: number[],
-        projectsPerPerson: SchedulerProjectData[][][],
+        projectsPerPerson: SchedulerProjectData<TMeta>[][][],
         zoom: ZoomLevel,
         currentCenterDate: dayjs.Dayjs,
         cols: number
@@ -68,7 +68,7 @@ export const Calendar: FC<CalendarProps> = ({
           coords: { x, y },
           resourceIndex,
           disposition
-        } = getTooltipData(
+        } = getTooltipData<TMeta>(
           config,
           tooltipCoords,
           rowsPerItem,
@@ -85,7 +85,7 @@ export const Calendar: FC<CalendarProps> = ({
     )
   );
   const debouncedFilterData = useRef(
-    debounce((dataToFilter: SchedulerData, enteredSearchPhrase: string) => {
+    debounce((dataToFilter: SchedulerData<TMeta>, enteredSearchPhrase: string) => {
       reset();
       setFilteredData(
         dataToFilter.filter((item) =>

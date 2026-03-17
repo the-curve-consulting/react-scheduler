@@ -9,10 +9,14 @@ import {
   SchedulerItemClickData,
   SchedulerProjectData
 } from "./types/global";
-import { FetchDataParams } from "./components/Scheduler/types";
 import ConfigPanel from "./components/ConfigPanel";
 import { StyledSchedulerFrame } from "./styles";
-import { Scheduler } from ".";
+import { FetchDataParams, Scheduler } from ".";
+
+type DemoProjectMeta = {
+  personId: string;
+  source: "mock";
+};
 
 function App() {
   const rangeUpdateTimeoutRef = useRef<number | null>(null);
@@ -29,11 +33,20 @@ function App() {
 
   const { peopleCount, projectsPerYear, yearsCovered, isFullscreen, maxRecordsPerPage } = values;
 
-  const mocked = useMemo(
-    () => createMockData(+peopleCount, +yearsCovered, +projectsPerYear),
+  const mocked = useMemo<SchedulerData<DemoProjectMeta>>(
+    () =>
+      createMockData(+peopleCount, +yearsCovered, +projectsPerYear).map((person) => ({
+        ...person,
+        data: person.data.map((project) => ({
+          ...project,
+          meta: {
+            personId: person.id,
+            source: "mock"
+          }
+        }))
+      })),
     [peopleCount, projectsPerYear, yearsCovered]
   );
-  const emptyData = useMemo<SchedulerData>(() => [], []);
 
   const [range, setRange] = useState<ParsedDatesRange>({
     startDate: new Date(),
@@ -69,8 +82,8 @@ function App() {
   }, []);
 
   const handleFetchData = useCallback(
-    async (params: FetchDataParams): Promise<SchedulerData> =>
-      new Promise<SchedulerData>((resolve, reject) => {
+    async (params: FetchDataParams): Promise<SchedulerData<DemoProjectMeta>> =>
+      new Promise<SchedulerData<DemoProjectMeta>>((resolve, reject) => {
         const { range, signal } = params;
 
         if (signal?.aborted) {
@@ -128,9 +141,9 @@ function App() {
     console.log(`Filters button was clicked.`);
   }, []);
 
-  const handleTileClick = useCallback((data: SchedulerProjectData) => {
+  const handleTileClick = useCallback((data: SchedulerProjectData<DemoProjectMeta>) => {
     console.log(
-      `Item ${data.title} - ${data.subtitle} was clicked. \n==============\nStart date: ${data.startDate} \n==============\nEnd date: ${data.endDate}\n==============\nOccupancy: ${data.occupancy}`
+      `Item ${data.title} - ${data.subtitle} was clicked. \n==============\nStart date: ${data.startDate} \n==============\nEnd date: ${data.endDate}\n==============\nOccupancy: ${data.occupancy}\n==============\nPerson id: ${data.meta?.personId}`
     );
   }, []);
 
@@ -153,11 +166,11 @@ function App() {
     <>
       <ConfigPanel values={values} onSubmit={setValues} />
       {isFullscreen ? (
-        <Scheduler
+        <Scheduler<DemoProjectMeta>
           startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
+          dataSourceKey={`${peopleCount}-${projectsPerYear}-${yearsCovered}`}
           onRangeChange={handleRangeChange}
           onFetchData={handleFetchData}
-          data={emptyData}
           isLoading={false}
           onTileClick={handleTileClick}
           onFilterData={handleFilterData}
@@ -166,7 +179,7 @@ function App() {
         />
       ) : (
         <StyledSchedulerFrame>
-          <Scheduler
+          <Scheduler<DemoProjectMeta>
             startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
             onRangeChange={handleRangeChange}
             isLoading={false}

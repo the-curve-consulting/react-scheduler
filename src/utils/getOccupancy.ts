@@ -4,9 +4,9 @@ import { getHourOccupancy } from "@/utils/getHourOccupancy";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
 
-export const getOccupancy = (
+export const getOccupancy = <TMeta>(
   config: Config,
-  resource: SchedulerProjectData[][],
+  resource: SchedulerProjectData<TMeta>[][],
   resourceIndex: number,
   focusedDate: dayjs.Dayjs,
   zoom: ZoomLevel,

@@ -1,10 +1,10 @@
 import { PaginatedSchedulerData, SchedulerProjectData } from "@/types/global";
 
-export type UsePaginationData = {
+export type UsePaginationData<TMeta = unknown> = {
   /**
    * Represents paginated data on current page
    */
-  page: PaginatedSchedulerData;
+  page: PaginatedSchedulerData<TMeta>;
   /**
    * Current page number
    */
@@ -16,7 +16,7 @@ export type UsePaginationData = {
   /**
    * Sorted resources per item.
    */
-  projectsPerPerson: SchedulerProjectData[][][];
+  projectsPerPerson: SchedulerProjectData<TMeta>[][][];
   /**
    * Amount of rows per item
    */

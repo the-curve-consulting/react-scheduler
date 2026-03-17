@@ -1,8 +1,10 @@
 import dayjs from "dayjs";
 import { SchedulerProjectData } from "@/types/global";
 
-export const setProjectsInRows = (projects: SchedulerProjectData[]): SchedulerProjectData[][] => {
-  const rows: SchedulerProjectData[][] = [];
+export const setProjectsInRows = <TMeta>(
+  projects: SchedulerProjectData<TMeta>[]
+): SchedulerProjectData<TMeta>[][] => {
+  const rows: SchedulerProjectData<TMeta>[][] = [];
   for (const project of projects) {
     let isAdded = false;
     if (rows.length) {

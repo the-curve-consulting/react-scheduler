@@ -1,4 +1,4 @@
-import { FC, memo } from "react";
+import { memo } from "react";
 import { useTheme } from "styled-components";
 import { getHourlyTileProperties } from "@/utils/getHourlyTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
@@ -11,10 +11,10 @@ import {
   StyledTileWrapper,
   tileTextHorizontalMargin
 } from "./styles";
-import { HourlyTileProps } from "./types";
+import { HourlyTileComponent, HourlyTileProps } from "./types";
 
-const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, onTileClick }) => {
-  const { currentCenterDate, cols } = useCalendar();
+const HourlyTileInner = <TMeta,>({ row, dayData, onTileClick }: HourlyTileProps<TMeta>) => {
+  const { currentCenterDate, cols } = useCalendar<TMeta>();
   const { y, x, width } = getHourlyTileProperties(
     row,
     currentCenterDate,
@@ -48,4 +48,6 @@ const HourlyTile: FC<HourlyTileProps> = ({ row, dayData, onTileClick }) => {
   );
 };
 
-export default memo(HourlyTile);
+const HourlyTile = memo(HourlyTileInner) as HourlyTileComponent;
+
+export default HourlyTile;
