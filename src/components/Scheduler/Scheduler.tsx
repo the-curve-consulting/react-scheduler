@@ -40,7 +40,7 @@ const SchedulerInner = <TMeta,>(
 ) => {
   const {
     config,
-    startDate,
+    centerDate,
     dataSourceKey,
     onRangeChange,
     onTileClick,
@@ -103,7 +103,7 @@ const SchedulerInner = <TMeta,>(
     ? { any: true, blocking: true, forward: true, backward: true }
     : fetchLoadingState ?? emptySchedulerFetchLoadingState;
 
-  const defaultStartDate = useMemo(() => dayjs(startDate), [startDate]);
+  const centerDateDayJs = useMemo(() => dayjs(centerDate), [centerDate]);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
 
   const toggleTheme = () => {
@@ -143,7 +143,7 @@ const SchedulerInner = <TMeta,>(
             loadingState={calendarLoadingState}
             config={appConfig}
             onRangeChange={handleRangeChange}
-            defaultStartDate={defaultStartDate}
+            centerDate={centerDateDayJs}
             onFilterData={onFilterData}
             onClearFilterData={onClearFilterData}>
             <StyledOutsideWrapper

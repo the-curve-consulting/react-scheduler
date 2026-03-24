@@ -37,7 +37,7 @@ export type SchedulerHandle<TMeta = unknown> = {
 export type SchedulerBaseProps<TMeta = unknown> = {
   isLoading?: boolean;
   config?: Config;
-  startDate?: string;
+  centerDate?: string;
   dataSourceKey?: string;
   onRangeChange?: (range: ParsedDatesRange) => void;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
