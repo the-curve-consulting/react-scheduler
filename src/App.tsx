@@ -167,7 +167,7 @@ function App() {
       <ConfigPanel values={values} onSubmit={setValues} />
       {isFullscreen ? (
         <Scheduler<DemoProjectMeta>
-          startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
+          centerDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
           dataSourceKey={`${peopleCount}-${projectsPerYear}-${yearsCovered}`}
           onRangeChange={handleRangeChange}
           onFetchData={handleFetchData}
@@ -180,7 +180,7 @@ function App() {
       ) : (
         <StyledSchedulerFrame>
           <Scheduler<DemoProjectMeta>
-            startDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
+            centerDate={values.startDate ? new Date(values.startDate).toISOString() : undefined}
             onRangeChange={handleRangeChange}
             isLoading={false}
             data={filteredData}

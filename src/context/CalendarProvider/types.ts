@@ -34,7 +34,7 @@ export type CalendarProviderProps<TMeta = unknown> = {
   children: ReactNode;
   isLoading: boolean;
   loadingState?: SchedulerFetchLoadingState;
-  defaultStartDate?: dayjs.Dayjs;
+  centerDate?: dayjs.Dayjs;
   data?: SchedulerData<TMeta>;
   config: Config;
   onRangeChange?: (range: ParsedDatesRange) => void;

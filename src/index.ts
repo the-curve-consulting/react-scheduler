@@ -13,6 +13,7 @@ export type { ParsedDatesRange } from "./utils/getDatesRange";
 export type {
   Config,
   SchedulerData,
+  SchedulerRow,
   SchedulerItemClickData,
   SchedulerProjectData,
   ZoomLevel
