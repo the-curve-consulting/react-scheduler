@@ -42,7 +42,7 @@ const CalendarProvider = <TMeta,>({
   onFilterData,
   onClearFilterData
 }: CalendarProviderProps<TMeta>) => {
-  const centerDateRef = useRef(centerDate);
+  const centerDateRef = useRef(centerDate?.valueOf());
   const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
@@ -278,10 +278,13 @@ const CalendarProvider = <TMeta,>({
    * @returns void
    */
   useEffect(() => {
-    if (centerDate !== centerDateRef.current) {
-      centerDateRef.current = centerDate;
-      handleGoToDate(centerDate);
-    }
+    if (!centerDate?.isValid()) return;
+
+    const nextCenterDateValue = centerDate!.valueOf();
+    if (nextCenterDateValue === centerDateRef.current) return;
+
+    centerDateRef.current = nextCenterDateValue;
+    handleGoToDate(centerDate);
   }, [centerDate, handleGoToDate]);
 
   /**

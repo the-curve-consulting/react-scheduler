@@ -103,7 +103,7 @@ const SchedulerInner = <TMeta,>(
     ? { any: true, blocking: true, forward: true, backward: true }
     : fetchLoadingState ?? emptySchedulerFetchLoadingState;
 
-  const centerDateDayJs = useMemo(() => dayjs(centerDate), [centerDate]);
+  const centerDateDayJs = useMemo(() => (centerDate ? dayjs(centerDate) : undefined), [centerDate]);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
 
   const toggleTheme = () => {
