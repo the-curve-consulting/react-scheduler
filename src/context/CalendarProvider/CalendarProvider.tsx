@@ -37,17 +37,19 @@ const CalendarProvider = <TMeta,>({
   isLoading,
   loadingState = { any: false, blocking: false, forward: false, backward: false },
   config,
-  centerDate = dayjs(),
+  centerDate,
   onRangeChange,
   onFilterData,
   onClearFilterData
 }: CalendarProviderProps<TMeta>) => {
+  const fallbackCenterDateRef = useRef(dayjs());
+  const effectiveCenterDate = centerDate ?? fallbackCenterDateRef.current;
   const centerDateRef = useRef(centerDate?.valueOf());
   const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
 
-  const [referenceDate, setReferenceDate] = useState(centerDate);
+  const [referenceDate, setReferenceDate] = useState(effectiveCenterDate);
   const [scrollPosition, setScrollPosition] = useState(() => scrollConfig.center);
   const [isInitialized, setIsInitialized] = useState(false);
   const [cols, setCols] = useState(getCols(zoom));
@@ -249,13 +251,13 @@ const CalendarProvider = <TMeta,>({
     if (isInitialized) return;
 
     const container = document.getElementById(outsideWrapperId);
-    const rawScrollLeft = getScrollPositionForDate(centerDate, referenceDate, zoom);
+    const rawScrollLeft = getScrollPositionForDate(effectiveCenterDate, referenceDate, zoom);
     const scrollLeft = clampScrollLeft(rawScrollLeft, container);
 
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
     setScrollPosition(scrollLeft);
     setIsInitialized(true);
-  }, [clampScrollLeft, centerDate, isInitialized, referenceDate, zoom]);
+  }, [clampScrollLeft, effectiveCenterDate, isInitialized, referenceDate, zoom]);
 
   /**
    * Emits the currently visible date range through external callback.

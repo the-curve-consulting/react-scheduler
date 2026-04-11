@@ -13,20 +13,11 @@ export default defineConfig({
     }
   },
   plugins: [
-    react({
-      babel: {
-        env: {
-          production: {
-            plugins: [["babel-plugin-styled-components", { displayName: false, pure: true }]]
-          },
-          development: {
-            plugins: [["babel-plugin-styled-components", { displayName: true, pure: true }]]
-          }
-        }
-      }
-    }),
+    react(),
     dts({
-      rollupTypes: true
+      insertTypesEntry: true,
+      rollupTypes: false,
+      tsconfigPath: "./tsconfig.json"
     }),
     svgr(),
     visualizer({

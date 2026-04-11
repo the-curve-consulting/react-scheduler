@@ -1,31 +1,31 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { localeContext } from "./localeContext";
 import { locales } from "./locales";
 import { LocaleProviderProps, LocaleType } from "./types";
 
-const LocaleProvider = ({ children, lang, translations }: LocaleProviderProps) => {
-  const [localLang, setLocalLang] = useState<string>("en");
-  const localesData = locales.getLocales();
+const getInitialLanguage = (lang?: string) => {
+  if (typeof window === "undefined") {
+    return lang ?? "en";
+  }
 
-  const findLocale = useCallback(() => {
-    const locale = localesData.find((l) => {
-      return l.id === localLang;
-    });
+  return lang ?? localStorage.getItem("locale") ?? "en";
+};
+
+const LocaleProvider = ({ children, lang, translations }: LocaleProviderProps) => {
+  const [localLang, setLocalLang] = useState<string>(() => getInitialLanguage(lang));
+  const localesData = locales.getLocales();
+  const effectiveLang = lang ?? localLang;
+
+  const currentLocale = useMemo(() => {
+    const locale = localesData.find((l) => l.id === effectiveLang) ?? localesData[0];
 
     if (typeof locale?.dayjsTranslations === "object") {
       dayjs.locale(locale.dayjsTranslations);
     }
 
-    return locale || localesData[0];
-  }, [localLang, localesData]);
-
-  const [currentLocale, setCurrentLocale] = useState<LocaleType>(findLocale());
-
-  const saveCurrentLocale = (locale: LocaleType) => {
-    localStorage.setItem("locale", locale.translateCode);
-    setCurrentLocale(locale);
-  };
+    return locale;
+  }, [effectiveLang, localesData]);
 
   useEffect(() => {
     translations?.forEach((translation) => {
@@ -36,13 +36,19 @@ const LocaleProvider = ({ children, lang, translations }: LocaleProviderProps) =
     });
   }, [localesData, translations]);
 
+  const saveCurrentLocale = useCallback((locale: LocaleType) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("locale", locale.id);
+    }
+
+    setLocalLang(locale.id);
+  }, []);
+
   useEffect(() => {
-    const localeId = localStorage.getItem("locale");
-    const language = lang ?? localeId ?? "en";
-    localStorage.setItem("locale", language);
-    setLocalLang(language);
-    setCurrentLocale(findLocale());
-  }, [findLocale, lang]);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("locale", effectiveLang);
+    }
+  }, [effectiveLang]);
 
   const { Provider } = localeContext;
 
