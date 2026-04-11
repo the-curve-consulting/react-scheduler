@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import dayjs from "dayjs";
 import { PaginatedSchedulerData, SchedulerProjectData } from "@/types/global";
 
@@ -13,4 +14,4 @@ export type TilesComponent = <TMeta = unknown>(
   props: TilesProps<TMeta>
 ) => React.ReactElement | null;
 
-export type PlacedTiles = JSX.Element[];
+export type PlacedTiles = ReactElement[];

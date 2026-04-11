@@ -68,7 +68,7 @@ const SchedulerInner = <TMeta,>(
   );
 
   const outsideWrapperRef = useRef<HTMLDivElement>(null);
-  const [topBarWidth, setTopBarWidth] = useState(outsideWrapperRef.current?.clientWidth);
+  const [topBarWidth, setTopBarWidth] = useState(0);
 
   const { schedulerData, fetchLoadingState, handleRangeChange, invalidate, setSchedulerData } =
     usePrefetchedSchedulerData({
@@ -107,7 +107,7 @@ const SchedulerInner = <TMeta,>(
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
 
   const toggleTheme = () => {
-    themeMode === "light" ? setThemeMode("dark") : setThemeMode("light");
+    setThemeMode((currentMode) => (currentMode === "light" ? "dark" : "light"));
   };
 
   const currentTheme = themeMode === "light" ? theme : darkTheme;
@@ -155,7 +155,7 @@ const SchedulerInner = <TMeta,>(
                   config={appConfig}
                   data={transformedData}
                   onTileClick={onTileClick}
-                  topBarWidth={topBarWidth ?? 0}
+                  topBarWidth={topBarWidth}
                   onItemClick={onItemClick}
                   toggleTheme={toggleTheme}
                 />
