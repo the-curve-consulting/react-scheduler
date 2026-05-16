@@ -51,6 +51,13 @@ export const Calendar = <TMeta,>({
     previous,
     reset
   } = usePagination<TMeta>(filteredData);
+  /* eslint-disable react-hooks/refs --
+     The closure reads gridRef.current only inside the debounced callback, which fires
+     300ms after a mousemove event — never during render. The rule cannot statically
+     verify that debounce defers its callback, so it flags the closure capture.
+     Refactoring the timing semantics (e.g. moving the read into the event handler)
+     would change observable behaviour and there are no tests to guard against
+     regressions in tooltip positioning. */
   const debouncedHandleMouseOver = useRef(
     debounce(
       (
@@ -84,6 +91,7 @@ export const Calendar = <TMeta,>({
       300
     )
   );
+  /* eslint-enable react-hooks/refs */
   const debouncedFilterData = useRef(
     debounce((dataToFilter: SchedulerData<TMeta>, enteredSearchPhrase: string) => {
       reset();
