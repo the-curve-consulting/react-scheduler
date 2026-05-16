@@ -201,9 +201,7 @@ export default function Component() {
       <button onClick={() => schedulerRef.current?.deleteProjects([deletion])}>
         Remove project
       </button>
-      <button onClick={() => schedulerRef.current?.invalidate()}>
-        Refetch current range
-      </button>
+      <button onClick={() => schedulerRef.current?.invalidate()}>Refetch current range</button>
     </section>
   );
 }
@@ -215,21 +213,21 @@ export default function Component() {
 
 ##### Scheduler Component Props
 
-| Property Name     | Type       | Arguments                                            | Description                                                                                                                       |
-| ----------------- | ---------- | ---------------------------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------|
-| data              | `SchedulerData` | -                                               | scheduler rows to display in static mode                                                                                           |
-| initialData       | `SchedulerData` | -                                               | optional initial cache seed for async mode when using `onFetchData`                                                                |
-| isLoading         | `boolean`  | -                                                    | external loading flag; forces blocking loading state                                                                              |
-| startDate         | `string`   | ISO date string                                      | initial date to center scheduler on mount                                                                                         |
-| dataSourceKey     | `string`   | -                                                    | async cache identity; changing it invalidates cached prefetched data                                                               |
-| onRangeChange     | `function` | updated `startDate` and `endDate`                    | callback fired when visible date range changes (called every scroll event)                                                        |
-| onFetchData       | `function` | `range`, `direction`, `reason`, `signal`             | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
-| onTileClick       | `function` | clicked resource data                                | detects resource click                                                                                                            |
-| onItemClick       | `function` | clicked left column item data                        | detects item click on left column                                                                                                 |
-| onFilterData      | `function` | -                                                    | callback firing when filter button was clicked                                                                                    |
-| onClearFilterData | `function` | -                                                    | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
-| transformData     | `function` | `SchedulerData`                                      | transforms cached scheduler data before rendering, useful for local filtering                                                     |
-| config            | `Config`   | -                                                    | object with scheduler config properties                                                                                           |
+| Property Name     | Type            | Arguments                                | Description                                                                                                                       |
+| ----------------- | --------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| data              | `SchedulerData` | -                                        | scheduler rows to display in static mode                                                                                          |
+| initialData       | `SchedulerData` | -                                        | optional initial cache seed for async mode when using `onFetchData`                                                               |
+| isLoading         | `boolean`       | -                                        | external loading flag; forces blocking loading state                                                                              |
+| startDate         | `string`        | ISO date string                          | initial date to center scheduler on mount                                                                                         |
+| dataSourceKey     | `string`        | -                                        | async cache identity; changing it invalidates cached prefetched data                                                              |
+| onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
+| onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
+| onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
+| onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
+| onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
+| onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
+| transformData     | `function`      | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                     |
+| config            | `Config`        | -                                        | object with scheduler config properties                                                                                           |
 
 `Scheduler` supports two exclusive data modes:
 
@@ -289,11 +287,11 @@ schedulerRef.current?.invalidate();
 
 Available handle methods:
 
-| Method            | Arguments                 | Description                                          |
-| ----------------- | ------------------------- | ---------------------------------------------------- |
-| `invalidate`      | -                         | clears async cache for the current data source and refetches visible range |
-| `upsertProjects`  | `ProjectUpdate[]`         | creates or updates projects inside existing rows      |
-| `deleteProjects`  | `ProjectDeleteUpdate[]`   | removes projects by id from existing rows             |
+| Method           | Arguments               | Description                                                                |
+| ---------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `invalidate`     | -                       | clears async cache for the current data source and refetches visible range |
+| `upsertProjects` | `ProjectUpdate[]`       | creates or updates projects inside existing rows                           |
+| `deleteProjects` | `ProjectDeleteUpdate[]` | removes projects by id from existing rows                                  |
 
 ##### Custom project metadata
 
@@ -322,31 +320,31 @@ const project: SchedulerProjectData<TimesheetMeta> = {
 
 ---
 
-| Property Name                        | Type               | Default     | Description                                                                                                                                                            |
-| ------------------------------------ | ------------------ | ----------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| zoom                                 | `0` or `1` or `2`  | 0           | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
-| filterButtonState                    | `number`           | 0           | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
-| maxRecordsPerPage                    | `number`           | 50          | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
-| lang                                 | `en`, `lt` or `pl` | en          | scheduler's language                                                                                                                                                   |
-| includeTakenHoursOnWeekendsInDayView | `boolean`          | `false`     | show weekends as taken when given resource is longer than a week                                                                                                       |
-| showTooltip                          | `boolean`          | `true`      | show tooltip when hovering over tiles                                                                                                                                  |
-| translations                         | `LocaleType[]`     | `undefined` | option to add specific langs translations                                                                                                                              |
-| showThemeToggle                      | `boolean`          | `false`     | show toggle button to switch between light/dark mode                                                                                                                   |
-| defaultTheme                         | `light` or `dark`  | `light`     | scheduler's default theme                                                                                                                                              |
-| dataLoading                          | `DataLoadingConfig`| built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
+| Property Name                        | Type                | Default           | Description                                                                                                                                                            |
+| ------------------------------------ | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| zoom                                 | `0` or `1` or `2`   | 0                 | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
+| filterButtonState                    | `number`            | 0                 | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
+| maxRecordsPerPage                    | `number`            | 50                | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
+| lang                                 | `en`, `lt` or `pl`  | en                | scheduler's language                                                                                                                                                   |
+| includeTakenHoursOnWeekendsInDayView | `boolean`           | `false`           | show weekends as taken when given resource is longer than a week                                                                                                       |
+| showTooltip                          | `boolean`           | `true`            | show tooltip when hovering over tiles                                                                                                                                  |
+| translations                         | `LocaleType[]`      | `undefined`       | option to add specific langs translations                                                                                                                              |
+| showThemeToggle                      | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
+| defaultTheme                         | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
+| dataLoading                          | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
 
 ##### DataLoadingConfig
 
-| Property Name         | Type     | Default | Description                                                   |
-| --------------------- | -------- | ------- | ------------------------------------------------------------- |
-| initialLoadDays       | `number` | `90`    | initial range size (days) requested around first visible date |
-| prefetchDays          | `number` | `60`    | number of days requested for each prefetch                    |
-| prefetchTriggerDays   | `number` | `45`    | day-based threshold for triggering edge prefetch              |
-| prefetchTriggerRatio  | `number` | `0.7`   | ratio-based threshold for triggering edge prefetch            |
-| maxCachedDays         | `number` | `120`   | soft cache half-window retained around current view           |
-| requestDebounceMs     | `number` | `80`    | debounce for rapid prefetch triggers                          |
-| jumpWindowMultiplier  | `number` | `3`     | multiplier for hard-jump fetch window vs visible range        |
-| minJumpWindowDays     | `number` | `45`    | minimum hard-jump fetch window                                |
+| Property Name        | Type     | Default | Description                                                   |
+| -------------------- | -------- | ------- | ------------------------------------------------------------- |
+| initialLoadDays      | `number` | `90`    | initial range size (days) requested around first visible date |
+| prefetchDays         | `number` | `60`    | number of days requested for each prefetch                    |
+| prefetchTriggerDays  | `number` | `45`    | day-based threshold for triggering edge prefetch              |
+| prefetchTriggerRatio | `number` | `0.7`   | ratio-based threshold for triggering edge prefetch            |
+| maxCachedDays        | `number` | `120`   | soft cache half-window retained around current view           |
+| requestDebounceMs    | `number` | `80`    | debounce for rapid prefetch triggers                          |
+| jumpWindowMultiplier | `number` | `3`     | multiplier for hard-jump fetch window vs visible range        |
+| minJumpWindowDays    | `number` | `45`    | minimum hard-jump fetch window                                |
 
 #### Translation object example
 
@@ -481,9 +479,12 @@ default export function SchedulerClient(props: SchedulerProps) {
 
 ```ts
 import dynamic from "next/dynamic";
-const Scheduler = dynamic(() => import("@the-curve-consulting/react-scheduler").then((mod) => mod.Scheduler), {
-  ssr: false
-});
+const Scheduler = dynamic(
+  () => import("@the-curve-consulting/react-scheduler").then((mod) => mod.Scheduler),
+  {
+    ssr: false
+  }
+);
 ```
 
 - How to customize Scheduler dimensions
