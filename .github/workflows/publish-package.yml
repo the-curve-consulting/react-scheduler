@@ -32,8 +32,21 @@ jobs:
       - name: Build package
         run: yarn build
 
-      - name: Publish package
+      - name: Publish package to GitHub Packages
         run: npm publish
         env:
           HUSKY: 0
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js for npmjs
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@the-curve-consulting"
+
+      - name: Publish package to npmjs
+        run: npm publish --registry https://registry.npmjs.org --access public
+        env:
+          HUSKY: 0
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
