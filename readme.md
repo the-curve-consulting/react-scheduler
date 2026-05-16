@@ -2,8 +2,6 @@
   <img src="logo.svg" style="height: 60px" alt="@the-curve-consulting/react-scheduler">
   <hr />
   <p align="center">
-    ✨ <a href="https://scheduler.bitnoise.pl/">https://scheduler.bitnoise.pl/</a> ✨
-    <br/>
     Open sourced, typescript oriented, light-weight, and ultra fast React Component for creating gantt charts.
   </p>
   <div align="center">
@@ -527,4 +525,4 @@ If you have any questions or need further assistance, feel free to reach out to 
 
 ### License
 
-MIT Licensed. Copyright (c) Bitnoise 2023.
+MIT Licensed. Copyright (c) Bitnoise 2023, The Curve Consulting Services Limited 2026.
