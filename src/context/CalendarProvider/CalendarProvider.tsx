@@ -42,8 +42,8 @@ const CalendarProvider = <TMeta,>({
   onFilterData,
   onClearFilterData
 }: CalendarProviderProps<TMeta>) => {
-  const fallbackCenterDateRef = useRef(dayjs());
-  const effectiveCenterDate = centerDate ?? fallbackCenterDateRef.current;
+  const [fallbackCenterDate] = useState(() => dayjs());
+  const effectiveCenterDate = centerDate ?? fallbackCenterDate;
   const centerDateRef = useRef(centerDate?.valueOf());
   const { zoom: configZoom, maxRecordsPerPage = 50 } = config;
   const [zoom, setZoom] = useState<ZoomLevel>(configZoom);
