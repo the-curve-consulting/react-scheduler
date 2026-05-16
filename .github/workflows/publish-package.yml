@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -46,7 +47,6 @@ jobs:
           scope: "@the-curve-consulting"
 
       - name: Publish package to npmjs
-        run: npm publish --registry https://registry.npmjs.org --access public
+        run: npm publish --registry https://registry.npmjs.org --access public --provenance
         env:
           HUSKY: 0
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
