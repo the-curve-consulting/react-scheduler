@@ -519,10 +519,6 @@ export const StyledSchedulerFrame = styled.div`
     - add at least 1 reviewer
     - link correct issue
 
-### Contact
-
-If you have any questions or need further assistance, feel free to reach out to us at [scheduler@bitnoi.se](mailto:scheduler@bitnoi.se). We appreciate your contributions and thank you for helping us improve this project!
-
 ### License
 
 MIT Licensed. Copyright (c) Bitnoise 2023, The Curve Consulting Services Limited 2026.
