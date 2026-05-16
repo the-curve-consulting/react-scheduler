@@ -7,8 +7,6 @@
     Open sourced, typescript oriented, light-weight, and ultra fast React Component for creating gantt charts.
   </p>
   <div align="center">
-    <a href="https://bit.ly/react_scheduler">Youtube Tutorial</a>
-    <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/the-curve-consulting/react-scheduler">Repository</a>
     <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
     <a href="https://github.com/the-curve-consulting/react-scheduler/issues/new">Report an issue</a>
