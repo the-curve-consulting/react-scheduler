@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+        env:
+          HUSKY: 0
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: yarn lint
+
+      - name: Format check
+        if: ${{ !cancelled() }}
+        run: yarn format:check
+
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: yarn typecheck
+
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: yarn build
