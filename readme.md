@@ -17,12 +17,12 @@
 <hr />
 
 <div>
-  <h3 align="center">NEWSLETTER</h3>
-  <p>
-    If you want to stay updated with Scheduler updates and news from the technical world, sign up for our newsletter. We don't  spam (we send emails once a month), we don't run a sales newsletter, and we respect your time.
-  </p>
-  <p>
-  See for yourself: <a href="https://www.bitnoise.pl/newsletter">NEWSLETTER</a>
+  <h3 align="center">About this fork</h3>
+  <p align="center">
+    <code>@the-curve-consulting/react-scheduler</code> is a maintained fork of
+    <a href="https://github.com/Bitnoise/react-scheduler">Bitnoise/react-scheduler</a>,
+    published by <a href="https://thecurve.io">The Curve Consulting</a> with ongoing
+    fixes and updates. Credit for the original library goes to the Bitnoise team.
   </p>
 </div>
 <hr/>
