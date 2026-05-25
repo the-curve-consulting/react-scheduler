@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import type * as dayjs from "dayjs";
 import { LangCodes } from "@/types/global";
 
 export type LocaleContextType = {
@@ -37,5 +38,5 @@ export type LocaleType = {
   id: string;
   lang: Translation;
   translateCode: string;
-  dayjsTranslations: string | ILocale | undefined;
+  dayjsTranslations: Parameters<typeof dayjs.locale>[0];
 };
