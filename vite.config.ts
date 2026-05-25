@@ -15,8 +15,7 @@ export default defineConfig({
   plugins: [
     react(),
     dts({
-      insertTypesEntry: true,
-      rollupTypes: false,
+      rollupTypes: true,
       tsconfigPath: "./tsconfig.json"
     }),
     svgr(),
@@ -28,7 +27,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "react-scheduler",
-      fileName: "index"
+      fileName: "index",
+      cssFileName: "style"
     },
     rollupOptions: {
       external: ["react", "react-dom", "react/jsx-runtime", "styled-components"],

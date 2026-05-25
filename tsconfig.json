@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "paths": { "@/*": ["./src/*"] },
+    "rootDir": "./src",
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -15,8 +16,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "declaration": true,
-    "typeRoots": ["./dist/index.d.ts"]
+    "declaration": true
   },
   "include": ["src", "index.ts"],
   "exclude": ["node_modules"],
