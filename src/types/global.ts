@@ -84,10 +84,22 @@ export type Theme = {
 
 export type SchedulerData<TMeta = unknown> = SchedulerRow<TMeta>[];
 
+export type WorkingDay = {
+  day: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+  hours: number;
+};
+
+export type WorkingDuration = {
+  effectiveFrom: Date;
+  flexibleHours: boolean;
+  workingDays: WorkingDay[];
+};
+
 export type SchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
   data: SchedulerProjectData<TMeta>[];
+  workingDurations?: WorkingDuration[];
 };
 
 export type SchedulerItemClickData<TMeta = unknown> = Omit<SchedulerRow<TMeta>, "data">;
@@ -105,7 +117,8 @@ export type SchedulerRowLabel = {
   title: string;
   subtitle: string;
 };
-export type SchedulerProjectData<TMeta = unknown> = {
+
+export type SchedulerProjectDataBase<TMeta = unknown> = {
   /**
    * Unique Id of item
    */
@@ -118,10 +131,6 @@ export type SchedulerProjectData<TMeta = unknown> = {
    * Represents end date to which tile will render
    */
   endDate: Date;
-  /**
-   * Indicates how much time is spent per day. Given in seconds and converted by Scheduler to hours/minutes
-   */
-  occupancy: number;
   /**
    * Title of item
    */
@@ -143,6 +152,25 @@ export type SchedulerProjectData<TMeta = unknown> = {
    */
   meta?: TMeta;
 };
+
+export type SchedulerProjectDataOccupancy<TMeta = unknown> = SchedulerProjectDataBase<TMeta> & {
+  /**
+   * Indicates how much time is spent per day. Given in seconds and converted by Scheduler to hours/minutes
+   */
+  occupancy: number;
+};
+
+export type SchedulerProjectDataThroughput<TMeta = unknown> = SchedulerProjectDataBase<TMeta> & {
+  /**
+   * Indicates how much percentage of working day hours is spent per day.
+   * Given in percent and converted by Scheduler to hours/minutes for each day based on working days.
+   */
+  throughput: number;
+};
+
+export type SchedulerProjectData<TMeta = unknown> =
+  | SchedulerProjectDataOccupancy<TMeta>
+  | SchedulerProjectDataThroughput<TMeta>;
 
 export type SchedulerProjectDayData<TMeta = unknown> = {
   startDateTime: dayjs.Dayjs;
