@@ -1,6 +1,13 @@
 import dayjs from "dayjs";
 import { boxHeight, zoom2ColumnWidth } from "@/constants";
-import { Coords, SchedulerProjectData, TooltipData, ZoomLevel, Config } from "@/types/global";
+import {
+  Coords,
+  SchedulerProjectData,
+  TooltipData,
+  ZoomLevel,
+  Config,
+  WorkingDuration
+} from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
 import { getCellWidth } from "./scrollHelpers";
 
@@ -12,7 +19,8 @@ export const getTooltipData = <TMeta>(
   zoom: ZoomLevel,
   includeTakenHoursOnWeekendsInDayView = false,
   currentCenterDate: dayjs.Dayjs,
-  cols: number
+  cols: number,
+  workingDurationsPerPerson: WorkingDuration[][]
 ): TooltipData => {
   let focusedDate: dayjs.Dayjs;
   const centerCol = Math.floor(cols / 2);
@@ -75,7 +83,8 @@ export const getTooltipData = <TMeta>(
     resourceIndex,
     focusedDate,
     zoom,
-    includeTakenHoursOnWeekendsInDayView
+    includeTakenHoursOnWeekendsInDayView,
+    workingDurationsPerPerson[resourceIndex]
   );
   return { coords: { x: xPos, y: yPos }, resourceIndex, disposition };
 };

@@ -9,8 +9,8 @@ export const StyledWrapper = styled.div`
   position: sticky;
   left: 0;
   background-color: ${({ theme }) => theme.colors.background};
-  box-shadow: 0px 4px 15px rgba(39, 55, 75, 0.16);
-  z-index: 2;
+  box-shadow: 0 4px 15px rgba(39, 55, 75, 0.16);
+  z-index: 3;
 `;
 
 export const StyledLeftColumnHeader = styled.div`

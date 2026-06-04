@@ -1,45 +1,93 @@
 import dayjs from "dayjs";
-import { businessDays, maxHoursPerWeek } from "@/constants";
-import { Config, OccupancyData, SchedulerProjectData, TimeUnits } from "@/types/global";
+import { businessDays, DaysOfWeekMap } from "@/constants";
+import {
+  OccupancyData,
+  SchedulerProjectData,
+  SchedulerProjectDataOccupancy,
+  SchedulerProjectDataThroughput,
+  TimeUnits,
+  WorkingDuration
+} from "@/types/global";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
 
-export const getWeekOccupancy = <TMeta>(
-  config: Config,
-  occupancy: SchedulerProjectData<TMeta>[],
+const isOccupancyProject = <TMeta>(
+  project: SchedulerProjectData<TMeta>
+): project is SchedulerProjectDataOccupancy<TMeta> => {
+  return "occupancy" in project;
+};
+
+const getHoursAndMinutesForOccupancy = <TMeta>(
+  project: SchedulerProjectDataOccupancy<TMeta>,
   focusedDate: dayjs.Dayjs
-): OccupancyData => {
+): TimeUnits => {
   const focusedWeek = focusedDate.isoWeek();
+  const startWeekNum = dayjs(project.startDate).isoWeek();
+  const startDateDayNum = dayjs(project.startDate).isoWeekday();
 
-  const getHoursAndMinutes: TimeUnits[] = occupancy.map((item) => {
-    const startWeekNum = dayjs(item.startDate).isoWeek();
-    const startDateDayNum = dayjs(item.startDate).isoWeekday();
+  const endWeekNum = dayjs(project.endDate).isoWeek();
+  const endDateDayNum = dayjs(project.endDate).isoWeekday();
 
-    const endWeekNum = dayjs(item.endDate).isoWeek();
-    const endDateDayNum = dayjs(item.endDate).isoWeekday();
+  const { hours: itemHours, minutes: itemMinutes } = getDuration(project.occupancy);
 
-    const { hours: itemHours, minutes: itemMinutes } = getDuration(item.occupancy);
+  if (focusedWeek === startWeekNum) {
+    const daysToCount = Math.max(0, businessDays + 1 - startDateDayNum);
+    const hours = daysToCount * itemHours;
+    const minutes = daysToCount * itemMinutes;
+    return { hours, minutes };
+  } else if (focusedWeek === endWeekNum) {
+    const daysToCount = endDateDayNum > businessDays ? businessDays : endDateDayNum;
+    const hours = daysToCount * itemHours;
+    const minutes = daysToCount * itemMinutes;
+    return { hours, minutes };
+  } else if (dayjs(focusedDate).isBetween(project.startDate, project.endDate)) {
+    return { hours: businessDays * itemHours, minutes: businessDays * itemMinutes };
+  }
+  return { hours: 0, minutes: 0 };
+};
 
-    if (focusedWeek === startWeekNum) {
-      const hours = (businessDays + 1 - startDateDayNum) * itemHours;
-      const minutes = (businessDays + 1 - startDateDayNum) * itemMinutes;
-      return { hours: Math.max(0, hours), minutes };
-    } else if (focusedWeek === endWeekNum) {
-      const hours =
-        endDateDayNum > businessDays ? businessDays * itemHours : endDateDayNum * itemHours;
-      const minutes =
-        endDateDayNum > businessDays ? businessDays * itemMinutes : endDateDayNum * itemMinutes;
-      return { hours, minutes };
-    } else if (dayjs(focusedDate).isBetween(item.startDate, item.endDate)) {
-      return { hours: businessDays * itemHours, minutes: businessDays * itemMinutes };
+const getHoursAndMinutesForThroughput = <TMeta>(
+  project: SchedulerProjectDataThroughput<TMeta>,
+  focusedDate: dayjs.Dayjs,
+  workingDuration: WorkingDuration
+): TimeUnits => {
+  const weekStart = focusedDate.startOf("isoWeek");
+
+  const totalHours = workingDuration.workingDays.reduce((sum, workingDay) => {
+    const date = weekStart.isoWeekday(DaysOfWeekMap[workingDay.day]);
+    const isActive = date.isBetween(project.startDate, project.endDate, "day", "[]");
+
+    return sum + (isActive ? project.throughput * workingDay.hours : 0);
+  }, 0);
+
+  return getDuration(totalHours * 3600);
+};
+
+const getHoursAndMinutes = <TMeta>(
+  projects: SchedulerProjectData<TMeta>[],
+  focusedDate: dayjs.Dayjs,
+  workingDuration: WorkingDuration
+): TimeUnits[] => {
+  return projects.map((item) => {
+    if (isOccupancyProject(item)) {
+      return getHoursAndMinutesForOccupancy(item, focusedDate);
     }
-    return { hours: 0, minutes: 0 };
+
+    return getHoursAndMinutesForThroughput(item, focusedDate, workingDuration);
   });
+};
 
-  const { hours: totalHours, minutes: totalMinutes } = getTotalHoursAndMinutes(getHoursAndMinutes);
+export const getWeekOccupancy = <TMeta>(
+  occupancy: SchedulerProjectData<TMeta>[],
+  focusedDate: dayjs.Dayjs,
+  workingDuration: WorkingDuration
+): OccupancyData => {
+  const maxHours = workingDuration.workingDays.reduce((sum, day) => sum + day.hours, 0);
+  const hoursAndMinutes = getHoursAndMinutes(occupancy, focusedDate, workingDuration);
 
-  const maxHours = config?.maxHoursPerWeek || maxHoursPerWeek;
+  const { hours: totalHours, minutes: totalMinutes } = getTotalHoursAndMinutes(hoursAndMinutes);
+
   const { free, overtime } = getTimeOccupancy(maxHours, {
     hours: totalHours,
     minutes: totalMinutes

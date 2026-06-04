@@ -19,7 +19,12 @@ export const splitToPages = <TMeta>(
 
   if (projectsPerPerson.length > recordsThreshold) {
     projectsPerPerson.forEach((projects, i) => {
-      const newItem = { id: data[i].id, label: data[i].label, data: projects };
+      const newItem = {
+        id: data[i].id,
+        label: data[i].label,
+        data: projects,
+        workingDurations: data[i].workingDurations
+      };
 
       if (pageRecords >= recordsThreshold) {
         pages.push(singlePage);
@@ -38,7 +43,8 @@ export const splitToPages = <TMeta>(
         const newItem = {
           id: data[i + leftIndex].id,
           label: data[i + leftIndex].label,
-          data: projects
+          data: projects,
+          workingDurations: data[i + leftIndex].workingDurations
         };
         singlePage.push(newItem);
 
@@ -49,7 +55,12 @@ export const splitToPages = <TMeta>(
     return pages;
   }
   projectsPerPerson.forEach((projects, i) => {
-    const newItem = { id: data[i].id, label: data[i].label, data: projects };
+    const newItem = {
+      id: data[i].id,
+      label: data[i].label,
+      data: projects,
+      workingDurations: data[i].workingDurations
+    };
     singlePage.push(newItem);
   });
 

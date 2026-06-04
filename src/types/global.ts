@@ -110,6 +110,7 @@ export type PaginatedSchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
   data: SchedulerProjectData<TMeta>[][];
+  workingDurations?: WorkingDuration[];
 };
 
 export type SchedulerRowLabel = {

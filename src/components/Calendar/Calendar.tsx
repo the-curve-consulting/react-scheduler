@@ -1,10 +1,17 @@
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import dayjs from "dayjs";
 import { useCalendar } from "@/context/CalendarProvider";
-import { SchedulerData, SchedulerProjectData, TooltipData, ZoomLevel } from "@/types/global";
+import {
+  SchedulerData,
+  SchedulerProjectData,
+  TooltipData,
+  WorkingDuration,
+  ZoomLevel
+} from "@/types/global";
 import { getTooltipData } from "@/utils/getTooltipData";
 import { usePagination } from "@/hooks/usePagination";
+import { getDefaultWorkingDurations } from "@/utils/getDefaultWorkingDurations";
 import { Grid, Header, LeftColumn, Tooltip } from "..";
 import { CalendarProps } from "./types";
 import { StyledOuterWrapper, StyledInnerWrapper } from "./styles";
@@ -51,6 +58,12 @@ export const Calendar = <TMeta,>({
     previous,
     reset
   } = usePagination<TMeta>(filteredData);
+
+  const defaultWorkingDurations = useMemo(() => getDefaultWorkingDurations(config), [config]);
+  const workingDurationsPerPerson = useMemo<WorkingDuration[][]>(
+    () => page.map((row) => row.workingDurations ?? defaultWorkingDurations),
+    [defaultWorkingDurations, page]
+  );
   /* eslint-disable react-hooks/refs --
      The closure reads gridRef.current only inside the debounced callback, which fires
      300ms after a mousemove event — never during render. The rule cannot statically
@@ -66,7 +79,8 @@ export const Calendar = <TMeta,>({
         projectsPerPerson: SchedulerProjectData<TMeta>[][][],
         zoom: ZoomLevel,
         currentCenterDate: dayjs.Dayjs,
-        cols: number
+        cols: number,
+        workingDurationsPerPerson: WorkingDuration[][]
       ) => {
         if (!gridRef.current) return;
         const { left, top } = gridRef.current.getBoundingClientRect();
@@ -83,7 +97,8 @@ export const Calendar = <TMeta,>({
           zoom,
           includeTakenHoursOnWeekendsInDayView,
           currentCenterDate,
-          cols
+          cols,
+          workingDurationsPerPerson
         );
         setTooltipData({ coords: { x, y }, resourceIndex, disposition });
         setIsVisible(true);
@@ -124,7 +139,8 @@ export const Calendar = <TMeta,>({
         projectsPerPerson,
         zoom,
         currentCenterDate,
-        cols
+        cols,
+        workingDurationsPerPerson
       );
     const gridArea = gridRef.current;
 
@@ -146,7 +162,8 @@ export const Calendar = <TMeta,>({
     currentCenterDate,
     cols,
     zoom,
-    viewportWidth
+    viewportWidth,
+    workingDurationsPerPerson
   ]);
 
   useEffect(() => {

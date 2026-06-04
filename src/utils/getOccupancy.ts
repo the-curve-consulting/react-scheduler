@@ -1,5 +1,11 @@
 import dayjs from "dayjs";
-import { SchedulerProjectData, OccupancyData, ZoomLevel, Config } from "@/types/global";
+import {
+  SchedulerProjectData,
+  OccupancyData,
+  ZoomLevel,
+  Config,
+  WorkingDuration
+} from "@/types/global";
 import { getHourOccupancy } from "@/utils/getHourOccupancy";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
@@ -10,7 +16,8 @@ export const getOccupancy = <TMeta>(
   resourceIndex: number,
   focusedDate: dayjs.Dayjs,
   zoom: ZoomLevel,
-  includeTakenHoursOnWeekendsInDayView = false
+  includeTakenHoursOnWeekendsInDayView = false,
+  workingDurations: WorkingDuration[]
 ): OccupancyData => {
   if (resourceIndex < 0)
     return {
@@ -36,12 +43,30 @@ export const getOccupancy = <TMeta>(
     }
   });
 
+  // Extract the working duration which should be applied for given focusedDate
+  const focusedDay = focusedDate.startOf("day");
+  const sortedWorkingDurations = [...workingDurations].sort(
+    (a, b) =>
+      dayjs(b.effectiveFrom).startOf("day").valueOf() -
+      dayjs(a.effectiveFrom).startOf("day").valueOf()
+  );
+  const workingDuration =
+    sortedWorkingDurations.find(
+      ({ effectiveFrom }) => !dayjs(effectiveFrom).startOf("day").isAfter(focusedDay)
+    ) ?? sortedWorkingDurations[0];
+
   switch (zoom) {
     case 1:
-      return getDayOccupancy(config, occupancy, focusedDate, includeTakenHoursOnWeekendsInDayView);
+      return getDayOccupancy(
+        config,
+        occupancy,
+        focusedDate,
+        includeTakenHoursOnWeekendsInDayView,
+        workingDuration
+      );
     case 2:
       return getHourOccupancy(resource, focusedDate, config.defaultStartHour);
     default:
-      return getWeekOccupancy(config, occupancy, focusedDate);
+      return getWeekOccupancy(occupancy, focusedDate, workingDuration);
   }
 };

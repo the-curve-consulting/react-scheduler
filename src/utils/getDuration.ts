@@ -1,10 +1,10 @@
-import dayjs from "dayjs";
 import { TimeUnits } from "@/types/global";
 
 export const getDuration = (seconds: number): TimeUnits => {
-  const duration = dayjs.duration(seconds, "seconds");
-  const itemHours = duration.hours();
-  const itemMinutes = duration.minutes();
+  const totalMinutes = Math.floor(seconds / 60);
 
-  return { hours: itemHours, minutes: itemMinutes };
+  return {
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60
+  };
 };
