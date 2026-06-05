@@ -1,37 +1,15 @@
 import dayjs from "dayjs";
-import { DaysOfWeekMap } from "@/constants";
 import {
-  Config,
   OccupancyData,
   SchedulerProjectData,
   SchedulerProjectDataOccupancy,
   TimeUnits,
-  WorkingDay,
   WorkingDuration
 } from "@/types/global";
+import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/occupancyUtils";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
-
-const isOccupancyProject = <TMeta>(
-  project: SchedulerProjectData<TMeta>
-): project is SchedulerProjectDataOccupancy<TMeta> => {
-  return "occupancy" in project;
-};
-
-const getMaxHoursPerDay = (
-  config: Config,
-  focusedDate: dayjs.Dayjs,
-  workingDuration: WorkingDuration
-): number => {
-  const focusedDayNum = focusedDate.isoWeekday();
-  const day = Object.keys(DaysOfWeekMap)[focusedDayNum - 1];
-  const hoursPerDay = workingDuration.workingDays.find(
-    (workingDay: WorkingDay) => workingDay.day === day
-  )?.hours;
-
-  return hoursPerDay ?? 0;
-};
 
 const getHoursAndMinutesForOccupancy = <TMeta>(
   project: SchedulerProjectDataOccupancy<TMeta>,
@@ -69,13 +47,12 @@ const getHoursAndMinutes = <TMeta>(
 };
 
 export const getDayOccupancy = <TMeta>(
-  config: Config,
   occupancy: SchedulerProjectData<TMeta>[],
   focusedDate: dayjs.Dayjs,
   includeTakenHoursOnWeekendsInDayView: boolean,
   workingDuration: WorkingDuration
 ): OccupancyData => {
-  const maxHours = getMaxHoursPerDay(config, focusedDate, workingDuration);
+  const maxHours = getMaxHoursPerDay(focusedDate, workingDuration);
   const hoursAndMinutes = getHoursAndMinutes(
     occupancy,
     focusedDate,

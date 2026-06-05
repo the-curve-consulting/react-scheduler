@@ -1,59 +1,73 @@
 import dayjs from "dayjs";
-import { OccupancyData, SchedulerProjectData } from "@/types/global";
-import { dayStartHour, minutesInHour } from "@/constants";
+import { OccupancyData, SchedulerProjectData, TimeUnits, WorkingDuration } from "@/types/global";
+import { dayStartHour, secondsInHour } from "@/constants";
+import { getDuration } from "@/utils/getDuration";
+import { getTimeOccupancy } from "@/utils/getTimeOccupancy";
+import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/occupancyUtils";
 
-const SECONDS_IN_HOUR = 3600;
-
-export const getHourOccupancy = <TMeta>(
-  resource: SchedulerProjectData<TMeta>[][],
+const getHoursAndMinutes = <TMeta>(
+  projectRows: SchedulerProjectData<TMeta>[][],
   focusedDate: dayjs.Dayjs,
-  defaultStartHour?: number
-): OccupancyData => {
-  const hourStart = focusedDate;
-  const hourEnd = focusedDate.add(1, "hour");
+  dayStartHour: number,
+  workingDuration: WorkingDuration
+): TimeUnits => {
+  let cumulativeTimeSeconds = 0;
+  const dayStart = focusedDate.hour(dayStartHour).minute(0);
+  if (focusedDate.isBefore(dayStart)) {
+    return { hours: 0, minutes: 0 };
+  }
 
-  let cumulativeEndTime = focusedDate.hour(defaultStartHour || dayStartHour).minute(0);
-  let totalOccupancySeconds = 0;
-
-  for (const row of resource) {
+  let projectsEndTimeDiff = 0;
+  for (const row of projectRows) {
     const currentDayProject = row.find((item) =>
       dayjs(focusedDate).isBetween(item.startDate, item.endDate, "day", "[]")
     );
 
     if (!currentDayProject) continue;
 
-    const projectStart = cumulativeEndTime;
-    const projectEnd = projectStart.add(currentDayProject.occupancy, "second");
-    cumulativeEndTime = projectEnd;
-
-    // Check if project overlaps with the focused hour
-    if (projectEnd.isAfter(hourStart) && projectStart.isBefore(hourEnd)) {
-      // Calculate the overlap using min/max to find intersection
-      const overlapStart = projectStart.isBefore(hourStart) ? hourStart : projectStart;
-      const overlapEnd = projectEnd.isAfter(hourEnd) ? hourEnd : projectEnd;
-      const overlapSeconds = overlapEnd.diff(overlapStart, "second");
-
-      totalOccupancySeconds += overlapSeconds;
-
-      // If the entire hour is occupied, we can stop early
-      if (totalOccupancySeconds >= SECONDS_IN_HOUR) {
-        totalOccupancySeconds = SECONDS_IN_HOUR;
-        break;
-      }
+    let occupancy = 0;
+    if (isOccupancyProject(currentDayProject)) {
+      occupancy = currentDayProject.occupancy;
+    } else {
+      const maxHoursPerDay = getMaxHoursPerDay(focusedDate, workingDuration);
+      occupancy = currentDayProject.throughput * maxHoursPerDay * 3600;
     }
+
+    const projectEndHour = dayStart.add(occupancy + cumulativeTimeSeconds, "second");
+    projectsEndTimeDiff = projectEndHour.diff(focusedDate, "second");
+
+    if (projectsEndTimeDiff >= secondsInHour) {
+      return { hours: 1, minutes: 0 };
+    }
+
+    cumulativeTimeSeconds += occupancy;
   }
 
-  const totalMinutes = Math.floor(totalOccupancySeconds / 60);
-  const takenHours = Math.floor(totalMinutes / minutesInHour);
-  const takenMinutes = totalMinutes % minutesInHour;
+  return getDuration(Math.max(projectsEndTimeDiff, 0));
+};
 
-  const totalFreeMinutes = Math.max(minutesInHour - totalMinutes, 0);
-  const freeHours = Math.floor(totalFreeMinutes / minutesInHour);
-  const freeMinutes = totalFreeMinutes % minutesInHour;
+export const getHourOccupancy = <TMeta>(
+  projectRows: SchedulerProjectData<TMeta>[][],
+  focusedDate: dayjs.Dayjs,
+  workingDuration: WorkingDuration,
+  defaultStartHour?: number
+): OccupancyData => {
+  const startHour = defaultStartHour ?? dayStartHour;
+
+  const maxHours = getMaxHoursPerDay(focusedDate, workingDuration);
+  const workStart = focusedDate.hour(startHour).minute(0);
+  const maxEndTime = workStart.add(maxHours, "hour");
+  const focusedHourEndTimeDiff = maxEndTime.diff(focusedDate, "hour", true);
+  const allowedWorkingDuration = focusedDate.isBefore(workStart)
+    ? 0
+    : Math.min(Math.max(0, focusedHourEndTimeDiff), 1);
+
+  const hoursAndMinutes = getHoursAndMinutes(projectRows, focusedDate, startHour, workingDuration);
+  const { free, overtime } = getTimeOccupancy(allowedWorkingDuration, hoursAndMinutes);
 
   return {
-    taken: { hours: takenHours, minutes: takenMinutes },
-    free: { hours: freeHours, minutes: freeMinutes },
-    overtime: { hours: 0, minutes: 0 }
+    taken: hoursAndMinutes,
+    free,
+    overtime
   };
 };

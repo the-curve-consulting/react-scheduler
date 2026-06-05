@@ -8,15 +8,10 @@ import {
   TimeUnits,
   WorkingDuration
 } from "@/types/global";
+import { isOccupancyProject } from "@/utils/occupancyUtils";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
-
-const isOccupancyProject = <TMeta>(
-  project: SchedulerProjectData<TMeta>
-): project is SchedulerProjectDataOccupancy<TMeta> => {
-  return "occupancy" in project;
-};
 
 const getHoursAndMinutesForOccupancy = <TMeta>(
   project: SchedulerProjectDataOccupancy<TMeta>,

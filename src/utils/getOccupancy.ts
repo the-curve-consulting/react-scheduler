@@ -58,14 +58,13 @@ export const getOccupancy = <TMeta>(
   switch (zoom) {
     case 1:
       return getDayOccupancy(
-        config,
         occupancy,
         focusedDate,
         includeTakenHoursOnWeekendsInDayView,
         workingDuration
       );
     case 2:
-      return getHourOccupancy(resource, focusedDate, config.defaultStartHour);
+      return getHourOccupancy(resource, focusedDate, workingDuration, config.defaultStartHour);
     default:
       return getWeekOccupancy(occupancy, focusedDate, workingDuration);
   }
