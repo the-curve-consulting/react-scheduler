@@ -3,7 +3,7 @@ import { OccupancyData, SchedulerProjectData, TimeUnits, WorkingDuration } from 
 import { dayStartHour, secondsInHour } from "@/constants";
 import { getDuration } from "@/utils/getDuration";
 import { getTimeOccupancy } from "@/utils/getTimeOccupancy";
-import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/occupancyUtils";
+import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/workingDurationHelper";
 
 const getHoursAndMinutes = <TMeta>(
   projectRows: SchedulerProjectData<TMeta>[][],

@@ -8,7 +8,7 @@ import {
   TimeUnits,
   WorkingDuration
 } from "@/types/global";
-import { isOccupancyProject } from "@/utils/occupancyUtils";
+import { isOccupancyProject } from "@/utils/workingDurationHelper";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";

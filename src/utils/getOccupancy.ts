@@ -7,6 +7,7 @@ import {
   WorkingDuration
 } from "@/types/global";
 import { getHourOccupancy } from "@/utils/getHourOccupancy";
+import { getWorkingDurationForDate } from "@/utils/workingDurationHelper";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
 
@@ -43,17 +44,9 @@ export const getOccupancy = <TMeta>(
     }
   });
 
-  // Extract the working duration which should be applied for given focusedDate
-  const focusedDay = focusedDate.startOf("day");
-  const sortedWorkingDurations = [...workingDurations].sort(
-    (a, b) =>
-      dayjs(b.effectiveFrom).startOf("day").valueOf() -
-      dayjs(a.effectiveFrom).startOf("day").valueOf()
-  );
-  const workingDuration =
-    sortedWorkingDurations.find(
-      ({ effectiveFrom }) => !dayjs(effectiveFrom).startOf("day").isAfter(focusedDay)
-    ) ?? sortedWorkingDurations[0];
+  //TODO [Jakub] This is wrong! What if someone's working hours change during a focused week?
+  // Following solution extracts only one workingDurations object - more may be required
+  const workingDuration = getWorkingDurationForDate(focusedDate, workingDurations);
 
   switch (zoom) {
     case 1:

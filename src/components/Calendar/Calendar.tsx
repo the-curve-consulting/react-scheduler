@@ -203,6 +203,7 @@ export const Calendar = <TMeta,>({
           zoom={zoom}
           rows={totalRowsPerPage}
           ref={gridRef}
+          workingDurationsPerPerson={workingDurationsPerPerson}
           onTileClick={onTileClick}
         />
         {showTooltip && isVisible && tooltipData?.resourceIndex > -1 && (

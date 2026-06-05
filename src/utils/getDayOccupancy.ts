@@ -6,7 +6,7 @@ import {
   TimeUnits,
   WorkingDuration
 } from "@/types/global";
-import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/occupancyUtils";
+import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/workingDurationHelper";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
