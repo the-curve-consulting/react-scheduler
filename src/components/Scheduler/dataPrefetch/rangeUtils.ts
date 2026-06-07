@@ -149,6 +149,7 @@ export const mergeSchedulerData = <TMeta>(
     string,
     {
       label: SchedulerData<TMeta>[number]["label"];
+      workingDurations: SchedulerData<TMeta>[number]["workingDurations"];
       projects: Map<string, SchedulerProjectData<TMeta>>;
     }
   >();
@@ -158,6 +159,7 @@ export const mergeSchedulerData = <TMeta>(
     rowOrder.push(row.id);
     rowsById.set(row.id, {
       label: row.label,
+      workingDurations: row.workingDurations,
       projects: new Map(row.data.map((project) => [project.id, project]))
     });
   }
@@ -169,12 +171,14 @@ export const mergeSchedulerData = <TMeta>(
       rowOrder.push(row.id);
       rowsById.set(row.id, {
         label: row.label,
+        workingDurations: row.workingDurations,
         projects: new Map(row.data.map((project) => [project.id, project]))
       });
       continue;
     }
 
     existingRow.label = row.label;
+    existingRow.workingDurations = row.workingDurations ?? existingRow.workingDurations;
     for (const project of row.data) {
       existingRow.projects.set(project.id, project);
     }
@@ -189,6 +193,7 @@ export const mergeSchedulerData = <TMeta>(
     mergedRows.push({
       id: rowId,
       label: row.label,
+      workingDurations: row.workingDurations,
       data: Array.from(row.projects.values())
     });
   }
