@@ -224,6 +224,7 @@ export type TileProperties = {
   x: number;
   y: number;
   width: number;
+  working: boolean;
 };
 
 export type ConfigFormValues = {

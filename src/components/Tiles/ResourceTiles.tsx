@@ -4,8 +4,8 @@ import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 import { dayStartHour } from "@/constants";
 import { HourlyTile, Tile } from "@/components";
 import { isProjectVisible } from "@/utils/scrollHelpers";
+import { getDailyTileSegments, getWeeklyTileSegments } from "@/utils/getTileSegments";
 import {
-  getWorkingDurationsForDateRange,
   getWorkingHoursForDate,
   isOccupancyProject,
   sortWorkingDurations
@@ -30,15 +30,21 @@ const ResourceTilesInner = <TMeta,>({
     [workingDurations]
   );
 
-  const relevantWorkingDurations = useMemo(
-    () =>
-      getWorkingDurationsForDateRange(
-        dayjs(visibleStartDay),
-        dayjs(visibleEndDay),
-        sortedWorkingDurations
-      ),
-    [sortedWorkingDurations, visibleStartDay, visibleEndDay]
-  );
+  const hoursByDay = useMemo(() => {
+    const result = new Map<number, number>();
+    let currentDate = dayjs(visibleStartDay);
+    const endDate = dayjs(visibleEndDay);
+
+    while (!currentDate.isAfter(endDate, "day")) {
+      const dayKey = currentDate.startOf("day").valueOf();
+
+      result.set(dayKey, getWorkingHoursForDate(currentDate, sortedWorkingDurations));
+
+      currentDate = currentDate.add(1, "day");
+    }
+
+    return result;
+  }, [visibleStartDay, visibleEndDay, sortedWorkingDurations]);
 
   const tiles = useMemo((): PlacedTiles => {
     const visibleStartDate = dayjs(visibleStart);
@@ -80,7 +86,7 @@ const ResourceTilesInner = <TMeta,>({
         if (isOccupancyProject(project)) {
           currentEndTime = currentStartTime.add(project.occupancy, "second");
         } else {
-          const workingHours = getWorkingHoursForDate(currentDate, relevantWorkingDurations);
+          const workingHours = hoursByDay.get(currentDate.startOf("day").valueOf()) ?? 0;
           currentEndTime = currentStartTime.add(workingHours * project.throughput, "hour");
         }
 
@@ -140,28 +146,30 @@ const ResourceTilesInner = <TMeta,>({
           .filter((project) =>
             isProjectVisible(project.startDate, project.endDate, visibleStartDate, visibleEndDate)
           )
-          .map((project) => (
-            //TODO [Jakub] Implement "not working" separators based on working days
-            <Tile
-              key={project.id}
-              row={rowIndex + rows}
-              data={project}
-              zoom={zoom}
-              onTileClick={onTileClick}
-            />
-          ))
+          .map((project) => {
+            const segments =
+              zoom === 0
+                ? getWeeklyTileSegments(project, visibleStart, visibleEnd, hoursByDay)
+                : getDailyTileSegments(project, visibleStart, visibleEnd, hoursByDay);
+
+            return segments.map((segment) => (
+              <Tile
+                key={`${project.id}-${segment.startDate.valueOf()}-${segment.endDate.valueOf()}-${
+                  segment.working
+                }`}
+                row={rowIndex + rows}
+                data={segment.data}
+                startDate={segment.startDate}
+                endDate={segment.endDate}
+                working={segment.working}
+                zoom={zoom}
+                onTileClick={onTileClick}
+              />
+            ));
+          })
       )
-      .flat(2);
-  }, [
-    visibleStart,
-    visibleEnd,
-    zoom,
-    data,
-    defaultStartHour,
-    onTileClick,
-    relevantWorkingDurations,
-    rows
-  ]);
+      .flat(3);
+  }, [visibleStart, visibleEnd, zoom, data, defaultStartHour, hoursByDay, onTileClick, rows]);
 
   return <>{tiles}</>;
 };
