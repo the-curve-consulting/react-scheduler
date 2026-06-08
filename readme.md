@@ -316,18 +316,20 @@ const project: SchedulerProjectData<TimesheetMeta> = {
 
 ---
 
-| Property Name                        | Type                | Default           | Description                                                                                                                                                            |
-| ------------------------------------ | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| zoom                                 | `0` or `1` or `2`   | 0                 | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
-| filterButtonState                    | `number`            | 0                 | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
-| maxRecordsPerPage                    | `number`            | 50                | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
-| lang                                 | `en`, `lt` or `pl`  | en                | scheduler's language                                                                                                                                                   |
-| includeTakenHoursOnWeekendsInDayView | `boolean`           | `false`           | show weekends as taken when given resource is longer than a week                                                                                                       |
-| showTooltip                          | `boolean`           | `true`            | show tooltip when hovering over tiles                                                                                                                                  |
-| translations                         | `LocaleType[]`      | `undefined`       | option to add specific langs translations                                                                                                                              |
-| showThemeToggle                      | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
-| defaultTheme                         | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
-| dataLoading                          | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
+| Property Name     | Type                | Default           | Description                                                                                                                                                            |
+| ----------------- | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| zoom              | `0` or `1` or `2`   | 0                 | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
+| filterButtonState | `number`            | 0                 | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
+| maxRecordsPerPage | `number`            | 50                | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
+| lang              | `en`, `lt` or `pl`  | en                | scheduler's language                                                                                                                                                   |
+| showTooltip       | `boolean`           | `true`            | show tooltip when hovering over tiles                                                                                                                                  |
+| translations      | `LocaleType[]`      | `undefined`       | option to add specific langs translations                                                                                                                              |
+| showThemeToggle   | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
+| defaultTheme      | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
+| theme             | `Theme`             | `undefined`       | custom light/dark theme color overrides                                                                                                                                |
+| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations                                                                                   |
+| defaultStartHour  | `number`            | `9`               | start hour used when placing entries in hourly view                                                                                                                    |
+| dataLoading       | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
 
 ##### DataLoadingConfig
 
@@ -422,6 +424,70 @@ array of chart rows with shape of
 | id | `string` | unique row id |
 | label | `SchedulerRowLabel` | row's label, `e.g person's name, surname, icon` |
 | data | `Array<ResourceItem>` | array of `resources` |
+| workingDurations | `WorkingDuration[] (optional)` | row-level working hours used for occupancy, throughput, tooltips, and non-working tile segments |
+
+##### WorkingDuration
+
+Rows can define `workingDurations` when a person has custom working hours. If omitted, Scheduler defaults to Monday-Friday working days derived from `config.maxHoursPerWeek` (`40` hours by default).
+
+When multiple working durations are provided, Scheduler uses the latest `effectiveFrom` date that is not after the rendered date. This allows working hours to change over time.
+
+| Property Name | Type | Description |
+| -------- | --------------------- | -------------------------------- |
+| effectiveFrom | `Date` | first date from which this working duration applies |
+| flexibleHours | `boolean` | flag preserved on the row model |
+| workingDays | `WorkingDay[]` | weekdays and hours worked on each day |
+
+##### WorkingDay
+
+| Property Name | Type | Description |
+| -------- | --------------------- | -------------------------------- |
+| day | `"Monday" \| "Tuesday" \| "Wednesday" \| "Thursday" \| "Friday" \| "Saturday" \| "Sunday"` | day of week |
+| hours | `number` | working hours for that day |
+
+Example row with custom working hours and mixed project duration models:
+
+```ts
+const data: SchedulerData<PlanningMeta> = [
+  {
+    id: "user-1",
+    label: {
+      icon: "JD",
+      title: "Jane Doe",
+      subtitle: "Consultant"
+    },
+    workingDurations: [
+      {
+        effectiveFrom: new Date("2026-01-01"),
+        flexibleHours: false,
+        workingDays: [
+          { day: "Monday", hours: 7.5 },
+          { day: "Tuesday", hours: 7.5 },
+          { day: "Wednesday", hours: 7.5 },
+          { day: "Thursday", hours: 7.5 },
+          { day: "Friday", hours: 6 }
+        ]
+      }
+    ],
+    data: [
+      {
+        id: "fixed-time-project",
+        title: "Fixed time project",
+        startDate: new Date("2026-03-02"),
+        endDate: new Date("2026-03-06"),
+        occupancy: 3600
+      },
+      {
+        id: "throughput-project",
+        title: "Throughput project",
+        startDate: new Date("2026-03-02"),
+        endDate: new Date("2026-03-06"),
+        throughput: 0.8
+      }
+    ]
+  }
+];
+```
 
 ##### Left Colum Item Data
 
@@ -442,9 +508,12 @@ item that will be visible on the grid as tile and that will be accessible as arg
 | description | `string (optional)` | resource description that will be displayed on resource tile |
 | startDate | `Date` | date for calculating start position for resource |
 | endDate | `Date` | date for calculating end position for resource |
-| occupancy | `number` | number of seconds resource takes up for given row that will be visible on resource tooltip when hovered |
+| occupancy | `number` | fixed number of seconds the resource takes per working day |
+| throughput | `number` | fraction of the person's working day that the resource takes, e.g. `0.8` means 80% of configured working hours |
 | bgColor | `string (optional)` | tile color |
 | meta | `TMeta (optional)` | custom project payload preserved by scheduler and exposed in typed callbacks |
+
+Provide either `occupancy` or `throughput` for a resource item.
 
 ### Troubleshooting
 
