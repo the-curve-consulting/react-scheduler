@@ -30,7 +30,7 @@ const TileInner = <TMeta,>({
     working: isWorking
   } = getTileProperties(row, startDate, endDate, currentCenterDate, zoom, cols, working);
   const { colors } = useTheme();
-  const backgroundColor = isWorking ? data.bgColor ?? colors.defaultTile : colors.secondary;
+  const backgroundColor = isWorking ? data.bgColor ?? colors.defaultTile : colors.notWorkingTile;
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
@@ -47,8 +47,8 @@ const TileInner = <TMeta,>({
       <StyledTextWrapper>
         <StyledStickyWrapper $offset={textOffset}>
           <StyledText bold>{data.title}</StyledText>
-          <StyledText>{data.subtitle}</StyledText>
-          <StyledDescription>{data.description}</StyledDescription>
+          <StyledText>{isWorking ? data.subtitle : "Non-working day"}</StyledText>
+          {isWorking && <StyledDescription>{data.description}</StyledDescription>}
         </StyledStickyWrapper>
       </StyledTextWrapper>
     </StyledTileWrapper>
