@@ -327,7 +327,7 @@ const project: SchedulerProjectData<TimesheetMeta> = {
 | showThemeToggle   | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
 | defaultTheme      | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
 | theme             | `Theme`             | `undefined`       | custom light/dark theme color overrides                                                                                                                                |
-| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations                                                                                   |
+| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations                                                                                  |
 | defaultStartHour  | `number`            | `9`               | start hour used when placing entries in hourly view                                                                                                                    |
 | dataLoading       | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
 
@@ -432,18 +432,18 @@ Rows can define `workingDurations` when a person has custom working hours. If om
 
 When multiple working durations are provided, Scheduler uses the latest `effectiveFrom` date that is not after the rendered date. This allows working hours to change over time.
 
-| Property Name | Type | Description |
-| -------- | --------------------- | -------------------------------- |
-| effectiveFrom | `Date` | first date from which this working duration applies |
-| flexibleHours | `boolean` | flag preserved on the row model |
-| workingDays | `WorkingDay[]` | weekdays and hours worked on each day |
+| Property Name | Type           | Description                                         |
+| ------------- | -------------- | --------------------------------------------------- |
+| effectiveFrom | `Date`         | first date from which this working duration applies |
+| flexibleHours | `boolean`      | flag preserved on the row model                     |
+| workingDays   | `WorkingDay[]` | weekdays and hours worked on each day               |
 
 ##### WorkingDay
 
-| Property Name | Type | Description |
-| -------- | --------------------- | -------------------------------- |
-| day | `"Monday" \| "Tuesday" \| "Wednesday" \| "Thursday" \| "Friday" \| "Saturday" \| "Sunday"` | day of week |
-| hours | `number` | working hours for that day |
+| Property Name | Type                                                                                       | Description                |
+| ------------- | ------------------------------------------------------------------------------------------ | -------------------------- |
+| day           | `"Monday" \| "Tuesday" \| "Wednesday" \| "Thursday" \| "Friday" \| "Saturday" \| "Sunday"` | day of week                |
+| hours         | `number`                                                                                   | working hours for that day |
 
 Example row with custom working hours and mixed project duration models:
 
