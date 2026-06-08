@@ -26,10 +26,10 @@ const getHoursAndMinutes = <TMeta>(
     if (!currentDayProject) continue;
 
     let occupancy = 0;
+    const maxHoursPerDay = getMaxHoursPerDay(focusedDate, workingDuration);
     if (isOccupancyProject(currentDayProject)) {
-      occupancy = currentDayProject.occupancy;
+      occupancy = maxHoursPerDay > 0 ? currentDayProject.occupancy : 0;
     } else {
-      const maxHoursPerDay = getMaxHoursPerDay(focusedDate, workingDuration);
       occupancy = currentDayProject.throughput * maxHoursPerDay * 3600;
     }
 

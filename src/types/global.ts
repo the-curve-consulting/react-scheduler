@@ -26,13 +26,6 @@ export type Config = {
    */
   lang?: LangCodes | string;
   maxRecordsPerPage?: number;
-  /**
-   * property for changing behavior of showing tooltip hours
-   * true - will show taken hours same as business days
-   * false - will always show 0 taken hours on weekends in day view
-   * @default false
-   */
-  includeTakenHoursOnWeekendsInDayView?: boolean;
 
   /**
    * show tooltip when hovering over tiles items
@@ -51,11 +44,6 @@ export type Config = {
    */
   defaultTheme?: "light" | "dark";
   theme?: Theme;
-  /**
-   * max hours per day for showing day overtime. If not set, it will default to
-   * the value defined in constants.ts
-   */
-  maxHoursPerDay?: number;
   /**
    * max hours per week for showing week overtime. If not set, it will default to
    * the value defined in constants.ts

@@ -304,7 +304,6 @@ function App() {
       zoom: 0,
       maxRecordsPerPage: maxRecordsPerPage,
       showThemeToggle: true,
-      maxHoursPerDay: 7.5,
       maxHoursPerWeek: 37.5
     }),
     [maxRecordsPerPage]

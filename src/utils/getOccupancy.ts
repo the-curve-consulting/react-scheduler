@@ -7,7 +7,11 @@ import {
   WorkingDuration
 } from "@/types/global";
 import { getHourOccupancy } from "@/utils/getHourOccupancy";
-import { getWorkingDurationForDate } from "@/utils/workingDurationHelper";
+import {
+  getWorkingDurationForDate,
+  getWorkingDurationsForDateRange,
+  sortWorkingDurations
+} from "@/utils/workingDurationHelper";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
 
@@ -17,7 +21,6 @@ export const getOccupancy = <TMeta>(
   resourceIndex: number,
   focusedDate: dayjs.Dayjs,
   zoom: ZoomLevel,
-  includeTakenHoursOnWeekendsInDayView = false,
   workingDurations: WorkingDuration[]
 ): OccupancyData => {
   if (resourceIndex < 0)
@@ -44,21 +47,23 @@ export const getOccupancy = <TMeta>(
     }
   });
 
-  //TODO [Jakub] This is wrong! What if someone's working hours change during a focused week?
-  // Following solution extracts only one workingDurations object - more may be required
-  const workingDuration = getWorkingDurationForDate(focusedDate, workingDurations);
-
+  const sortedWorkingDurations = sortWorkingDurations(workingDurations);
   switch (zoom) {
-    case 1:
-      return getDayOccupancy(
-        occupancy,
-        focusedDate,
-        includeTakenHoursOnWeekendsInDayView,
-        workingDuration
-      );
-    case 2:
+    case 1: {
+      const workingDuration = getWorkingDurationForDate(focusedDate, sortedWorkingDurations);
+      return getDayOccupancy(occupancy, focusedDate, workingDuration);
+    }
+    case 2: {
+      const workingDuration = getWorkingDurationForDate(focusedDate, sortedWorkingDurations);
       return getHourOccupancy(resource, focusedDate, workingDuration, config.defaultStartHour);
-    default:
-      return getWeekOccupancy(occupancy, focusedDate, workingDuration);
+    }
+    default: {
+      const weeklyWorkingDurations = getWorkingDurationsForDateRange(
+        focusedDate,
+        focusedDate.add(6, "days"),
+        sortedWorkingDurations
+      );
+      return getWeekOccupancy(occupancy, focusedDate, weeklyWorkingDurations);
+    }
   }
 };

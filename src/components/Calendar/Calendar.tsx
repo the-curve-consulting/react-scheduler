@@ -44,7 +44,7 @@ export const Calendar = <TMeta,>({
     currentCenterDate,
     viewportWidth,
     cols,
-    config: { includeTakenHoursOnWeekendsInDayView, showTooltip, showThemeToggle }
+    config: { showTooltip, showThemeToggle }
   } = useCalendar<TMeta>();
   const gridRef = useRef<HTMLDivElement>(null);
   const {
@@ -95,7 +95,6 @@ export const Calendar = <TMeta,>({
           rowsPerItem,
           projectsPerPerson,
           zoom,
-          includeTakenHoursOnWeekendsInDayView,
           currentCenterDate,
           cols,
           workingDurationsPerPerson

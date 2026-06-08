@@ -17,7 +17,6 @@ export const getTooltipData = <TMeta>(
   rowsPerPerson: number[],
   resourcesData: SchedulerProjectData<TMeta>[][][],
   zoom: ZoomLevel,
-  includeTakenHoursOnWeekendsInDayView = false,
   currentCenterDate: dayjs.Dayjs,
   cols: number,
   workingDurationsPerPerson: WorkingDuration[][]
@@ -83,7 +82,6 @@ export const getTooltipData = <TMeta>(
     resourceIndex,
     focusedDate,
     zoom,
-    includeTakenHoursOnWeekendsInDayView,
     workingDurationsPerPerson[resourceIndex]
   );
   return { coords: { x: xPos, y: yPos }, resourceIndex, disposition };
