@@ -1,21 +1,35 @@
 import dayjs from "dayjs";
 import { boxHeight, tileYOffset } from "@/constants";
-import { SchedulerProjectData, TileProperties } from "@/types/global";
+import { TileProperties } from "@/types/global";
 import { getCellWidth, getTilePositionRelativeToCenter } from "@/utils/scrollHelpers";
 
+/**
+ * Calculates absolute tile geometry for one already-split tile segment.
+ *
+ * @param row Vertical resource row index.
+ * @param startDate Segment start date.
+ * @param endDate Segment end date.
+ * @param currentCenterDate Date currently centered in the calendar viewport.
+ * @param zoom Current zoom level.
+ * @param cols Number of visible calendar columns.
+ * @param working Whether the segment represents working time.
+ * @returns Tile position, width, and working-state metadata.
+ */
 export const getTileProperties = (
   row: number,
-  data: SchedulerProjectData,
+  startDate: dayjs.Dayjs,
+  endDate: dayjs.Dayjs,
   currentCenterDate: dayjs.Dayjs,
   zoom: number,
-  cols: number
+  cols: number,
+  working: boolean
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
-  const tileStartDate = dayjs(data.startDate);
+  const tileStartDate = startDate.startOf("day");
   const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols);
 
   // Calculate width based on duration
-  const tileEndDate = dayjs(data.endDate).endOf("day");
+  const tileEndDate = endDate.endOf("day");
   const cellWidth = getCellWidth(zoom);
   let duration: number;
 
@@ -37,5 +51,5 @@ export const getTileProperties = (
 
   const width = duration * cellWidth;
 
-  return { y, x, width };
+  return { y, x, width, working };
 };

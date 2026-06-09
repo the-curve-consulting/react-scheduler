@@ -13,10 +13,24 @@ import {
 } from "./styles";
 import { TileComponent, TileProps } from "./types";
 
-const TileInner = <TMeta,>({ row, data, zoom, onTileClick }: TileProps<TMeta>) => {
+const TileInner = <TMeta,>({
+  row,
+  data,
+  zoom,
+  startDate,
+  endDate,
+  working,
+  onTileClick
+}: TileProps<TMeta>) => {
   const { currentCenterDate, cols } = useCalendar<TMeta>();
-  const { y, x, width } = getTileProperties(row, data, currentCenterDate, zoom, cols);
+  const {
+    y,
+    x,
+    width,
+    working: isWorking
+  } = getTileProperties(row, startDate, endDate, currentCenterDate, zoom, cols, working);
   const { colors } = useTheme();
+  const backgroundColor = isWorking ? data.bgColor ?? colors.defaultTile : colors.notWorkingTile;
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
@@ -25,16 +39,16 @@ const TileInner = <TMeta,>({ row, data, zoom, onTileClick }: TileProps<TMeta>) =
       style={{
         left: `${x}px`,
         top: `${y}px`,
-        backgroundColor: `${data.bgColor ?? colors.defaultTile}`,
+        backgroundColor,
         width: `${width}px`,
-        color: getTileTextColor(data.bgColor ?? "")
+        color: getTileTextColor(backgroundColor)
       }}
       onClick={() => onTileClick?.(data)}>
       <StyledTextWrapper>
         <StyledStickyWrapper $offset={textOffset}>
           <StyledText bold>{data.title}</StyledText>
-          <StyledText>{data.subtitle}</StyledText>
-          <StyledDescription>{data.description}</StyledDescription>
+          <StyledText>{isWorking ? data.subtitle : "Non-working day"}</StyledText>
+          {isWorking && <StyledDescription>{data.description}</StyledDescription>}
         </StyledStickyWrapper>
       </StyledTextWrapper>
     </StyledTileWrapper>

@@ -24,7 +24,7 @@ import {
 } from "./styles";
 
 const GridInner = <TMeta,>(
-  { data, rows, onTileClick }: GridProps<TMeta>,
+  { data, rows, onTileClick, workingDurationsPerPerson }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
   const {
@@ -119,6 +119,7 @@ const GridInner = <TMeta,>(
             zoom={zoom}
             visibleRange={visibleRange}
             onTileClick={onTileClick}
+            workingDurationsPerPerson={workingDurationsPerPerson}
             defaultStartHour={config.defaultStartHour}
           />
         </StyledTilesLayer>

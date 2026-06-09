@@ -1,30 +1,33 @@
 import dayjs from "dayjs";
-import { maxHoursPerDay } from "@/constants";
-import { Config, OccupancyData, SchedulerProjectData, TimeUnits } from "@/types/global";
+import { OccupancyData, SchedulerProjectData, TimeUnits, WorkingDuration } from "@/types/global";
+import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/workingDurationHelper";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
 
+const getHoursAndMinutes = <TMeta>(
+  occupancy: SchedulerProjectData<TMeta>[],
+  maxHoursPerDay: number
+): TimeUnits[] => {
+  return occupancy.map((item) => {
+    if (isOccupancyProject(item)) {
+      return maxHoursPerDay > 0 ? getDuration(item.occupancy) : { hours: 0, minutes: 0 };
+    }
+
+    const durationSeconds = item.throughput * maxHoursPerDay * 3600;
+    return getDuration(durationSeconds);
+  });
+};
+
 export const getDayOccupancy = <TMeta>(
-  config: Config,
   occupancy: SchedulerProjectData<TMeta>[],
   focusedDate: dayjs.Dayjs,
-  includeTakenHoursOnWeekendsInDayView: boolean
+  workingDuration: WorkingDuration
 ): OccupancyData => {
-  const focusedDayNum = focusedDate.isoWeekday();
-  const getHoursAndMinutes: TimeUnits[] = occupancy.map((item) => {
-    const { hours: itemHours, minutes: itemMinutes } = getDuration(item.occupancy);
+  const maxHours = getMaxHoursPerDay(focusedDate, workingDuration);
+  const hoursAndMinutes = getHoursAndMinutes(occupancy, maxHours);
+  const { hours: totalHours, minutes: totalMinutes } = getTotalHoursAndMinutes(hoursAndMinutes);
 
-    // if config was set to include free weekends max day num is 5 - friday else is 7 - whole week
-    if (focusedDayNum <= (includeTakenHoursOnWeekendsInDayView ? 7 : 5)) {
-      return { hours: itemHours, minutes: itemMinutes };
-    }
-    return { hours: 0, minutes: 0 };
-  });
-
-  const { hours: totalHours, minutes: totalMinutes } = getTotalHoursAndMinutes(getHoursAndMinutes);
-
-  const maxHours = config?.maxHoursPerDay || maxHoursPerDay;
   const { free, overtime } = getTimeOccupancy(maxHours, {
     hours: totalHours,
     minutes: totalMinutes

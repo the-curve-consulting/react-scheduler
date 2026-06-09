@@ -1,8 +1,12 @@
+import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 
 export type TileProps<TMeta = unknown> = {
   row: number;
   data: SchedulerProjectData<TMeta>;
+  startDate: dayjs.Dayjs;
+  endDate: dayjs.Dayjs;
+  working: boolean;
   zoom: number;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };

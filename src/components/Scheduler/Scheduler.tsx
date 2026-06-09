@@ -59,7 +59,6 @@ const SchedulerInner = <TMeta,>(
     () => ({
       zoom: 0,
       filterButtonState: 1,
-      includeTakenHoursOnWeekendsInDayView: false,
       showTooltip: true,
       translations: undefined,
       ...config

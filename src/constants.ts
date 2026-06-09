@@ -46,10 +46,19 @@ export const formFieldsIds = {
 export const businessDays = 5;
 export const dayStartHour = 9;
 export const maxHoursPerWeek = 40;
-export const maxHoursPerDay = 8;
 export const topRowTextYPos = headerMonthHeight / 2 + 2;
 export const middleRowTextYPos = headerWeekHeight / 2 + headerMonthHeight + 1;
 export const minutesInHour = 60;
+export const secondsInHour = 3600;
+export const DaysOfWeekMap = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7
+};
 
 export const SCROLL_CONFIG_DAYS = {
   containerDays: 3650,

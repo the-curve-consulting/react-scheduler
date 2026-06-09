@@ -1,10 +1,11 @@
 import React from "react";
-import { PaginatedSchedulerData, SchedulerProjectData } from "@/types/global";
+import { PaginatedSchedulerData, SchedulerProjectData, WorkingDuration } from "@/types/global";
 
 export type GridProps<TMeta = unknown> = {
   zoom: number;
   rows: number;
   data: PaginatedSchedulerData<TMeta>;
+  workingDurationsPerPerson: WorkingDuration[][];
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };
 
