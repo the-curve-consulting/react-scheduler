@@ -161,26 +161,37 @@ const createDemoHolidayRequests = (
   return requests;
 };
 
-const isDateRangeInRange = (startDate: Date, endDate: Date, range: ParsedDatesRange): boolean => {
+const isDateRangeInRange = (
+  startDate: Date,
+  endDate: Date,
+  rangeStartDate: Date,
+  rangeEndDate: Date
+): boolean => {
   const start = dayjs(startDate);
   const end = dayjs(endDate);
-  const rangeStart = dayjs(range.startDate);
-  const rangeEnd = dayjs(range.endDate);
+  const rangeStart = dayjs(rangeStartDate);
+  const rangeEnd = dayjs(rangeEndDate);
 
   return !start.isAfter(rangeEnd) && !end.isBefore(rangeStart);
 };
 
 const filterSchedulerRowsByDateRange = <TMeta,>(
   data: SchedulerData<TMeta>,
-  range: ParsedDatesRange
+  rangeStartDate: Date,
+  rangeEndDate: Date
 ): SchedulerData<TMeta> =>
   data.map((person) => ({
     ...person,
     holidayRequests: person.holidayRequests.filter((holidayRequest) =>
-      isDateRangeInRange(holidayRequest.leave_from, holidayRequest.leave_to, range)
+      isDateRangeInRange(
+        holidayRequest.leave_from,
+        holidayRequest.leave_to,
+        rangeStartDate,
+        rangeEndDate
+      )
     ),
     data: person.data.filter((project) =>
-      isDateRangeInRange(project.startDate, project.endDate, range)
+      isDateRangeInRange(project.startDate, project.endDate, rangeStartDate, rangeEndDate)
     )
   }));
 
@@ -333,7 +344,7 @@ function App() {
         const timeoutId = window.setTimeout(() => {
           signal?.removeEventListener("abort", handleAbort);
 
-          resolve(filterSchedulerRowsByDateRange(mocked, range));
+          resolve(filterSchedulerRowsByDateRange(mocked, range.startDate, range.endDate));
         }, 5000);
 
         function handleAbort() {
@@ -349,9 +360,10 @@ function App() {
   // Note: this is just a demo, so we filter data based on start and end dates of the range.
   // There is problem here because every update of the filteredData triggers re-render of Grid and Tileset components.
   // Proposal is to modify data retrieval logic to avoid unnecessary re-renders - like smart pagination.
+  const { startDate: rangeStartDate, endDate: rangeEndDate } = range;
   const filteredData = useMemo(
-    () => filterSchedulerRowsByDateRange(mocked, range),
-    [mocked, range.endDate, range.startDate]
+    () => filterSchedulerRowsByDateRange(mocked, rangeStartDate, rangeEndDate),
+    [mocked, rangeEndDate, rangeStartDate]
   );
 
   const handleFilterData = useCallback(() => {
