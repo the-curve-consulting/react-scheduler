@@ -3,10 +3,12 @@ import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import {
   boxHeight,
+  businessDays,
   canvasId,
   canvasWrapperId,
   gridInnerWrapperId,
   leftColumnWidth,
+  maxHoursPerWeek,
   outsideWrapperId
 } from "@/constants";
 import { Loader, Tiles } from "@/components";
@@ -121,6 +123,7 @@ const GridInner = <TMeta,>(
             onTileClick={onTileClick}
             workingDurationsPerPerson={workingDurationsPerPerson}
             defaultStartHour={config.defaultStartHour}
+            defaultWorkDayHours={(config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays}
           />
         </StyledTilesLayer>
         {isBlocking ? (
