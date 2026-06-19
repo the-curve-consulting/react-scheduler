@@ -19,11 +19,12 @@ export const splitToPages = <TMeta>(
 
   if (projectsPerPerson.length > recordsThreshold) {
     projectsPerPerson.forEach((projects, i) => {
-      const newItem = {
+      const newItem: PaginatedSchedulerRow<TMeta> = {
         id: data[i].id,
         label: data[i].label,
         data: projects,
-        workingDurations: data[i].workingDurations
+        workingDurations: data[i].workingDurations,
+        holidayRequests: data[i].holidayRequests
       };
 
       if (pageRecords >= recordsThreshold) {
@@ -40,11 +41,12 @@ export const splitToPages = <TMeta>(
     if (rowsPerPerson.slice(leftIndex).length <= recordsThreshold) {
       singlePage = [];
       projectsPerPerson.slice(leftIndex).forEach((projects, i) => {
-        const newItem = {
+        const newItem: PaginatedSchedulerRow<TMeta> = {
           id: data[i + leftIndex].id,
           label: data[i + leftIndex].label,
           data: projects,
-          workingDurations: data[i + leftIndex].workingDurations
+          workingDurations: data[i + leftIndex].workingDurations,
+          holidayRequests: data[i + leftIndex].holidayRequests
         };
         singlePage.push(newItem);
 
@@ -55,11 +57,12 @@ export const splitToPages = <TMeta>(
     return pages;
   }
   projectsPerPerson.forEach((projects, i) => {
-    const newItem = {
+    const newItem: PaginatedSchedulerRow<TMeta> = {
       id: data[i].id,
       label: data[i].label,
       data: projects,
-      workingDurations: data[i].workingDurations
+      workingDurations: data[i].workingDurations,
+      holidayRequests: data[i].holidayRequests
     };
     singlePage.push(newItem);
   });
