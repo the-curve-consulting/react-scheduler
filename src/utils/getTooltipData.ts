@@ -6,7 +6,8 @@ import {
   TooltipData,
   ZoomLevel,
   Config,
-  WorkingDuration
+  WorkingDuration,
+  HolidayRequest
 } from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
 import { getCellWidth } from "./scrollHelpers";
@@ -19,7 +20,8 @@ export const getTooltipData = <TMeta>(
   zoom: ZoomLevel,
   currentCenterDate: dayjs.Dayjs,
   cols: number,
-  workingDurationsPerPerson: WorkingDuration[][]
+  workingDurationsPerPerson: WorkingDuration[][],
+  holidayRequestsPerPerson: HolidayRequest[][]
 ): TooltipData => {
   let focusedDate: dayjs.Dayjs;
   const centerCol = Math.floor(cols / 2);
@@ -82,7 +84,8 @@ export const getTooltipData = <TMeta>(
     resourceIndex,
     focusedDate,
     zoom,
-    workingDurationsPerPerson[resourceIndex]
+    workingDurationsPerPerson[resourceIndex],
+    holidayRequestsPerPerson[resourceIndex]
   );
   return { coords: { x: xPos, y: yPos }, resourceIndex, disposition };
 };

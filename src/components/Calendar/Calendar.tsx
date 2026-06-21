@@ -3,6 +3,8 @@ import debounce from "lodash.debounce";
 import dayjs from "dayjs";
 import { useCalendar } from "@/context/CalendarProvider";
 import {
+  Config,
+  HolidayRequest,
   SchedulerData,
   SchedulerProjectData,
   TooltipData,
@@ -65,6 +67,10 @@ export const Calendar = <TMeta,>({
     () => page.map((row) => row.workingDurations ?? defaultWorkingDurations),
     [defaultWorkingDurations, page]
   );
+  const holidayRequestsPerPerson = useMemo<HolidayRequest[][]>(
+    () => page.map((row) => row.holidayRequests ?? []),
+    [page]
+  );
   /* eslint-disable react-hooks/refs --
      The closure reads gridRef.current only inside the debounced callback, which fires
      300ms after a mousemove event — never during render. The rule cannot statically
@@ -76,12 +82,14 @@ export const Calendar = <TMeta,>({
     debounce(
       (
         e: MouseEvent,
+        config: Config,
         rowsPerItem: number[],
         projectsPerPerson: SchedulerProjectData<TMeta>[][][],
         zoom: ZoomLevel,
         currentCenterDate: dayjs.Dayjs,
         cols: number,
-        workingDurationsPerPerson: WorkingDuration[][]
+        workingDurationsPerPerson: WorkingDuration[][],
+        holidayRequestsPerPerson: HolidayRequest[][]
       ) => {
         if (!gridRef.current) return;
         const { left, top } = gridRef.current.getBoundingClientRect();
@@ -98,7 +106,8 @@ export const Calendar = <TMeta,>({
           zoom,
           currentCenterDate,
           cols,
-          workingDurationsPerPerson
+          workingDurationsPerPerson,
+          holidayRequestsPerPerson
         );
         setTooltipData({ coords: { x, y }, resourceIndex, disposition });
         setIsVisible(true);
@@ -135,12 +144,14 @@ export const Calendar = <TMeta,>({
     const handleMouseOver = (e: MouseEvent) =>
       debouncedHandleMouseOver.current(
         e,
+        config,
         rowsPerItem,
         projectsPerPerson,
         zoom,
         currentCenterDate,
         cols,
-        workingDurationsPerPerson
+        workingDurationsPerPerson,
+        holidayRequestsPerPerson
       );
     const gridArea = gridRef.current;
 
@@ -155,6 +166,7 @@ export const Calendar = <TMeta,>({
     };
   }, [
     debouncedHandleMouseOver,
+    config,
     handleMouseLeave,
     projectsPerPerson,
     rowsPerItem,
@@ -163,7 +175,8 @@ export const Calendar = <TMeta,>({
     cols,
     zoom,
     viewportWidth,
-    workingDurationsPerPerson
+    workingDurationsPerPerson,
+    holidayRequestsPerPerson
   ]);
 
   useEffect(() => {

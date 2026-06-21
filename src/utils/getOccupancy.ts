@@ -4,7 +4,8 @@ import {
   OccupancyData,
   ZoomLevel,
   Config,
-  WorkingDuration
+  WorkingDuration,
+  HolidayRequest
 } from "@/types/global";
 import { getHourOccupancy } from "@/utils/getHourOccupancy";
 import {
@@ -12,6 +13,11 @@ import {
   getWorkingDurationsForDateRange,
   sortWorkingDurations
 } from "@/utils/workingDurationHelper";
+import {
+  getHolidayRequestsForDateRange,
+  getHolidayRequestsForDay
+} from "@/utils/holidayRequestHelper";
+import { businessDays, dayStartHour, maxHoursPerWeek } from "@/constants";
 import { getWeekOccupancy } from "./getWeekOccupancy";
 import { getDayOccupancy } from "./getDayOccupancy";
 
@@ -21,7 +27,8 @@ export const getOccupancy = <TMeta>(
   resourceIndex: number,
   focusedDate: dayjs.Dayjs,
   zoom: ZoomLevel,
-  workingDurations: WorkingDuration[]
+  workingDurations: WorkingDuration[],
+  holidayRequests: HolidayRequest[]
 ): OccupancyData => {
   if (resourceIndex < 0)
     return {
@@ -47,23 +54,56 @@ export const getOccupancy = <TMeta>(
     }
   });
 
+  const halfDayHours = ((config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays) * 0.5;
+  const startHour = config.defaultStartHour ?? dayStartHour;
+
   const sortedWorkingDurations = sortWorkingDurations(workingDurations);
   switch (zoom) {
     case 1: {
       const workingDuration = getWorkingDurationForDate(focusedDate, sortedWorkingDurations);
-      return getDayOccupancy(occupancy, focusedDate, workingDuration);
+      const filteredHolidayRequests = getHolidayRequestsForDay(focusedDate, holidayRequests);
+      return getDayOccupancy(
+        occupancy,
+        focusedDate,
+        workingDuration,
+        filteredHolidayRequests,
+        halfDayHours,
+        startHour
+      );
     }
     case 2: {
       const workingDuration = getWorkingDurationForDate(focusedDate, sortedWorkingDurations);
-      return getHourOccupancy(resource, focusedDate, workingDuration, config.defaultStartHour);
+      const filteredHolidayRequests = getHolidayRequestsForDay(focusedDate, holidayRequests);
+      return getHourOccupancy(
+        resource,
+        focusedDate,
+        workingDuration,
+        filteredHolidayRequests,
+        halfDayHours,
+        startHour
+      );
     }
     default: {
+      const weekEndDate = focusedDate.add(6, "days");
       const weeklyWorkingDurations = getWorkingDurationsForDateRange(
         focusedDate,
-        focusedDate.add(6, "days"),
+        weekEndDate,
         sortedWorkingDurations
       );
-      return getWeekOccupancy(occupancy, focusedDate, weeklyWorkingDurations);
+      const filteredHolidayRequests = getHolidayRequestsForDateRange(
+        focusedDate,
+        weekEndDate,
+        holidayRequests
+      );
+      return getWeekOccupancy(
+        occupancy,
+        focusedDate,
+        weekEndDate,
+        weeklyWorkingDurations,
+        filteredHolidayRequests,
+        halfDayHours,
+        startHour
+      );
     }
   }
 };

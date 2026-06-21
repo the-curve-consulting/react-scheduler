@@ -170,3 +170,70 @@ export const getHolidayWindow = (
 
   return { startDate: start, endDate: end };
 };
+
+/**
+ * Resolves how many working hours remain on one day after holiday rules.
+ *
+ * This returns only the duration of the available work window. Use
+ * `getAvailableWorkWindow` directly when the exact start/end times are needed.
+ *
+ * @param date Day to resolve.
+ * @param workingHours Person-specific working hours configured for the day.
+ * @param holidayRequests Holiday requests that may overlap the day.
+ * @param startHour Hour of day at which work starts.
+ * @param halfDayHours Number of hours used as the holiday half-day boundary.
+ * @returns Available working hours for the day after holidays are applied.
+ */
+export const getAvailableWorkingHoursForDate = (
+  date: dayjs.Dayjs,
+  workingHours: number,
+  holidayRequests: HolidayRequest[],
+  startHour: number,
+  halfDayHours: number
+): number => {
+  const workWindow = getAvailableWorkWindow(
+    date,
+    workingHours,
+    getHolidayRequestsForDay(date, holidayRequests),
+    startHour,
+    halfDayHours
+  );
+
+  return workWindow ? workWindow.end.diff(workWindow.start, "hour", true) : 0;
+};
+
+/**
+ * Filters holiday requests to those overlapping a single day.
+ *
+ * @param date Day to test.
+ * @param holidayRequests Holiday requests to filter.
+ * @returns Holiday requests overlapping the given day.
+ */
+export const getHolidayRequestsForDay = (
+  date: dayjs.Dayjs,
+  holidayRequests: HolidayRequest[]
+): HolidayRequest[] => getHolidayRequestsForDateRange(date, date, holidayRequests);
+
+/**
+ * Filters holiday requests to those overlapping an inclusive date range.
+ *
+ * @param startDate First day in the range.
+ * @param endDate Last day in the range.
+ * @param holidayRequests Holiday requests to filter.
+ * @returns Holiday requests whose leave range intersects the given range.
+ */
+export const getHolidayRequestsForDateRange = (
+  startDate: dayjs.Dayjs,
+  endDate: dayjs.Dayjs,
+  holidayRequests: HolidayRequest[]
+): HolidayRequest[] => {
+  const rangeStart = startDate.startOf("day");
+  const rangeEnd = endDate.endOf("day");
+
+  return holidayRequests.filter((holidayRequest) => {
+    const leaveFrom = dayjs(holidayRequest.leave_from);
+    const leaveTo = dayjs(holidayRequest.leave_to);
+
+    return !leaveFrom.isAfter(rangeEnd) && !leaveTo.isBefore(rangeStart);
+  });
+};
