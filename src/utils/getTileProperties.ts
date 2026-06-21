@@ -25,31 +25,26 @@ export const getTileProperties = (
   working: boolean
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
-  const tileStartDate = startDate.startOf("day");
+  const tileStartDate = zoom !== 2 ? startDate.startOf("day") : startDate;
+  const tileEndDate = zoom !== 2 ? endDate.endOf("day") : endDate;
   const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols);
-
-  // Calculate width based on duration
-  const tileEndDate = endDate.endOf("day");
   const cellWidth = getCellWidth(zoom);
+
   let duration: number;
 
   switch (zoom) {
-    case 0: {
-      const days = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
-      duration = days / 7;
+    case 0:
+      duration = Math.ceil(tileEndDate.diff(tileStartDate, "days", true)) / 7;
       break;
-    }
     case 1:
       duration = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
       break;
     case 2:
-      duration = tileEndDate.diff(tileStartDate, "hours");
+      duration = tileEndDate.diff(tileStartDate, "hours", true);
       break;
     default:
-      duration = tileEndDate.diff(tileStartDate, "days");
+      duration = tileEndDate.diff(tileStartDate, "days", true);
   }
 
-  const width = duration * cellWidth;
-
-  return { y, x, width, working };
+  return { y, x, width: duration * cellWidth, working };
 };

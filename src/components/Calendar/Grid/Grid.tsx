@@ -6,6 +6,7 @@ import {
   businessDays,
   canvasId,
   canvasWrapperId,
+  dayStartHour,
   gridInnerWrapperId,
   leftColumnWidth,
   maxHoursPerWeek,
@@ -26,7 +27,7 @@ import {
 } from "./styles";
 
 const GridInner = <TMeta,>(
-  { data, rows, onTileClick, workingDurationsPerPerson }: GridProps<TMeta>,
+  { data, rows, onTileClick, onHolidayTileClick, workingDurationsPerPerson }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
   const {
@@ -121,8 +122,9 @@ const GridInner = <TMeta,>(
             zoom={zoom}
             visibleRange={visibleRange}
             onTileClick={onTileClick}
+            onHolidayTileClick={onHolidayTileClick}
             workingDurationsPerPerson={workingDurationsPerPerson}
-            defaultStartHour={config.defaultStartHour}
+            defaultStartHour={config.defaultStartHour ?? dayStartHour}
             defaultWorkDayHours={(config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays}
           />
         </StyledTilesLayer>

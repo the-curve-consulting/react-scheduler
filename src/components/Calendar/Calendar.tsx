@@ -30,6 +30,7 @@ export const Calendar = <TMeta,>({
   config,
   data,
   onTileClick,
+  onHolidayTileClick,
   onItemClick,
   toggleTheme,
   topBarWidth
@@ -204,6 +205,7 @@ export const Calendar = <TMeta,>({
           ref={gridRef}
           workingDurationsPerPerson={workingDurationsPerPerson}
           onTileClick={onTileClick}
+          onHolidayTileClick={onHolidayTileClick}
         />
         {showTooltip && isVisible && tooltipData?.resourceIndex > -1 && (
           <Tooltip tooltipData={tooltipData} zoom={zoom} />

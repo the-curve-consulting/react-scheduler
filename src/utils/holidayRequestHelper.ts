@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { HolidayRequest } from "@/types/global";
+import { minutesInHour } from "@/constants";
 
 /**
  * Normalised holiday availability category used by tile placement.
@@ -132,4 +133,40 @@ export const getAvailableWorkWindow = (
   if (!holidayRequests.length) return workWindow;
 
   return applyHolidayAvailability(workWindow, getHolidayKindSummary(holidayRequests), halfDayHours);
+};
+
+/**
+ * Resolves the visible tile window for a holiday request.
+ *
+ * Full-day holidays span the clipped request date range. Single-day morning and
+ * afternoon holidays span only the configured half-day window.
+ *
+ * @param startDate Clipped holiday start date within the visible range.
+ * @param endDate Clipped holiday end date within the visible range.
+ * @param startHour Hour of day at which the normal work day starts.
+ * @param holidayRequest Holiday request to render.
+ * @param halfDayHours Number of hours represented by a half-day holiday.
+ * @returns Tile start/end dates for rendering the holiday.
+ */
+export const getHolidayWindow = (
+  startDate: dayjs.Dayjs,
+  endDate: dayjs.Dayjs,
+  startHour: number,
+  holidayRequest: HolidayRequest,
+  halfDayHours: number
+): { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs } | null => {
+  const holidayKind = getHolidayKind(holidayRequest);
+
+  const start =
+    holidayKind === "full"
+      ? startDate.startOf("day")
+      : startDate
+          .startOf("day")
+          .minute(
+            (holidayKind === "morning" ? startHour : startHour + halfDayHours) * minutesInHour
+          );
+
+  const end = holidayKind === "full" ? endDate.endOf("day") : start.add(halfDayHours, "hour");
+
+  return { startDate: start, endDate: end };
 };

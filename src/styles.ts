@@ -38,7 +38,8 @@ export type ColorType =
   | "tooltip"
   | "defaultTile"
   | "hover"
-  | "notWorkingTile";
+  | "notWorkingTile"
+  | "holidayTile";
 
 export type Theme = {
   colors: Record<ColorType, string>;
@@ -71,7 +72,8 @@ export const theme: DefaultTheme = {
     defaultTile: "#728DE2",
 
     accent: "#0A11EB",
-    notWorkingTile: "#f0f0f0"
+    notWorkingTile: "#f0f0f0",
+    holidayTile: "#eadaff"
   }
 };
 
@@ -100,7 +102,8 @@ export const darkTheme: Theme = {
     defaultTile: "#728DE2",
 
     accent: "#1798c2",
-    notWorkingTile: "#f0f0f0"
+    notWorkingTile: "#f0f0f0",
+    holidayTile: "#a86eff"
   }
 };
 

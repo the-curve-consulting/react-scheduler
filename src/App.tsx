@@ -379,6 +379,16 @@ function App() {
     );
   }, []);
 
+  const handleHolidayClick = useCallback((data: HolidayRequest) => {
+    console.log(
+      `Holiday ${data.leave_type} was clicked. \n==============\nStart date: ${
+        data.leave_from
+      } \n==============\nEnd date: ${data.leave_to}\n==============\nState: ${
+        data.state
+      }\n==============\nPart of day: ${data.morning_or_afternoon ?? "Full day"}`
+    );
+  }, []);
+
   const handleItemClick = useCallback((data: SchedulerItemClickData) => {
     console.log("clicked: ", data);
   }, []);
@@ -404,6 +414,7 @@ function App() {
           onFetchData={handleFetchData}
           isLoading={false}
           onTileClick={handleTileClick}
+          onHolidayClick={handleHolidayClick}
           onFilterData={handleFilterData}
           config={config}
           onItemClick={handleItemClick}
@@ -416,6 +427,7 @@ function App() {
             isLoading={false}
             data={filteredData}
             onTileClick={handleTileClick}
+            onHolidayClick={handleHolidayClick}
             onFilterData={handleFilterData}
             onItemClick={handleItemClick}
           />

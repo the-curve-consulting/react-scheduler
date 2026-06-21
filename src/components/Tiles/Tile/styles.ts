@@ -42,6 +42,13 @@ export const StyledText = styled.p<StyledTextProps>`
   }
 `;
 
+export const StyledHolidayText = styled.p<StyledTextProps>`
+  ${marginPaddingReset}
+  ${truncate}
+  display: inline;
+  font-weight: ${({ bold }) => (bold ? "600" : "400")};
+`;
+
 export const StyledDescription = styled.p`
   ${marginPaddingReset}
   ${truncate}

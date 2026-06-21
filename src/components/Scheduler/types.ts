@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Config,
+  HolidayRequest,
   SchedulerData,
   SchedulerFetchLoadingState,
   SchedulerItemClickData,
@@ -45,6 +46,7 @@ export type SchedulerBaseProps<TMeta = unknown> = {
   onClearFilterData?: () => void;
   transformData?: (data: SchedulerData<TMeta>) => SchedulerData<TMeta>;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
+  onHolidayClick?: (data: HolidayRequest) => void;
 };
 
 export type SchedulerStaticProps<TMeta = unknown> = SchedulerBaseProps<TMeta> & {

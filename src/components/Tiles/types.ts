@@ -12,12 +12,13 @@ export type ResourceTilesProps<TMeta = unknown> = {
   data: SchedulerProjectData<TMeta>[][];
   rows: number;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
+  onHolidayTileClick?: (data: HolidayRequest) => void;
   visibleStart: number;
   visibleEnd: number;
   workingDurations: WorkingDuration[];
   holidayRequests: HolidayRequest[];
   defaultWorkDayHours: number;
-  defaultStartHour?: number;
+  defaultStartHour: number;
 };
 
 export type ResourceTilesComponent = <TMeta = unknown>(
@@ -28,10 +29,11 @@ export type TilesProps<TMeta = unknown> = {
   zoom: number;
   data: PaginatedSchedulerData<TMeta>;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
+  onHolidayTileClick?: (data: HolidayRequest) => void;
   visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
   workingDurationsPerPerson: WorkingDuration[][];
   defaultWorkDayHours: number;
-  defaultStartHour?: number;
+  defaultStartHour: number;
 };
 
 export type TilesComponent = <TMeta = unknown>(

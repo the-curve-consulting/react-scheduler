@@ -1,8 +1,8 @@
 import { memo, useMemo } from "react";
 import dayjs from "dayjs";
 import { HolidayRequest, SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
-import { dayStartHour, secondsInHour } from "@/constants";
-import { HourlyTile, Tile } from "@/components";
+import { secondsInHour } from "@/constants";
+import { HourlyTile, Tile, HolidayTile } from "@/components";
 import { isProjectVisible } from "@/utils/scrollHelpers";
 import { getDailyTileSegments, getWeeklyTileSegments } from "@/utils/getTileSegments";
 import {
@@ -10,7 +10,7 @@ import {
   isOccupancyProject,
   sortWorkingDurations
 } from "@/utils/workingDurationHelper";
-import { getAvailableWorkWindow, WorkWindow } from "@/utils/holidayRequestHelper";
+import { getAvailableWorkWindow, getHolidayWindow, WorkWindow } from "@/utils/holidayRequestHelper";
 import { PlacedTiles, ResourceTilesComponent, ResourceTilesProps } from "./types";
 
 const ResourceTilesInner = <TMeta,>({
@@ -18,6 +18,7 @@ const ResourceTilesInner = <TMeta,>({
   zoom,
   rows,
   onTileClick,
+  onHolidayTileClick,
   visibleStart,
   visibleEnd,
   workingDurations,
@@ -50,19 +51,33 @@ const ResourceTilesInner = <TMeta,>({
     return result;
   }, [visibleStartDay, visibleEndDay, sortedWorkingDurations]);
 
-  const holidayRequestsByDay = useMemo(() => {
-    const result = new Map<number, HolidayRequest[]>();
+  const visibleHolidayRanges = useMemo(() => {
     const visibleStartDate = dayjs(visibleStartDay).startOf("day");
     const visibleEndDate = dayjs(visibleEndDay).startOf("day");
 
-    for (const holidayRequest of holidayRequests) {
-      const leaveFromDay = dayjs(holidayRequest.leave_from).startOf("day");
-      const leaveToDay = dayjs(holidayRequest.leave_to).startOf("day");
+    return holidayRequests.flatMap((holidayRequest) => {
+      const leaveStart = dayjs(holidayRequest.leave_from).startOf("day");
+      const leaveEnd = dayjs(holidayRequest.leave_to).startOf("day");
 
-      if (leaveFromDay.isAfter(visibleEndDate) || leaveToDay.isBefore(visibleStartDate)) continue;
+      if (leaveStart.isAfter(visibleEndDate) || leaveEnd.isBefore(visibleStartDate)) {
+        return [];
+      }
 
-      let currentDate = leaveFromDay.isBefore(visibleStartDate) ? visibleStartDate : leaveFromDay;
-      const endDate = leaveToDay.isAfter(visibleEndDate) ? visibleEndDate : leaveToDay;
+      return [
+        {
+          holidayRequest,
+          startDate: leaveStart.isBefore(visibleStartDate) ? visibleStartDate : leaveStart,
+          endDate: leaveEnd.isAfter(visibleEndDate) ? visibleEndDate : leaveEnd
+        }
+      ];
+    });
+  }, [visibleStartDay, visibleEndDay, holidayRequests]);
+
+  const holidayRequestsByDay = useMemo(() => {
+    const result = new Map<number, HolidayRequest[]>();
+
+    for (const { holidayRequest, startDate, endDate } of visibleHolidayRanges) {
+      let currentDate = startDate;
 
       while (!currentDate.isAfter(endDate, "day")) {
         const dayKey = currentDate.valueOf();
@@ -72,13 +87,12 @@ const ResourceTilesInner = <TMeta,>({
     }
 
     return result;
-  }, [visibleStartDay, visibleEndDay, holidayRequests]);
+  }, [visibleHolidayRanges]);
 
   const workWindowsByDay = useMemo(() => {
     const result = new Map<number, WorkWindow | null>();
     let currentDate = dayjs(visibleStartDay);
     const visibleEndDate = dayjs(visibleEndDay);
-    const startHour = defaultStartHour ?? dayStartHour;
 
     while (!currentDate.isAfter(visibleEndDate, "day")) {
       const dayKey = currentDate.startOf("day").valueOf();
@@ -87,7 +101,7 @@ const ResourceTilesInner = <TMeta,>({
         currentDate,
         workingHours,
         holidayRequestsByDay.get(dayKey) ?? [],
-        startHour,
+        defaultStartHour,
         halfDayHours
       );
 
@@ -114,6 +128,42 @@ const ResourceTilesInner = <TMeta,>({
 
     return result;
   }, [workWindowsByDay]);
+
+  const holidayTiles: PlacedTiles = useMemo(() => {
+    const rowNo = Math.max(data.length, 1);
+    return visibleHolidayRanges.flatMap(({ holidayRequest, startDate, endDate }) => {
+      const holidayWindow = getHolidayWindow(
+        startDate,
+        endDate,
+        defaultStartHour,
+        holidayRequest,
+        halfDayHours
+      );
+
+      if (holidayWindow === null) return [];
+
+      return [
+        <HolidayTile
+          key={holidayRequest.id}
+          startDate={holidayWindow?.startDate}
+          endDate={holidayWindow?.endDate}
+          rowIndex={rows}
+          rowNo={rowNo}
+          data={holidayRequest}
+          zoom={zoom}
+          onTileClick={onHolidayTileClick}
+        />
+      ];
+    });
+  }, [
+    data.length,
+    defaultStartHour,
+    halfDayHours,
+    onHolidayTileClick,
+    rows,
+    visibleHolidayRanges,
+    zoom
+  ]);
 
   const tiles = useMemo((): PlacedTiles => {
     const visibleStartDate = dayjs(visibleStart);
@@ -225,7 +275,8 @@ const ResourceTilesInner = <TMeta,>({
             )
             .map((project) => renderHourlyTilesForProject(project, rowIndex, rows, startDateTimes))
         )
-        .flat(3);
+        .flat(3)
+        .concat(holidayTiles);
     }
 
     // Regular view
@@ -257,7 +308,8 @@ const ResourceTilesInner = <TMeta,>({
             ));
           })
       )
-      .flat(3);
+      .flat(3)
+      .concat(holidayTiles);
   }, [
     visibleStart,
     visibleEnd,
@@ -266,7 +318,8 @@ const ResourceTilesInner = <TMeta,>({
     availableHoursByDay,
     onTileClick,
     rows,
-    workWindowsByDay
+    workWindowsByDay,
+    holidayTiles
   ]);
 
   return <>{tiles}</>;
