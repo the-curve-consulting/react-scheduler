@@ -109,7 +109,8 @@ import {
   Scheduler,
   SchedulerData,
   SchedulerHandle,
-  SchedulerProjectData
+  SchedulerProjectData,
+  SchedulerProps
 } from "@the-curve-consulting/react-scheduler";
 
 type PlanningMeta = {
@@ -148,6 +149,11 @@ export default function Component() {
     console.log(project.meta?.externalId);
   }, []);
 
+  const handleHolidayClick: NonNullable<SchedulerProps<PlanningMeta>["onHolidayClick"]> =
+    useCallback((holidayRequest) => {
+      console.log(holidayRequest.id, holidayRequest.state);
+    }, []);
+
   const optimisticProject: ProjectUpdate<PlanningMeta> = useMemo(
     () => ({
       rowId: "user-1",
@@ -182,6 +188,7 @@ export default function Component() {
         transformData={transformData}
         onRangeChange={(range) => console.log("visible range", range)}
         onTileClick={handleTileClick}
+        onHolidayClick={handleHolidayClick}
         onItemClick={(item) => console.log(item)}
         onFilterData={() => setSelectedUserIds(["user-1", "user-2"])}
         onClearFilterData={() => setSelectedUserIds([])}
@@ -219,6 +226,7 @@ export default function Component() {
 | onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
 | onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
 | onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
+| onHolidayClick    | `function`      | clicked holiday request data             | detects holiday tile click                                                                                                        |
 | onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
 | onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
@@ -327,8 +335,8 @@ const project: SchedulerProjectData<TimesheetMeta> = {
 | showThemeToggle   | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
 | defaultTheme      | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
 | theme             | `Theme`             | `undefined`       | custom light/dark theme color overrides                                                                                                                                |
-| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations                                                                                  |
-| defaultStartHour  | `number`            | `9`               | start hour used when placing entries in hourly view                                                                                                                    |
+| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations and default holiday half-day duration                                            |
+| defaultStartHour  | `number`            | `9`               | start hour used when placing entries and partial-day holidays in hourly view                                                                                           |
 | dataLoading       | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
 
 ##### DataLoadingConfig
@@ -424,7 +432,27 @@ array of chart rows with shape of
 | id | `string` | unique row id |
 | label | `SchedulerRowLabel` | row's label, `e.g person's name, surname, icon` |
 | data | `Array<ResourceItem>` | array of `resources` |
+| holidayRequests | `HolidayRequest[]` | row-level holiday requests used for holiday tiles and holiday-adjusted occupancy |
 | workingDurations | `WorkingDuration[] (optional)` | row-level working hours used for occupancy, throughput, tooltips, and non-working tile segments |
+
+##### HolidayRequest
+
+Rows must provide `holidayRequests`. Use an empty array when the row has no holidays.
+
+Holiday requests render as background holiday tiles and are passed to `onHolidayClick` when clicked. They also reduce available working time used by tooltips, throughput calculations, and non-working tile segmentation. Full-day and multi-day holidays remove the affected working time. Partial-day holidays remove half of the default workday derived from `config.maxHoursPerWeek`, not half of the row's custom working hours. In hourly zoom, the half-day is placed from `config.defaultStartHour`; in daily and weekly zoom, partial holidays render as half of the visual day cell.
+
+Scheduler does not filter holiday requests by `state`. Pass only the requests that should be rendered and included in capacity calculations.
+
+For partial holidays, `Morning` removes the first half of the day. Other defined `morning_or_afternoon` values are treated as the second half of the day.
+
+| Property Name        | Type                                                                                                                | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| id                   | `string`                                                                                                            | unique holiday request id                                                 |
+| leave_from           | `Date`                                                                                                              | first date covered by the holiday request                                 |
+| leave_to             | `Date`                                                                                                              | last date covered by the holiday request                                  |
+| leave_type           | `"Sick Leave" \| "Holiday / Vacation" \| "Compassionate Leave" \| "Unpaid Leave" \| "Paternity Leave" \| "Unknown"` | holiday category returned by the data source                              |
+| state                | `"pending" \| "approved" \| "rejected" \| "cancelled"`                                                              | request state returned by the data source                                 |
+| morning_or_afternoon | `"Morning" \| "Afternoon" \| "Half Day" (optional)`                                                                 | partial-day marker; omitted values are treated as full-day holiday blocks |
 
 ##### WorkingDuration
 
@@ -456,6 +484,16 @@ const data: SchedulerData<PlanningMeta> = [
       title: "Jane Doe",
       subtitle: "Consultant"
     },
+    holidayRequests: [
+      {
+        id: "holiday-1",
+        leave_from: new Date("2026-03-04"),
+        leave_to: new Date("2026-03-04"),
+        leave_type: "Holiday / Vacation",
+        state: "approved",
+        morning_or_afternoon: "Morning"
+      }
+    ],
     workingDurations: [
       {
         effectiveFrom: new Date("2026-01-01"),
@@ -509,11 +547,13 @@ item that will be visible on the grid as tile and that will be accessible as arg
 | startDate | `Date` | date for calculating start position for resource |
 | endDate | `Date` | date for calculating end position for resource |
 | occupancy | `number` | fixed number of seconds the resource takes per working day |
-| throughput | `number` | fraction of the person's working day that the resource takes, e.g. `0.8` means 80% of configured working hours |
+| throughput | `number` | fraction of the person's holiday-adjusted working day that the resource takes, e.g. `0.8` means 80% of available working hours |
 | bgColor | `string (optional)` | tile color |
 | meta | `TMeta (optional)` | custom project payload preserved by scheduler and exposed in typed callbacks |
 
 Provide either `occupancy` or `throughput` for a resource item.
+
+Throughput is calculated per available working day. Multiple throughput resources whose total is greater than `1` can create overtime; the scheduler does not cap the requested work at 100% before calculating tooltip overtime.
 
 ### Troubleshooting
 

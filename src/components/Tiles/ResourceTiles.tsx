@@ -137,7 +137,8 @@ const ResourceTilesInner = <TMeta,>({
         endDate,
         defaultStartHour,
         holidayRequest,
-        halfDayHours
+        halfDayHours,
+        zoom
       );
 
       if (holidayWindow === null) return [];
@@ -145,8 +146,8 @@ const ResourceTilesInner = <TMeta,>({
       return [
         <HolidayTile
           key={holidayRequest.id}
-          startDate={holidayWindow?.startDate}
-          endDate={holidayWindow?.endDate}
+          startDate={holidayWindow.startDate}
+          endDate={holidayWindow.endDate}
           rowIndex={rows}
           rowNo={rowNo}
           data={holidayRequest}
@@ -169,6 +170,18 @@ const ResourceTilesInner = <TMeta,>({
     const visibleStartDate = dayjs(visibleStart);
     const visibleEndDate = dayjs(visibleEnd);
 
+    /**
+     * Calculates how much of the remaining work window one project should occupy.
+     *
+     * Occupancy projects request fixed seconds and are clipped to the remaining
+     * available window. Throughput projects scale from the full holiday-adjusted
+     * day capacity, then are also clipped to the remaining window.
+     *
+     * @param project Project being rendered.
+     * @param currentStartTime First available timestamp after previous same-day tiles.
+     * @param workWindow Holiday-adjusted work window for the current day.
+     * @returns Number of seconds this project can occupy from `currentStartTime`.
+     */
     const calculateProjectOccupancySeconds = (
       project: SchedulerProjectData<TMeta>,
       currentStartTime: dayjs.Dayjs,
@@ -186,7 +199,18 @@ const ResourceTilesInner = <TMeta,>({
       return Math.min(projectSeconds, availableSeconds);
     };
 
-    // Helper: Render hourly tiles for a single project
+    /**
+     * Builds hourly tiles for one project across the visible date range.
+     *
+     * `startDateTimes` is shared per day so each next project starts after the
+     * previously rendered project on that day, matching the scheduler stacking logic.
+     *
+     * @param project Project being rendered.
+     * @param rowIndex Project row index inside the resource.
+     * @param rowOffset Number of rows reserved before project rows.
+     * @param startDateTimes Last rendered end time keyed by visible day.
+     * @returns Hourly tile elements for the project.
+     */
     const renderHourlyTilesForProject = (
       project: SchedulerProjectData<TMeta>,
       rowIndex: number,

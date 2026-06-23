@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { HolidayRequest } from "@/types/global";
-import { minutesInHour } from "@/constants";
+import { hoursInDay, minutesInHour } from "@/constants";
 
 /**
  * Normalised holiday availability category used by tile placement.
@@ -138,14 +138,17 @@ export const getAvailableWorkWindow = (
 /**
  * Resolves the visible tile window for a holiday request.
  *
- * Full-day holidays span the clipped request date range. Single-day morning and
- * afternoon holidays span only the configured half-day window.
+ * Hourly zoom uses the configured business-day start and half-day duration.
+ * Daily and weekly zoom use visual half-cell/full-cell spans, so partial holidays
+ * occupy exactly half of the rendered day even when a business half-day is not
+ * twelve real hours.
  *
  * @param startDate Clipped holiday start date within the visible range.
  * @param endDate Clipped holiday end date within the visible range.
  * @param startHour Hour of day at which the normal work day starts.
  * @param holidayRequest Holiday request to render.
  * @param halfDayHours Number of hours represented by a half-day holiday.
+ * @param zoom Current zoom level. Non-hourly zooms use visual half-day spans.
  * @returns Tile start/end dates for rendering the holiday.
  */
 export const getHolidayWindow = (
@@ -153,9 +156,20 @@ export const getHolidayWindow = (
   endDate: dayjs.Dayjs,
   startHour: number,
   holidayRequest: HolidayRequest,
-  halfDayHours: number
+  halfDayHours: number,
+  zoom: number
 ): { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs } | null => {
   const holidayKind = getHolidayKind(holidayRequest);
+  const dayStart = startDate.startOf("day");
+  const halfRealDay = hoursInDay / 2;
+
+  if (zoom !== 2) {
+    const start = holidayKind === "afternoon" ? dayStart.add(halfRealDay, "hour") : dayStart;
+    const end =
+      holidayKind === "morning" ? dayStart.add(halfRealDay, "hour") : endDate.endOf("day");
+
+    return { startDate: start, endDate: end };
+  }
 
   const start =
     holidayKind === "full"

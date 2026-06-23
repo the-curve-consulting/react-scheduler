@@ -31,7 +31,8 @@ const HolidayTileInner = <TMeta,>({
     currentCenterDate,
     zoom,
     cols,
-    false
+    false,
+    true
   );
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
