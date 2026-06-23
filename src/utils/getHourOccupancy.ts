@@ -10,7 +10,7 @@ import { secondsInHour } from "@/constants";
 import { getDuration } from "@/utils/getDuration";
 import { getTimeOccupancy } from "@/utils/getTimeOccupancy";
 import { getMaxHoursPerDay, isOccupancyProject } from "@/utils/workingDurationHelper";
-import { getAvailableWorkWindow, getHolidayRequestsForDay } from "@/utils/holidayRequestHelper";
+import { getAvailableWorkWindow } from "@/utils/holidayRequestHelper";
 
 /**
  * Calculates the overlapping seconds between two time ranges.
@@ -99,7 +99,7 @@ const getHoursAndMinutes = <TMeta>(
  * @param projectRows Project rows for the focused resource.
  * @param focusedDate Start of the hour represented by the tooltip.
  * @param workingDuration Working-duration definition active on the focused day.
- * @param holidayRequests Holiday requests overlapping the focused day.
+ * @param holidayRequests Holiday requests already scoped to the focused day.
  * @param halfDayHours Number of hours represented by a half-day holiday.
  * @param startHour Hour of day at which work starts.
  * @returns Taken, free, and overtime values for the focused hour.
@@ -117,7 +117,7 @@ export const getHourOccupancy = <TMeta>(
   const workWindow = getAvailableWorkWindow(
     focusedDate,
     maxHours,
-    getHolidayRequestsForDay(focusedDate, holidayRequests),
+    holidayRequests,
     startHour,
     halfDayHours
   );

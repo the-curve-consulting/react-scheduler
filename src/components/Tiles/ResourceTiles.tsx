@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import dayjs from "dayjs";
-import { HolidayRequest, SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
+import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 import { secondsInHour } from "@/constants";
 import { HourlyTile, Tile, HolidayTile } from "@/components";
 import { isProjectVisible } from "@/utils/scrollHelpers";
@@ -10,8 +10,16 @@ import {
   isOccupancyProject,
   sortWorkingDurations
 } from "@/utils/workingDurationHelper";
-import { getAvailableWorkWindow, getHolidayWindow, WorkWindow } from "@/utils/holidayRequestHelper";
+import {
+  getAvailableWorkWindowFromKinds,
+  getHolidayKind,
+  getHolidayWindow,
+  HolidayKind,
+  WorkWindow
+} from "@/utils/holidayRequestHelper";
 import { PlacedTiles, ResourceTilesComponent, ResourceTilesProps } from "./types";
+
+const NO_HOLIDAY_KINDS: HolidayKind[] = [];
 
 const ResourceTilesInner = <TMeta,>({
   data,
@@ -35,22 +43,6 @@ const ResourceTilesInner = <TMeta,>({
     [workingDurations]
   );
 
-  const hoursByDay = useMemo(() => {
-    const result = new Map<number, number>();
-    let currentDate = dayjs(visibleStartDay);
-    const endDate = dayjs(visibleEndDay);
-
-    while (!currentDate.isAfter(endDate, "day")) {
-      const dayKey = currentDate.startOf("day").valueOf();
-
-      result.set(dayKey, getWorkingHoursForDate(currentDate, sortedWorkingDurations));
-
-      currentDate = currentDate.add(1, "day");
-    }
-
-    return result;
-  }, [visibleStartDay, visibleEndDay, sortedWorkingDurations]);
-
   const visibleHolidayRanges = useMemo(() => {
     const visibleStartDate = dayjs(visibleStartDay).startOf("day");
     const visibleEndDate = dayjs(visibleEndDay).startOf("day");
@@ -66,6 +58,7 @@ const ResourceTilesInner = <TMeta,>({
       return [
         {
           holidayRequest,
+          kind: getHolidayKind(holidayRequest),
           startDate: leaveStart.isBefore(visibleStartDate) ? visibleStartDate : leaveStart,
           endDate: leaveEnd.isAfter(visibleEndDate) ? visibleEndDate : leaveEnd
         }
@@ -73,15 +66,20 @@ const ResourceTilesInner = <TMeta,>({
     });
   }, [visibleStartDay, visibleEndDay, holidayRequests]);
 
-  const holidayRequestsByDay = useMemo(() => {
-    const result = new Map<number, HolidayRequest[]>();
+  const holidayKindsByDay = useMemo(() => {
+    const result = new Map<number, HolidayKind[]>();
 
-    for (const { holidayRequest, startDate, endDate } of visibleHolidayRanges) {
+    for (const { kind, startDate, endDate } of visibleHolidayRanges) {
       let currentDate = startDate;
 
       while (!currentDate.isAfter(endDate, "day")) {
         const dayKey = currentDate.valueOf();
-        result.set(dayKey, [...(result.get(dayKey) ?? []), holidayRequest]);
+        let kinds = result.get(dayKey);
+        if (!kinds) {
+          kinds = [];
+          result.set(dayKey, kinds);
+        }
+        kinds.push(kind);
         currentDate = currentDate.add(1, "day");
       }
     }
@@ -89,54 +87,59 @@ const ResourceTilesInner = <TMeta,>({
     return result;
   }, [visibleHolidayRanges]);
 
-  const workWindowsByDay = useMemo(() => {
-    const result = new Map<number, WorkWindow | null>();
-    let currentDate = dayjs(visibleStartDay);
-    const visibleEndDate = dayjs(visibleEndDay);
+  // Resolve working hours, the holiday-adjusted work window and remaining available
+  // hours for every visible day in a single pass. Days with no holidays skip the
+  // per-day kind lookup entirely (the common case).
+  const { workWindowsByDay, availableHoursByDay } = useMemo(() => {
+    const workWindowsByDay = new Map<number, WorkWindow | null>();
+    const availableHoursByDay = new Map<number, number>();
+    const hasHolidays = holidayRequests.length > 0;
 
-    while (!currentDate.isAfter(visibleEndDate, "day")) {
+    let currentDate = dayjs(visibleStartDay);
+    const endDate = dayjs(visibleEndDay);
+
+    while (!currentDate.isAfter(endDate, "day")) {
       const dayKey = currentDate.startOf("day").valueOf();
-      const workingHours = hoursByDay.get(dayKey) ?? 0;
-      const workWindow = getAvailableWorkWindow(
+      const workingHours = getWorkingHoursForDate(currentDate, sortedWorkingDurations);
+      const holidayKinds = hasHolidays
+        ? holidayKindsByDay.get(dayKey) ?? NO_HOLIDAY_KINDS
+        : NO_HOLIDAY_KINDS;
+      const workWindow = getAvailableWorkWindowFromKinds(
         currentDate,
         workingHours,
-        holidayRequestsByDay.get(dayKey) ?? [],
+        holidayKinds,
         defaultStartHour,
         halfDayHours
       );
 
-      result.set(dayKey, workWindow);
+      workWindowsByDay.set(dayKey, workWindow);
+      availableHoursByDay.set(
+        dayKey,
+        workWindow ? workWindow.end.diff(workWindow.start, "hour", true) : 0
+      );
+
       currentDate = currentDate.add(1, "day");
     }
 
-    return result;
+    return { workWindowsByDay, availableHoursByDay };
   }, [
     visibleStartDay,
     visibleEndDay,
+    sortedWorkingDurations,
     defaultStartHour,
     halfDayHours,
-    holidayRequestsByDay,
-    hoursByDay
+    holidayKindsByDay,
+    holidayRequests
   ]);
-
-  const availableHoursByDay = useMemo(() => {
-    const result = new Map<number, number>();
-
-    for (const [dayKey, workWindow] of workWindowsByDay) {
-      result.set(dayKey, workWindow ? workWindow.end.diff(workWindow.start, "hour", true) : 0);
-    }
-
-    return result;
-  }, [workWindowsByDay]);
 
   const holidayTiles: PlacedTiles = useMemo(() => {
     const rowNo = Math.max(data.length, 1);
-    return visibleHolidayRanges.flatMap(({ holidayRequest, startDate, endDate }) => {
+    return visibleHolidayRanges.flatMap(({ holidayRequest, kind, startDate, endDate }) => {
       const holidayWindow = getHolidayWindow(
         startDate,
         endDate,
         defaultStartHour,
-        holidayRequest,
+        kind,
         halfDayHours,
         zoom
       );
