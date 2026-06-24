@@ -39,20 +39,25 @@ export const getHolidayKind = (holidayRequest: HolidayRequest): HolidayKind => {
 };
 
 /**
+ * Summarises pre-computed holiday kinds present on a single calendar day.
+ *
+ * @param holidayKinds Normalised holiday kinds overlapping one day.
+ * @returns Boolean flags for each supported holiday kind.
+ */
+const getHolidayKindSummaryFromKinds = (holidayKinds: HolidayKind[]): HolidayKindSummary => ({
+  full: holidayKinds.includes("full"),
+  morning: holidayKinds.includes("morning"),
+  afternoon: holidayKinds.includes("afternoon")
+});
+
+/**
  * Summarises all holiday request kinds present on a single calendar day.
  *
  * @param holidayRequests Holiday requests overlapping one day.
  * @returns Boolean flags for each supported holiday kind.
  */
-const getHolidayKindSummary = (holidayRequests: HolidayRequest[]): HolidayKindSummary => {
-  const holidayKinds = holidayRequests.map(getHolidayKind);
-
-  return {
-    full: holidayKinds.includes("full"),
-    morning: holidayKinds.includes("morning"),
-    afternoon: holidayKinds.includes("afternoon")
-  };
-};
+const getHolidayKindSummary = (holidayRequests: HolidayRequest[]): HolidayKindSummary =>
+  getHolidayKindSummaryFromKinds(holidayRequests.map(getHolidayKind));
 
 /**
  * Builds the unadjusted working window for a day.
@@ -136,6 +141,38 @@ export const getAvailableWorkWindow = (
 };
 
 /**
+ * Resolves the project-rendering work window for a day from pre-computed holiday kinds.
+ *
+ * Identical to `getAvailableWorkWindow` but skips per-day holiday classification when
+ * kinds have already been computed once per request (avoids repeated date parsing in
+ * the tile-rendering hot path).
+ *
+ * @param date Day to resolve.
+ * @param workingHours Person-specific working hours configured for the day.
+ * @param holidayKinds Normalised holiday kinds overlapping the day.
+ * @param startHour Hour of day at which work starts.
+ * @param halfDayHours Number of hours used as the holiday half-day boundary.
+ * @returns Available work window, or `null` when the day is unavailable.
+ */
+export const getAvailableWorkWindowFromKinds = (
+  date: dayjs.Dayjs,
+  workingHours: number,
+  holidayKinds: HolidayKind[],
+  startHour: number,
+  halfDayHours: number
+): WorkWindow | null => {
+  const workWindow = getBaseWorkWindow(date, workingHours, startHour);
+  if (!workWindow) return null;
+  if (!holidayKinds.length) return workWindow;
+
+  return applyHolidayAvailability(
+    workWindow,
+    getHolidayKindSummaryFromKinds(holidayKinds),
+    halfDayHours
+  );
+};
+
+/**
  * Resolves the visible tile window for a holiday request.
  *
  * Hourly zoom uses the configured business-day start and half-day duration.
@@ -146,7 +183,7 @@ export const getAvailableWorkWindow = (
  * @param startDate Clipped holiday start date within the visible range.
  * @param endDate Clipped holiday end date within the visible range.
  * @param startHour Hour of day at which the normal work day starts.
- * @param holidayRequest Holiday request to render.
+ * @param holidayKind Pre-computed normalised kind for the holiday request.
  * @param halfDayHours Number of hours represented by a half-day holiday.
  * @param zoom Current zoom level. Non-hourly zooms use visual half-day spans.
  * @returns Tile start/end dates for rendering the holiday.
@@ -155,11 +192,10 @@ export const getHolidayWindow = (
   startDate: dayjs.Dayjs,
   endDate: dayjs.Dayjs,
   startHour: number,
-  holidayRequest: HolidayRequest,
+  holidayKind: HolidayKind,
   halfDayHours: number,
   zoom: number
 ): { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs } | null => {
-  const holidayKind = getHolidayKind(holidayRequest);
   const dayStart = startDate.startOf("day");
   const halfRealDay = hoursInDay / 2;
 
@@ -191,9 +227,12 @@ export const getHolidayWindow = (
  * This returns only the duration of the available work window. Use
  * `getAvailableWorkWindow` directly when the exact start/end times are needed.
  *
+ * `holidayRequests` must already be scoped to `date` (e.g. via
+ * `getHolidayRequestsForDay`); this function does not filter again.
+ *
  * @param date Day to resolve.
  * @param workingHours Person-specific working hours configured for the day.
- * @param holidayRequests Holiday requests that may overlap the day.
+ * @param holidayRequests Holiday requests already scoped to the day.
  * @param startHour Hour of day at which work starts.
  * @param halfDayHours Number of hours used as the holiday half-day boundary.
  * @returns Available working hours for the day after holidays are applied.
@@ -208,7 +247,7 @@ export const getAvailableWorkingHoursForDate = (
   const workWindow = getAvailableWorkWindow(
     date,
     workingHours,
-    getHolidayRequestsForDay(date, holidayRequests),
+    holidayRequests,
     startHour,
     halfDayHours
   );
@@ -250,4 +289,49 @@ export const getHolidayRequestsForDateRange = (
 
     return !leaveFrom.isAfter(rangeEnd) && !leaveTo.isBefore(rangeStart);
   });
+};
+
+/**
+ * Buckets holiday requests by the start-of-day timestamps they overlap within a range.
+ *
+ * Parses each request's dates once and walks only the days it covers, so callers can
+ * resolve a single day's holidays with a map lookup instead of re-filtering the whole
+ * list per day.
+ *
+ * @param rangeStart First day in the range.
+ * @param rangeEnd Last day in the range.
+ * @param holidayRequests Holiday requests to bucket.
+ * @returns Map keyed by start-of-day ms to the holiday requests overlapping that day.
+ */
+export const groupHolidayRequestsByDay = (
+  rangeStart: dayjs.Dayjs,
+  rangeEnd: dayjs.Dayjs,
+  holidayRequests: HolidayRequest[]
+): Map<number, HolidayRequest[]> => {
+  const result = new Map<number, HolidayRequest[]>();
+  const windowStart = rangeStart.startOf("day");
+  const windowEnd = rangeEnd.startOf("day");
+
+  for (const holidayRequest of holidayRequests) {
+    const leaveStart = dayjs(holidayRequest.leave_from).startOf("day");
+    const leaveEnd = dayjs(holidayRequest.leave_to).startOf("day");
+
+    if (leaveStart.isAfter(windowEnd) || leaveEnd.isBefore(windowStart)) continue;
+
+    let currentDate = leaveStart.isBefore(windowStart) ? windowStart : leaveStart;
+    const lastDate = leaveEnd.isAfter(windowEnd) ? windowEnd : leaveEnd;
+
+    while (!currentDate.isAfter(lastDate, "day")) {
+      const dayKey = currentDate.valueOf();
+      let bucket = result.get(dayKey);
+      if (!bucket) {
+        bucket = [];
+        result.set(dayKey, bucket);
+      }
+      bucket.push(holidayRequest);
+      currentDate = currentDate.add(1, "day");
+    }
+  }
+
+  return result;
 };

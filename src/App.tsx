@@ -341,18 +341,7 @@ function App() {
           return;
         }
 
-        const timeoutId = window.setTimeout(() => {
-          signal?.removeEventListener("abort", handleAbort);
-
-          resolve(filterSchedulerRowsByDateRange(mocked, range.startDate, range.endDate));
-        }, 5000);
-
-        function handleAbort() {
-          window.clearTimeout(timeoutId);
-          reject(new DOMException("Request aborted", "AbortError"));
-        }
-
-        signal?.addEventListener("abort", handleAbort, { once: true });
+        resolve(filterSchedulerRowsByDateRange(mocked, range.startDate, range.endDate));
       }),
     [mocked]
   );

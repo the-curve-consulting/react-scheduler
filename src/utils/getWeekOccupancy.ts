@@ -10,7 +10,10 @@ import {
 } from "@/types/global";
 import { secondsInHour } from "@/constants";
 import { getWorkingHoursForDate, isOccupancyProject } from "@/utils/workingDurationHelper";
-import { getAvailableWorkingHoursForDate } from "@/utils/holidayRequestHelper";
+import {
+  getAvailableWorkingHoursForDate,
+  groupHolidayRequestsByDay
+} from "@/utils/holidayRequestHelper";
 import { getDuration } from "./getDuration";
 import { getTotalHoursAndMinutes } from "./getTotalHoursAndMinutes";
 import { getTimeOccupancy } from "./getTimeOccupancy";
@@ -45,13 +48,14 @@ const getWeeklyAvailability = (
   const days: DayAvailability[] = [];
   let currentDate = weekStartDate.startOf("day");
   const weekEnd = weekEndDate.startOf("day");
+  const holidayRequestsByDay = groupHolidayRequestsByDay(currentDate, weekEnd, holidayRequests);
 
   while (!currentDate.isAfter(weekEnd, "day")) {
     const workingHours = getWorkingHoursForDate(currentDate, workingDurations);
     const availableHours = getAvailableWorkingHoursForDate(
       currentDate,
       workingHours,
-      holidayRequests,
+      holidayRequestsByDay.get(currentDate.valueOf()) ?? [],
       startHour,
       halfDayHours
     );
