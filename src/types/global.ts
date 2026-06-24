@@ -83,14 +83,30 @@ export type WorkingDuration = {
   workingDays: WorkingDay[];
 };
 
+export type HolidayRequest = {
+  id: string;
+  leave_from: Date;
+  leave_to: Date;
+  leave_type:
+    | "Sick Leave"
+    | "Holiday / Vacation"
+    | "Compassionate Leave"
+    | "Unpaid Leave"
+    | "Paternity Leave"
+    | "Unknown";
+  state: "pending" | "approved" | "rejected" | "cancelled";
+  morning_or_afternoon?: "Morning" | "Afternoon" | "Half Day";
+};
+
 export type SchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
   data: SchedulerProjectData<TMeta>[];
+  holidayRequests: HolidayRequest[];
   workingDurations?: WorkingDuration[];
 };
 
-export type SchedulerItemClickData<TMeta = unknown> = Omit<SchedulerRow<TMeta>, "data">;
+export type SchedulerItemClickData<TMeta = unknown> = Pick<SchedulerRow<TMeta>, "id" | "label">;
 
 export type PaginatedSchedulerData<TMeta = unknown> = PaginatedSchedulerRow<TMeta>[];
 
@@ -98,6 +114,7 @@ export type PaginatedSchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;
   data: SchedulerProjectData<TMeta>[][];
+  holidayRequests: HolidayRequest[];
   workingDurations?: WorkingDuration[];
 };
 

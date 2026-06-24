@@ -222,13 +222,15 @@ export const isProjectVisible = (
  * @param currentCenterDate Date currently centered in viewport.
  * @param zoom Current zoom level.
  * @param cols Number of visible columns.
+ * @param precise Whether sub-day offsets should be preserved outside hourly zoom.
  * @returns Tile x-position in pixels inside the grid.
  */
 export const getTilePositionRelativeToCenter = (
   tileDate: dayjs.Dayjs,
   currentCenterDate: dayjs.Dayjs,
   zoom: number,
-  cols: number
+  cols: number,
+  precise: boolean = false
 ): number => {
   const cellWidth = getCellWidth(zoom);
   const centerCol = Math.floor(cols / 2);
@@ -237,12 +239,20 @@ export const getTilePositionRelativeToCenter = (
 
   switch (zoom) {
     case 0:
-      // Weekly view: use day-level precision with ISO weeks (Monday start)
-      offset = tileDate.startOf("day").diff(currentCenterDate.startOf("isoWeek"), "weeks", true);
+      // Weekly view: use ISO weeks (Monday start), with optional sub-day precision.
+      offset = (precise ? tileDate : tileDate.startOf("day")).diff(
+        currentCenterDate.startOf("isoWeek"),
+        "weeks",
+        true
+      );
       return (centerCol + offset) * cellWidth;
     case 1:
-      // Daily view: use day-level precision
-      offset = tileDate.startOf("day").diff(currentCenterDate.startOf("day"), "days");
+      // Daily view: use day-level precision unless exact positioning is requested.
+      offset = (precise ? tileDate : tileDate.startOf("day")).diff(
+        currentCenterDate.startOf("day"),
+        "days",
+        true
+      );
       return (centerCol + offset) * cellWidth;
     case 2:
       // Hourly view: use minute-level precision

@@ -5,6 +5,7 @@ import { ParsedDatesRange } from "./utils/getDatesRange";
 import {
   Config,
   ConfigFormValues,
+  HolidayRequest,
   SchedulerData,
   SchedulerItemClickData,
   SchedulerProjectData,
@@ -20,6 +21,23 @@ type DemoProjectMeta = {
 };
 
 const secondsInHour = 60 * 60;
+
+const holidayLeaveTypes: HolidayRequest["leave_type"][] = [
+  "Sick Leave",
+  "Holiday / Vacation",
+  "Compassionate Leave",
+  "Unpaid Leave",
+  "Paternity Leave",
+  "Unknown"
+];
+
+const holidayStates: HolidayRequest["state"][] = ["approved", "pending", "rejected", "cancelled"];
+
+const halfDayOptions: NonNullable<HolidayRequest["morning_or_afternoon"]>[] = [
+  "Morning",
+  "Afternoon",
+  "Half Day"
+];
 
 const getDemoWorkingDurations = (personIndex: number): WorkingDuration[] => {
   const effectiveFrom = dayjs().subtract(1, "year").startOf("year").toDate();
@@ -90,6 +108,92 @@ const getDemoWorkingDurations = (personIndex: number): WorkingDuration[] => {
       ];
   }
 };
+
+const createDemoHolidayRequests = (
+  personId: string,
+  personIndex: number,
+  years: number
+): HolidayRequest[] => {
+  const yearsPerSide = Math.max(0, Math.floor(years));
+  const startYear = dayjs().subtract(yearsPerSide, "year").year();
+  const endYear = dayjs().add(yearsPerSide, "year").year();
+  const requests: HolidayRequest[] = [];
+
+  if (personIndex < 6) {
+    const leaveStart = dayjs()
+      .startOf("isoWeek")
+      .add(personIndex % 5, "day");
+    const isHalfDay = personIndex % 3 === 0;
+
+    requests.push({
+      id: `${personId}-holiday-current-week`,
+      leave_from: leaveStart.toDate(),
+      leave_to: (isHalfDay ? leaveStart : leaveStart.add((personIndex % 2) + 1, "day")).toDate(),
+      leave_type: holidayLeaveTypes[personIndex % holidayLeaveTypes.length],
+      state: holidayStates[personIndex % holidayStates.length],
+      morning_or_afternoon: isHalfDay
+        ? halfDayOptions[personIndex % halfDayOptions.length]
+        : undefined
+    });
+  }
+
+  for (let year = startYear; year <= endYear; year++) {
+    const yearOffset = year - startYear;
+    const leaveStart = dayjs(new Date(year, (personIndex * 3 + yearOffset * 5) % 12, 3))
+      .add((personIndex + yearOffset * 2) % 21, "day")
+      .startOf("day");
+    const isHalfDay = (personIndex + yearOffset) % 4 === 0;
+
+    requests.push({
+      id: `${personId}-holiday-${year}`,
+      leave_from: leaveStart.toDate(),
+      leave_to: (isHalfDay ? leaveStart : leaveStart.add((personIndex + yearOffset) % 5, "day"))
+        .endOf("day")
+        .toDate(),
+      leave_type: holidayLeaveTypes[(personIndex + yearOffset) % holidayLeaveTypes.length],
+      state: holidayStates[(personIndex + yearOffset) % holidayStates.length],
+      morning_or_afternoon: isHalfDay
+        ? halfDayOptions[(personIndex + yearOffset) % halfDayOptions.length]
+        : undefined
+    });
+  }
+
+  return requests;
+};
+
+const isDateRangeInRange = (
+  startDate: Date,
+  endDate: Date,
+  rangeStartDate: Date,
+  rangeEndDate: Date
+): boolean => {
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  const rangeStart = dayjs(rangeStartDate);
+  const rangeEnd = dayjs(rangeEndDate);
+
+  return !start.isAfter(rangeEnd) && !end.isBefore(rangeStart);
+};
+
+const filterSchedulerRowsByDateRange = <TMeta,>(
+  data: SchedulerData<TMeta>,
+  rangeStartDate: Date,
+  rangeEndDate: Date
+): SchedulerData<TMeta> =>
+  data.map((person) => ({
+    ...person,
+    holidayRequests: person.holidayRequests.filter((holidayRequest) =>
+      isDateRangeInRange(
+        holidayRequest.leave_from,
+        holidayRequest.leave_to,
+        rangeStartDate,
+        rangeEndDate
+      )
+    ),
+    data: person.data.filter((project) =>
+      isDateRangeInRange(project.startDate, project.endDate, rangeStartDate, rangeEndDate)
+    )
+  }));
 
 const toThroughputProject = (
   project: SchedulerProjectData<DemoProjectMeta>,
@@ -184,6 +288,7 @@ function App() {
         return {
           ...person,
           workingDurations: getDemoWorkingDurations(personIndex),
+          holidayRequests: createDemoHolidayRequests(person.id, personIndex, +yearsCovered),
           data: [
             ...createVisibleDemoProjects(person.id, person.label.title, personIndex),
             ...generatedProjects
@@ -236,30 +341,7 @@ function App() {
           return;
         }
 
-        const timeoutId = window.setTimeout(() => {
-          signal?.removeEventListener("abort", handleAbort);
-
-          const rowsInRange = mocked.map((person) => ({
-            ...person,
-            data: person.data.filter((project) => {
-              const projectStart = dayjs(project.startDate);
-              const projectEnd = dayjs(project.endDate);
-              const rangeStart = dayjs(range.startDate);
-              const rangeEnd = dayjs(range.endDate);
-
-              return !projectStart.isAfter(rangeEnd) && !projectEnd.isBefore(rangeStart);
-            })
-          }));
-
-          resolve(rowsInRange);
-        }, 5000);
-
-        function handleAbort() {
-          window.clearTimeout(timeoutId);
-          reject(new DOMException("Request aborted", "AbortError"));
-        }
-
-        signal?.addEventListener("abort", handleAbort, { once: true });
+        resolve(filterSchedulerRowsByDateRange(mocked, range.startDate, range.endDate));
       }),
     [mocked]
   );
@@ -267,19 +349,10 @@ function App() {
   // Note: this is just a demo, so we filter data based on start and end dates of the range.
   // There is problem here because every update of the filteredData triggers re-render of Grid and Tileset components.
   // Proposal is to modify data retrieval logic to avoid unnecessary re-renders - like smart pagination.
+  const { startDate: rangeStartDate, endDate: rangeEndDate } = range;
   const filteredData = useMemo(
-    () =>
-      mocked.map((person) => ({
-        ...person,
-        data: person.data.filter(
-          (project) =>
-            dayjs(project.startDate).isBetween(range.startDate, range.endDate) ||
-            dayjs(project.endDate).isBetween(range.startDate, range.endDate) ||
-            (dayjs(project.startDate).isBefore(range.startDate, "day") &&
-              dayjs(project.endDate).isAfter(range.endDate, "day"))
-        )
-      })),
-    [mocked, range.endDate, range.startDate]
+    () => filterSchedulerRowsByDateRange(mocked, rangeStartDate, rangeEndDate),
+    [mocked, rangeEndDate, rangeStartDate]
   );
 
   const handleFilterData = useCallback(() => {
@@ -292,6 +365,16 @@ function App() {
 
     console.log(
       `Item ${data.title} - ${data.subtitle} was clicked. \n==============\nStart date: ${data.startDate} \n==============\nEnd date: ${data.endDate}\n==============\nAllocation: ${allocation}\n==============\nPerson id: ${data.meta?.personId}`
+    );
+  }, []);
+
+  const handleHolidayClick = useCallback((data: HolidayRequest) => {
+    console.log(
+      `Holiday ${data.leave_type} was clicked. \n==============\nStart date: ${
+        data.leave_from
+      } \n==============\nEnd date: ${data.leave_to}\n==============\nState: ${
+        data.state
+      }\n==============\nPart of day: ${data.morning_or_afternoon ?? "Full day"}`
     );
   }, []);
 
@@ -320,6 +403,7 @@ function App() {
           onFetchData={handleFetchData}
           isLoading={false}
           onTileClick={handleTileClick}
+          onHolidayClick={handleHolidayClick}
           onFilterData={handleFilterData}
           config={config}
           onItemClick={handleItemClick}
@@ -332,6 +416,7 @@ function App() {
             isLoading={false}
             data={filteredData}
             onTileClick={handleTileClick}
+            onHolidayClick={handleHolidayClick}
             onFilterData={handleFilterData}
             onItemClick={handleItemClick}
           />

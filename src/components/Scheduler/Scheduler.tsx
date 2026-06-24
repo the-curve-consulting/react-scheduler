@@ -44,6 +44,7 @@ const SchedulerInner = <TMeta,>(
     dataSourceKey,
     onRangeChange,
     onTileClick,
+    onHolidayClick,
     onFilterData,
     onClearFilterData,
     onItemClick,
@@ -154,6 +155,7 @@ const SchedulerInner = <TMeta,>(
                   config={appConfig}
                   data={transformedData}
                   onTileClick={onTileClick}
+                  onHolidayTileClick={onHolidayClick}
                   topBarWidth={topBarWidth}
                   onItemClick={onItemClick}
                   toggleTheme={toggleTheme}

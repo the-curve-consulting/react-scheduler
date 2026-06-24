@@ -1,7 +1,24 @@
 import dayjs from "dayjs";
-import { SchedulerData, SchedulerProjectData } from "@/types/global";
+import { HolidayRequest, SchedulerData, SchedulerProjectData } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
 import { DayjsRange } from "./types";
+
+/**
+ * Checks whether holiday request dates overlap a target range.
+ *
+ * @param holidayRequest Holiday Request entry to test.
+ * @param range Inclusive range for overlap.
+ * @returns `true` when holiday request intersects range.
+ */
+const isHolidayRequestInRange = (holidayRequest: HolidayRequest, range: DayjsRange): boolean => {
+  const start = dayjs(holidayRequest.leave_from);
+  const end = dayjs(holidayRequest.leave_to);
+
+  return (
+    (start.isBefore(range.endDate) || start.isSame(range.endDate)) &&
+    (end.isAfter(range.startDate) || end.isSame(range.startDate))
+  );
+};
 
 /**
  * Checks whether project dates overlap a target range.
@@ -150,6 +167,7 @@ export const mergeSchedulerData = <TMeta>(
     {
       label: SchedulerData<TMeta>[number]["label"];
       workingDurations: SchedulerData<TMeta>[number]["workingDurations"];
+      holidayRequests: Map<string, HolidayRequest>;
       projects: Map<string, SchedulerProjectData<TMeta>>;
     }
   >();
@@ -160,6 +178,9 @@ export const mergeSchedulerData = <TMeta>(
     rowsById.set(row.id, {
       label: row.label,
       workingDurations: row.workingDurations,
+      holidayRequests: new Map(
+        row.holidayRequests.map((holidayRequest) => [holidayRequest.id, holidayRequest])
+      ),
       projects: new Map(row.data.map((project) => [project.id, project]))
     });
   }
@@ -172,6 +193,9 @@ export const mergeSchedulerData = <TMeta>(
       rowsById.set(row.id, {
         label: row.label,
         workingDurations: row.workingDurations,
+        holidayRequests: new Map(
+          row.holidayRequests.map((holidayRequest) => [holidayRequest.id, holidayRequest])
+        ),
         projects: new Map(row.data.map((project) => [project.id, project]))
       });
       continue;
@@ -181,6 +205,9 @@ export const mergeSchedulerData = <TMeta>(
     existingRow.workingDurations = row.workingDurations ?? existingRow.workingDurations;
     for (const project of row.data) {
       existingRow.projects.set(project.id, project);
+    }
+    for (const holidayRequest of row.holidayRequests) {
+      existingRow.holidayRequests.set(holidayRequest.id, holidayRequest);
     }
   }
 
@@ -194,6 +221,7 @@ export const mergeSchedulerData = <TMeta>(
       id: rowId,
       label: row.label,
       workingDurations: row.workingDurations,
+      holidayRequests: Array.from(row.holidayRequests.values()),
       data: Array.from(row.projects.values())
     });
   }
@@ -216,13 +244,19 @@ export const trimDataToRange = <TMeta>(
 
   const trimmedRows = rows.map((row) => {
     const filteredProjects = row.data.filter((project) => isProjectInRange(project, range));
+    const filteredHolidayRequests = row.holidayRequests.filter((holidayRequest) =>
+      isHolidayRequestInRange(holidayRequest, range)
+    );
 
-    if (filteredProjects.length === row.data.length) {
+    if (
+      filteredProjects.length === row.data.length &&
+      filteredHolidayRequests.length === row.holidayRequests.length
+    ) {
       return row;
     }
 
     changed = true;
-    return { ...row, data: filteredProjects };
+    return { ...row, holidayRequests: filteredHolidayRequests, data: filteredProjects };
   });
 
   return changed ? trimmedRows : rows;

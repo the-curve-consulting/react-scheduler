@@ -81,6 +81,7 @@ export const createMockData = (
         title,
         subtitle: getRandomWords()
       },
+      holidayRequests: [],
       data
     };
     schedulerData.push(item);

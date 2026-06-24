@@ -13,6 +13,7 @@ import { getCellWidth, getTilePositionRelativeToCenter } from "@/utils/scrollHel
  * @param zoom Current zoom level.
  * @param cols Number of visible calendar columns.
  * @param working Whether the segment represents working time.
+ * @param precise Whether exact start/end timestamps should be preserved outside hourly zoom.
  * @returns Tile position, width, and working-state metadata.
  */
 export const getTileProperties = (
@@ -22,34 +23,34 @@ export const getTileProperties = (
   currentCenterDate: dayjs.Dayjs,
   zoom: number,
   cols: number,
-  working: boolean
+  working: boolean,
+  precise: boolean = false
 ): TileProperties => {
   const y = row * boxHeight + tileYOffset;
-  const tileStartDate = startDate.startOf("day");
-  const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols);
-
-  // Calculate width based on duration
-  const tileEndDate = endDate.endOf("day");
+  const tileStartDate = !precise && zoom !== 2 ? startDate.startOf("day") : startDate;
+  const tileEndDate = !precise && zoom !== 2 ? endDate.endOf("day") : endDate;
+  const x = getTilePositionRelativeToCenter(tileStartDate, currentCenterDate, zoom, cols, precise);
   const cellWidth = getCellWidth(zoom);
+
   let duration: number;
 
   switch (zoom) {
     case 0: {
-      const days = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
-      duration = days / 7;
+      const diff = tileEndDate.diff(tileStartDate, "days", true);
+      duration = precise ? diff / 7 : Math.ceil(diff) / 7;
       break;
     }
-    case 1:
-      duration = Math.ceil(tileEndDate.diff(tileStartDate, "days", true));
+    case 1: {
+      const diff = tileEndDate.diff(tileStartDate, "days", true);
+      duration = precise ? diff : Math.ceil(diff);
       break;
+    }
     case 2:
-      duration = tileEndDate.diff(tileStartDate, "hours");
+      duration = tileEndDate.diff(tileStartDate, "hours", true);
       break;
     default:
-      duration = tileEndDate.diff(tileStartDate, "days");
+      duration = tileEndDate.diff(tileStartDate, "days", true);
   }
 
-  const width = duration * cellWidth;
-
-  return { y, x, width, working };
+  return { y, x, width: duration * cellWidth, working };
 };

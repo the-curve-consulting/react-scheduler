@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
+import { HolidayRequest, SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 
 export type TileProps<TMeta = unknown> = {
   row: number;
@@ -17,6 +17,16 @@ export type HourlyTileProps<TMeta = unknown> = {
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };
 
+export type HolidayTileProps = {
+  rowIndex: number;
+  rowNo: number;
+  data: HolidayRequest;
+  startDate: dayjs.Dayjs;
+  endDate: dayjs.Dayjs;
+  zoom: number;
+  onTileClick?: (data: HolidayRequest) => void;
+};
+
 export type StyledTextProps = {
   bold?: boolean;
 };
@@ -30,3 +40,5 @@ export type TileComponent = <TMeta = unknown>(props: TileProps<TMeta>) => React.
 export type HourlyTileComponent = <TMeta = unknown>(
   props: HourlyTileProps<TMeta>
 ) => React.ReactElement | null;
+
+export type HolidayTileComponent = (props: HolidayTileProps) => React.ReactElement | null;

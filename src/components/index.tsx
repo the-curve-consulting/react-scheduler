@@ -10,6 +10,7 @@ export { default as Loader } from "./Loader";
 export { default as Header } from "./Calendar/Header";
 export { default as Tile } from "./Tiles/Tile";
 export { default as HourlyTile } from "./Tiles/Tile/HourlyTile";
+export { default as HolidayTile } from "./Tiles/Tile/HolidayTile";
 export { default as Tiles } from "./Tiles";
 export { default as ConfigPanel } from "./ConfigPanel";
 export { default as Tooltip } from "./Tooltip";

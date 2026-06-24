@@ -6,9 +6,11 @@ const TilesInner = <TMeta,>({
   data,
   zoom,
   onTileClick,
+  onHolidayTileClick,
   visibleRange,
   workingDurationsPerPerson,
-  defaultStartHour
+  defaultStartHour,
+  defaultWorkDayHours
 }: TilesProps<TMeta>) => {
   let rows = 0;
   const visibleStart = visibleRange.startDate.valueOf();
@@ -31,8 +33,11 @@ const TilesInner = <TMeta,>({
         visibleStart={visibleStart}
         visibleEnd={visibleEnd}
         workingDurations={workingDurationsPerPerson[personIndex]}
+        holidayRequests={person.holidayRequests}
         onTileClick={onTileClick}
+        onHolidayTileClick={onHolidayTileClick}
         defaultStartHour={defaultStartHour}
+        defaultWorkDayHours={defaultWorkDayHours}
       />
     );
   });
