@@ -98,6 +98,12 @@ export type HolidayRequest = {
   morning_or_afternoon?: "Morning" | "Afternoon" | "Half Day";
 };
 
+export type HolidayTileClickData = {
+  startDate: Date;
+  endDate: Date;
+  holidayRequests: HolidayRequest[];
+};
+
 export type SchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;

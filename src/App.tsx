@@ -6,6 +6,7 @@ import {
   Config,
   ConfigFormValues,
   HolidayRequest,
+  HolidayTileClickData,
   SchedulerData,
   SchedulerItemClickData,
   SchedulerProjectData,
@@ -135,6 +136,17 @@ const createDemoHolidayRequests = (
         ? halfDayOptions[personIndex % halfDayOptions.length]
         : undefined
     });
+
+    if (personIndex === 0) {
+      requests.push({
+        id: `${personId}-holiday-current-week-afternoon`,
+        leave_from: leaveStart.toDate(),
+        leave_to: leaveStart.toDate(),
+        leave_type: "Holiday / Vacation",
+        state: "approved",
+        morning_or_afternoon: "Afternoon"
+      });
+    }
   }
 
   for (let year = startYear; year <= endYear; year++) {
@@ -368,13 +380,13 @@ function App() {
     );
   }, []);
 
-  const handleHolidayClick = useCallback((data: HolidayRequest) => {
+  const handleHolidayClick = useCallback((data: HolidayTileClickData) => {
+    const holidayRequestSummary = data.holidayRequests
+      .map((holidayRequest) => `${holidayRequest.leave_type} (${holidayRequest.state})`)
+      .join(", ");
+
     console.log(
-      `Holiday ${data.leave_type} was clicked. \n==============\nStart date: ${
-        data.leave_from
-      } \n==============\nEnd date: ${data.leave_to}\n==============\nState: ${
-        data.state
-      }\n==============\nPart of day: ${data.morning_or_afternoon ?? "Full day"}`
+      `Holiday range was clicked. \n==============\nStart date: ${data.startDate} \n==============\nEnd date: ${data.endDate}\n==============\nHoliday requests: ${holidayRequestSummary}`
     );
   }, []);
 

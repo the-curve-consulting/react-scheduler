@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 import { secondsInHour } from "@/constants";
@@ -13,6 +13,7 @@ import {
 import {
   getAvailableWorkWindowFromKinds,
   getHolidayKind,
+  getHolidayRequestsForDateRange,
   getHolidayWindow,
   HolidayKind,
   WorkWindow
@@ -41,6 +42,20 @@ const ResourceTilesInner = <TMeta,>({
   const sortedWorkingDurations = useMemo(
     () => sortWorkingDurations(workingDurations),
     [workingDurations]
+  );
+
+  const handleHolidayTileClick = useCallback(
+    (startDate: dayjs.Dayjs, endDate: dayjs.Dayjs) => {
+      const parsedStartDate = startDate.toDate();
+      const parsedEndDate = endDate.toDate();
+
+      onHolidayTileClick?.({
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        holidayRequests: getHolidayRequestsForDateRange(startDate, endDate, holidayRequests)
+      });
+    },
+    [holidayRequests, onHolidayTileClick]
   );
 
   const visibleHolidayRanges = useMemo(() => {
@@ -153,9 +168,8 @@ const ResourceTilesInner = <TMeta,>({
           endDate={holidayWindow.endDate}
           rowIndex={rows}
           rowNo={rowNo}
-          data={holidayRequest}
           zoom={zoom}
-          onTileClick={onHolidayTileClick}
+          onTileClick={handleHolidayTileClick}
         />
       ];
     });
@@ -163,7 +177,7 @@ const ResourceTilesInner = <TMeta,>({
     data.length,
     defaultStartHour,
     halfDayHours,
-    onHolidayTileClick,
+    handleHolidayTileClick,
     rows,
     visibleHolidayRanges,
     zoom

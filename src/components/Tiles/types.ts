@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import dayjs from "dayjs";
 import {
   HolidayRequest,
+  HolidayTileClickData,
   PaginatedSchedulerData,
   SchedulerProjectData,
   WorkingDuration
@@ -12,7 +13,7 @@ export type ResourceTilesProps<TMeta = unknown> = {
   data: SchedulerProjectData<TMeta>[][];
   rows: number;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
-  onHolidayTileClick?: (data: HolidayRequest) => void;
+  onHolidayTileClick?: (data: HolidayTileClickData) => void;
   visibleStart: number;
   visibleEnd: number;
   workingDurations: WorkingDuration[];
@@ -29,7 +30,7 @@ export type TilesProps<TMeta = unknown> = {
   zoom: number;
   data: PaginatedSchedulerData<TMeta>;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
-  onHolidayTileClick?: (data: HolidayRequest) => void;
+  onHolidayTileClick?: (data: HolidayTileClickData) => void;
   visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
   workingDurationsPerPerson: WorkingDuration[][];
   defaultWorkDayHours: number;

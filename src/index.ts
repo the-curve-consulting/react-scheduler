@@ -16,7 +16,9 @@ export type {
   SchedulerRow,
   SchedulerItemClickData,
   SchedulerProjectData,
-  ZoomLevel
+  ZoomLevel,
+  HolidayRequest,
+  HolidayTileClickData
 } from "./types/global";
 
 export { Scheduler };

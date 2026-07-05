@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { HolidayRequest, SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
+import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
 
 export type TileProps<TMeta = unknown> = {
   row: number;
@@ -20,11 +20,10 @@ export type HourlyTileProps<TMeta = unknown> = {
 export type HolidayTileProps = {
   rowIndex: number;
   rowNo: number;
-  data: HolidayRequest;
   startDate: dayjs.Dayjs;
   endDate: dayjs.Dayjs;
   zoom: number;
-  onTileClick?: (data: HolidayRequest) => void;
+  onTileClick?: (startDate: dayjs.Dayjs, endDate: dayjs.Dayjs) => void;
 };
 
 export type StyledTextProps = {

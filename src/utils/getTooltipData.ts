@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { boxHeight, zoom2ColumnWidth } from "@/constants";
+import { boxHeight } from "@/constants";
 import {
   Coords,
   SchedulerProjectData,
@@ -10,7 +10,7 @@ import {
   HolidayRequest
 } from "@/types/global";
 import { getOccupancy } from "./getOccupancy";
-import { getCellWidth } from "./scrollHelpers";
+import { getCellDateRelativeToCenter } from "./scrollHelpers";
 
 export const getTooltipData = <TMeta>(
   config: Config,
@@ -23,50 +23,13 @@ export const getTooltipData = <TMeta>(
   workingDurationsPerPerson: WorkingDuration[][],
   holidayRequestsPerPerson: HolidayRequest[][]
 ): TooltipData => {
-  let focusedDate: dayjs.Dayjs;
-  const centerCol = Math.floor(cols / 2);
-  const cellWidth = getCellWidth(zoom);
-
-  let adjustedX = cursorPosition.x;
-  let columnIndex = Math.floor(adjustedX / cellWidth);
-  let xPos = columnIndex * cellWidth;
-  switch (zoom) {
-    case 0: {
-      columnIndex = Math.floor(adjustedX / cellWidth);
-      const centerWeek = currentCenterDate.startOf("isoWeek");
-      const offsetFromCenter = columnIndex - centerCol;
-      focusedDate = centerWeek.add(offsetFromCenter, "weeks");
-      xPos = columnIndex * cellWidth;
-      break;
-    }
-
-    case 1: {
-      columnIndex = Math.floor(adjustedX / cellWidth);
-      const centerDay = currentCenterDate.startOf("day");
-      const offsetFromCenter = columnIndex - centerCol;
-      focusedDate = centerDay.add(offsetFromCenter, "days");
-      xPos = columnIndex * cellWidth;
-      break;
-    }
-
-    case 2: {
-      // Account for initial half cell offset in hourly grid
-      adjustedX = cursorPosition.x - zoom2ColumnWidth / 2;
-      columnIndex = Math.floor(adjustedX / zoom2ColumnWidth);
-
-      const centerHour = currentCenterDate.startOf("hour");
-      const offsetFromCenter = columnIndex - centerCol;
-      focusedDate = centerHour.add(offsetFromCenter, "hours");
-      xPos = columnIndex * zoom2ColumnWidth;
-      break;
-    }
-
-    default: {
-      const centerDay = currentCenterDate.startOf("day");
-      const offsetFromCenter = columnIndex - centerCol;
-      focusedDate = centerDay.add(offsetFromCenter, "days");
-    }
-  }
+  const { alignedPos, cellDate } = getCellDateRelativeToCenter(
+    cursorPosition.x,
+    currentCenterDate,
+    zoom,
+    cols
+  );
+  const focusedDate = cellDate;
 
   // Calculate row index (0-based) for positioning
   const rowIndex = Math.floor(cursorPosition.y / boxHeight);
@@ -87,5 +50,5 @@ export const getTooltipData = <TMeta>(
     workingDurationsPerPerson[resourceIndex],
     holidayRequestsPerPerson[resourceIndex]
   );
-  return { coords: { x: xPos, y: yPos }, resourceIndex, disposition };
+  return { coords: { x: alignedPos, y: yPos }, resourceIndex, disposition };
 };

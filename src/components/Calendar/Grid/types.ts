@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  HolidayRequest,
+  HolidayTileClickData,
   PaginatedSchedulerData,
   SchedulerProjectData,
   WorkingDuration
@@ -12,7 +12,7 @@ export type GridProps<TMeta = unknown> = {
   data: PaginatedSchedulerData<TMeta>;
   workingDurationsPerPerson: WorkingDuration[][];
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
-  onHolidayTileClick?: (data: HolidayRequest) => void;
+  onHolidayTileClick?: (data: HolidayTileClickData) => void;
 };
 
 export type GridComponent = <TMeta = unknown>(

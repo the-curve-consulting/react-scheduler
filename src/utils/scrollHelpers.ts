@@ -266,6 +266,52 @@ export const getTilePositionRelativeToCenter = (
 };
 
 /**
+ * Resolves the timeline cell at a horizontal grid position.
+ *
+ * Weekly and daily zooms align directly to full cells. Hourly zoom accounts for
+ * the half-cell visual offset used by the hourly grid before resolving the hour.
+ *
+ * @param position Horizontal position in grid coordinates.
+ * @param currentCenterDate Date currently centered in the calendar viewport.
+ * @param zoom Current zoom level.
+ * @param cols Number of visible calendar columns.
+ * @returns The snapped cell x-position and the date represented by that cell.
+ */
+export const getCellDateRelativeToCenter = (
+  position: number,
+  currentCenterDate: dayjs.Dayjs,
+  zoom: number,
+  cols: number
+): { alignedPos: number; cellDate: dayjs.Dayjs } => {
+  const cellWidth = getCellWidth(zoom);
+  const centerCol = Math.floor(cols / 2);
+  let columnIndex = Math.floor(position / cellWidth);
+  let alignedPos = columnIndex * cellWidth;
+
+  switch (zoom) {
+    case 1: {
+      const centerDay = currentCenterDate.startOf("day");
+      const offsetFromCenter = columnIndex - centerCol;
+      return { alignedPos, cellDate: centerDay.add(offsetFromCenter, "days") };
+    }
+    case 2: {
+      const adjustedX = position - zoom2ColumnWidth / 2;
+      columnIndex = Math.floor(adjustedX / zoom2ColumnWidth);
+
+      const centerHour = currentCenterDate.startOf("hour");
+      const offsetFromCenter = columnIndex - centerCol;
+      alignedPos = columnIndex * zoom2ColumnWidth;
+      return { alignedPos, cellDate: centerHour.add(offsetFromCenter, "hours") };
+    }
+    default: {
+      const centerWeek = currentCenterDate.startOf("isoWeek");
+      const offsetFromCenter = columnIndex - centerCol;
+      return { alignedPos, cellDate: centerWeek.add(offsetFromCenter, "weeks") };
+    }
+  }
+};
+
+/**
  * Maps scroll position back to exact center date using continuous pixel-to-time conversion.
  *
  * @param scrollLeft Current scroll position in pixels.

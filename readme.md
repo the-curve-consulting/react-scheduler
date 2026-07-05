@@ -109,6 +109,7 @@ import {
   Scheduler,
   SchedulerData,
   SchedulerHandle,
+  HolidayTileClickData,
   SchedulerProjectData,
   SchedulerProps
 } from "@the-curve-consulting/react-scheduler";
@@ -150,8 +151,12 @@ export default function Component() {
   }, []);
 
   const handleHolidayClick: NonNullable<SchedulerProps<PlanningMeta>["onHolidayClick"]> =
-    useCallback((holidayRequest) => {
-      console.log(holidayRequest.id, holidayRequest.state);
+    useCallback((holidayClick: HolidayTileClickData) => {
+      console.log(
+        holidayClick.startDate,
+        holidayClick.endDate,
+        holidayClick.holidayRequests.map((request) => request.id)
+      );
     }, []);
 
   const optimisticProject: ProjectUpdate<PlanningMeta> = useMemo(
@@ -226,7 +231,7 @@ export default function Component() {
 | onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
 | onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
 | onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
-| onHolidayClick    | `function`      | clicked holiday request data             | detects holiday tile click                                                                                                        |
+| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked range with matching holiday requests                                           |
 | onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
 | onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
@@ -439,7 +444,9 @@ array of chart rows with shape of
 
 Rows must provide `holidayRequests`. Use an empty array when the row has no holidays.
 
-Holiday requests render as background holiday tiles and are passed to `onHolidayClick` when clicked. They also reduce available working time used by tooltips, throughput calculations, and non-working tile segmentation. Full-day and multi-day holidays remove the affected working time. Partial-day holidays remove half of the default workday derived from `config.maxHoursPerWeek`, not half of the row's custom working hours. In hourly zoom, the half-day is placed from `config.defaultStartHour`; in daily and weekly zoom, partial holidays render as half of the visual day cell.
+Holiday requests render as background holiday tiles. When a holiday tile is clicked, `onHolidayClick` receives `HolidayTileClickData` with the clicked date range and all row-level holiday requests overlapping that range. Weekly zoom returns the clicked ISO week. Daily and hourly zoom return the clicked day.
+
+Holiday requests also reduce available working time used by tooltips, throughput calculations, and non-working tile segmentation. Full-day and multi-day holidays remove the affected working time. Partial-day holidays remove half of the default workday derived from `config.maxHoursPerWeek`, not half of the row's custom working hours. In hourly zoom, the half-day is placed from `config.defaultStartHour`; in daily and weekly zoom, partial holidays render as half of the visual day cell.
 
 Scheduler does not filter holiday requests by `state`. Pass only the requests that should be rendered and included in capacity calculations.
 
@@ -453,6 +460,16 @@ For partial holidays, `Morning` removes the first half of the day. Other defined
 | leave_type           | `"Sick Leave" \| "Holiday / Vacation" \| "Compassionate Leave" \| "Unpaid Leave" \| "Paternity Leave" \| "Unknown"` | holiday category returned by the data source                              |
 | state                | `"pending" \| "approved" \| "rejected" \| "cancelled"`                                                              | request state returned by the data source                                 |
 | morning_or_afternoon | `"Morning" \| "Afternoon" \| "Half Day" (optional)`                                                                 | partial-day marker; omitted values are treated as full-day holiday blocks |
+
+##### HolidayTileClickData
+
+`onHolidayClick` receives this payload when a holiday tile is clicked.
+
+| Property Name   | Type               | Description                                                        |
+| --------------- | ------------------ | ------------------------------------------------------------------ |
+| startDate       | `Date`             | first date/time covered by the clicked holiday range               |
+| endDate         | `Date`             | last date/time covered by the clicked holiday range                |
+| holidayRequests | `HolidayRequest[]` | holiday requests from the clicked row that overlap the click range |
 
 ##### WorkingDuration
 
