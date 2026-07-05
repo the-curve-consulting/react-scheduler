@@ -9,6 +9,7 @@ import {
 } from "@/types/global";
 
 export type ResourceTilesProps<TMeta = unknown> = {
+  resourceId: string;
   zoom: number;
   data: SchedulerProjectData<TMeta>[][];
   rows: number;
