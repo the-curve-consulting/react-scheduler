@@ -232,7 +232,7 @@ export default function Component() {
 | onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
 | onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
 | onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
-| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                          |
+| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
 | onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
 | onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
