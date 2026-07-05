@@ -99,6 +99,7 @@ export type HolidayRequest = {
 };
 
 export type HolidayTileClickData = {
+  resourceId: string;
   startDate: Date;
   endDate: Date;
   holidayRequests: HolidayRequest[];

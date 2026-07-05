@@ -27,6 +27,7 @@ const TilesInner = <TMeta,>({
     return (
       <ResourceTiles
         key={person.id}
+        resourceId={person.id}
         zoom={zoom}
         data={person.data}
         rows={rows}

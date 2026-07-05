@@ -153,6 +153,7 @@ export default function Component() {
   const handleHolidayClick: NonNullable<SchedulerProps<PlanningMeta>["onHolidayClick"]> =
     useCallback((holidayClick: HolidayTileClickData) => {
       console.log(
+        holidayClick.resourceId,
         holidayClick.startDate,
         holidayClick.endDate,
         holidayClick.holidayRequests.map((request) => request.id)
@@ -231,7 +232,7 @@ export default function Component() {
 | onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
 | onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
 | onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
-| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked range with matching holiday requests                                           |
+| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
 | onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
 | onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
@@ -444,7 +445,7 @@ array of chart rows with shape of
 
 Rows must provide `holidayRequests`. Use an empty array when the row has no holidays.
 
-Holiday requests render as background holiday tiles. When a holiday tile is clicked, `onHolidayClick` receives `HolidayTileClickData` with the clicked date range and all row-level holiday requests overlapping that range. Weekly zoom returns the clicked ISO week. Daily and hourly zoom return the clicked day.
+Holiday requests render as background holiday tiles. When a holiday tile is clicked, `onHolidayClick` receives `HolidayTileClickData` with the clicked row id, clicked date range, and all row-level holiday requests overlapping that range. Weekly zoom returns the clicked ISO week. Daily and hourly zoom return the clicked day.
 
 Holiday requests also reduce available working time used by tooltips, throughput calculations, and non-working tile segmentation. Full-day and multi-day holidays remove the affected working time. Partial-day holidays remove half of the default workday derived from `config.maxHoursPerWeek`, not half of the row's custom working hours. In hourly zoom, the half-day is placed from `config.defaultStartHour`; in daily and weekly zoom, partial holidays render as half of the visual day cell.
 
@@ -467,6 +468,7 @@ For partial holidays, `Morning` removes the first half of the day. Other defined
 
 | Property Name   | Type               | Description                                                        |
 | --------------- | ------------------ | ------------------------------------------------------------------ |
+| resourceId      | `string`           | row id for the resource whose holiday tile was clicked             |
 | startDate       | `Date`             | first date/time covered by the clicked holiday range               |
 | endDate         | `Date`             | last date/time covered by the clicked holiday range                |
 | holidayRequests | `HolidayRequest[]` | holiday requests from the clicked row that overlap the click range |

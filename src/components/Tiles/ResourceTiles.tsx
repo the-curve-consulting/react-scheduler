@@ -23,6 +23,7 @@ import { PlacedTiles, ResourceTilesComponent, ResourceTilesProps } from "./types
 const NO_HOLIDAY_KINDS: HolidayKind[] = [];
 
 const ResourceTilesInner = <TMeta,>({
+  resourceId,
   data,
   zoom,
   rows,
@@ -50,12 +51,13 @@ const ResourceTilesInner = <TMeta,>({
       const parsedEndDate = endDate.toDate();
 
       onHolidayTileClick?.({
+        resourceId: resourceId,
         startDate: parsedStartDate,
         endDate: parsedEndDate,
         holidayRequests: getHolidayRequestsForDateRange(startDate, endDate, holidayRequests)
       });
     },
-    [holidayRequests, onHolidayTileClick]
+    [holidayRequests, onHolidayTileClick, resourceId]
   );
 
   const visibleHolidayRanges = useMemo(() => {
