@@ -206,7 +206,10 @@ const ResourceTilesInner = <TMeta,>({
       currentStartTime: dayjs.Dayjs,
       workWindow: WorkWindow
     ): number => {
-      const availableSeconds = Math.max(workWindow.end.diff(currentStartTime, "second"), 0);
+      const availableSeconds = Math.max(
+        currentStartTime.endOf("day").diff(currentStartTime, "second"),
+        0
+      );
       if (availableSeconds <= 0) return 0;
 
       if (isOccupancyProject(project)) {
