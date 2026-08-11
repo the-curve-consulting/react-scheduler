@@ -3,4 +3,10 @@ export type HeaderProps = {
   topBarWidth: number;
   showThemeToggle?: boolean;
   toggleTheme?: () => void;
+  /**
+   * How far from the left edge the ruler starts, which must match the width of
+   * whatever column sits beside the chart. Defaults to the Scheduler's own left
+   * column, so existing callers are unaffected.
+   */
+  leftOffset?: number;
 };

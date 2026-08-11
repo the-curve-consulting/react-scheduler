@@ -14,7 +14,13 @@ import { HeaderProps } from "./types";
 import { StyledCanvas, StyledOuterWrapper, StyledWrapper } from "./styles";
 import Topbar from "./Topbar";
 
-const Header: FC<HeaderProps> = ({ zoom, topBarWidth, showThemeToggle, toggleTheme }) => {
+const Header: FC<HeaderProps> = ({
+  zoom,
+  topBarWidth,
+  showThemeToggle,
+  toggleTheme,
+  leftOffset = leftColumnWidth
+}) => {
   const { week } = useLanguage();
   const { cols, currentCenterDate, viewportWidth } = useCalendar();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,7 +69,7 @@ const Header: FC<HeaderProps> = ({ zoom, topBarWidth, showThemeToggle, toggleThe
       <StyledWrapper
         id={canvasHeaderWrapperId}
         $viewportWidth={viewportWidth}
-        $leftColumnWidth={leftColumnWidth}>
+        $leftColumnWidth={leftOffset}>
         <StyledCanvas ref={canvasRef} />
       </StyledWrapper>
     </StyledOuterWrapper>
