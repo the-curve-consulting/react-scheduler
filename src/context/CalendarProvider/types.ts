@@ -9,6 +9,8 @@ export type CalendarContextType<TMeta = unknown> = {
   handleGoToday: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  /** Jump straight to a zoom level, for a control that is not a +/- pair. */
+  setZoomLevel: (zoom: ZoomLevel) => void;
   handleFilterData: () => void;
   onClearFilterData?: () => void;
   data?: SchedulerData<TMeta>;
