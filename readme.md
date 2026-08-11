@@ -225,10 +225,17 @@ import type { GanttData, GanttTaskChange } from "@the-curve-consulting/react-sch
 const data: GanttData = {
   tasks: [
     { id: "phase-1", title: "Discovery", kind: "summary", startDate: a, endDate: b },
-    { id: "audit", parentId: "phase-1", title: "Content audit", startDate: a, endDate: b, progress: 100 },
-    { id: "gate", title: "Signed off", kind: "milestone", startDate: c, endDate: c },
+    {
+      id: "audit",
+      parentId: "phase-1",
+      title: "Content audit",
+      startDate: a,
+      endDate: b,
+      progress: 100
+    },
+    { id: "gate", title: "Signed off", kind: "milestone", startDate: c, endDate: c }
   ],
-  links: [{ id: "l1", predecessorId: "audit", successorId: "gate" }],
+  links: [{ id: "l1", predecessorId: "audit", successorId: "gate" }]
 };
 
 <Gantt
@@ -240,27 +247,27 @@ const data: GanttData = {
 
 #### Props
 
-| Property         | Type                                 | Description                                                                   |
-| ---------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
-| data             | `GanttData`                          | `{ tasks, links }`                                                            |
-| centerDate       | `string \| Date`                     | date to centre the timeline on at mount                                       |
-| config           | `GanttConfig`                        | `Config` plus the Gantt options below                                         |
-| isLoading        | `boolean`                            | blocks interaction and shows the loading treatment                            |
-| defaultCollapsed | `string[]`                           | task ids that start collapsed                                                 |
-| onRangeChange    | `function`                           | fires on scroll with the dates now on screen                                  |
-| onTaskClick      | `function`                           | a bar, milestone or outline row was clicked                                   |
-| onTaskChange     | `function`                           | a bar was dragged or resized — see below                                      |
-| outlineLabel     | `string`                             | heading above the outline column                                              |
-| emptyMessage     | `string`                             | shown when there are no tasks                                                 |
+| Property         | Type             | Description                                        |
+| ---------------- | ---------------- | -------------------------------------------------- |
+| data             | `GanttData`      | `{ tasks, links }`                                 |
+| centerDate       | `string \| Date` | date to centre the timeline on at mount            |
+| config           | `GanttConfig`    | `Config` plus the Gantt options below              |
+| isLoading        | `boolean`        | blocks interaction and shows the loading treatment |
+| defaultCollapsed | `string[]`       | task ids that start collapsed                      |
+| onRangeChange    | `function`       | fires on scroll with the dates now on screen       |
+| onTaskClick      | `function`       | a bar, milestone or outline row was clicked        |
+| onTaskChange     | `function`       | a bar was dragged or resized — see below           |
+| outlineLabel     | `string`         | heading above the outline column                   |
+| emptyMessage     | `string`         | shown when there are no tasks                      |
 
 #### Gantt config
 
-| Property      | Type      | Default | Description                                                                 |
-| ------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| Property      | Type      | Default | Description                                                                                 |
+| ------------- | --------- | ------- | ------------------------------------------------------------------------------------------- |
 | outlineWidth  | `number`  | `240`   | width of the task tree beside the chart; **`0` hides it** so a host can render its own grid |
-| editable      | `boolean` | `true`  | drag to move and resize bars                                                |
-| showLinks     | `boolean` | `true`  | draw dependency arrows                                                      |
-| showBaselines | `boolean` | `true`  | draw a ghost bar under any task carrying a `baseline`                       |
+| editable      | `boolean` | `true`  | drag to move and resize bars                                                                |
+| showLinks     | `boolean` | `true`  | draw dependency arrows                                                                      |
+| showBaselines | `boolean` | `true`  | draw a ghost bar under any task carrying a `baseline`                                       |
 
 Everything in `Config` (zoom, lang, translations, theme, defaultTheme,
 showThemeToggle) applies as well.
