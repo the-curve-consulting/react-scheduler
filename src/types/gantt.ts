@@ -100,4 +100,14 @@ export type GanttConfig = Config & {
    * @default true
    */
   showBaselines?: boolean;
+  /**
+   * Draw a vertical marker at the current date and time.
+   * @default true
+   */
+  showToday?: boolean;
+  /**
+   * Text on the today marker's tab. Set "" to draw the line alone.
+   * @default "Today"
+   */
+  todayLabel?: string;
 };

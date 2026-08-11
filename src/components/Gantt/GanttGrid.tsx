@@ -15,6 +15,7 @@ import { getScrollConfig } from "@/utils/scrollHelpers";
 import { GanttLink, GanttRow, GanttTask, GanttTaskChange } from "@/types/gantt";
 import GanttBars from "./GanttBars/GanttBars";
 import GanttLinks from "./GanttLinks/GanttLinks";
+import GanttToday from "./GanttToday/GanttToday";
 import { StyledCanvas, StyledGridInnerWrapper, StyledGridWrapper } from "./styles";
 
 export type GanttGridProps<TMeta = unknown> = {
@@ -24,6 +25,8 @@ export type GanttGridProps<TMeta = unknown> = {
   editable: boolean;
   showLinks: boolean;
   showBaselines: boolean;
+  showToday: boolean;
+  todayLabel: string;
   onTaskClick?: (task: GanttTask<TMeta>) => void;
   onTaskChange?: (change: GanttTaskChange, task: GanttTask<TMeta>) => void;
 };
@@ -43,6 +46,8 @@ export const GanttGrid = <TMeta,>({
   editable,
   showLinks,
   showBaselines,
+  showToday,
+  todayLabel,
   onTaskClick,
   onTaskChange
 }: GanttGridProps<TMeta>) => {
@@ -105,6 +110,16 @@ export const GanttGrid = <TMeta,>({
         $viewportWidth={viewportWidth}
         $offset={outlineWidth}>
         <StyledCanvas id={canvasId} ref={canvasRef} />
+        {showToday && (
+          <GanttToday
+            currentCenterDate={currentCenterDate}
+            zoom={zoom}
+            cols={cols}
+            height={height}
+            width={scrollConfig.containerWidth}
+            label={todayLabel}
+          />
+        )}
         {showLinks && links.length > 0 && (
           <GanttLinks
             rows={rows}
