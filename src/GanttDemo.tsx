@@ -124,6 +124,9 @@ const links: GanttData<DemoMeta>["links"] = [
 const GanttDemo = () => {
   const [tasks, setTasks] = useState(buildTasks);
   const [zoom, setZoom] = useState<ZoomLevel>(1);
+  // Hosts that render their own task grid pass outlineWidth: 0; exercise it
+  // here, because the viewport maths differs between the two.
+  const [showOutline, setShowOutline] = useState(true);
   const [lastChange, setLastChange] = useState<string>("");
 
   const data = useMemo<GanttData<DemoMeta>>(() => ({ tasks, links }), [tasks]);
@@ -158,6 +161,9 @@ const GanttDemo = () => {
             {["Weeks", "Days", "Hours"][level]}
           </button>
         ))}
+        <button type="button" onClick={() => setShowOutline((on) => !on)}>
+          {showOutline ? "Hide outline" : "Show outline"}
+        </button>
         <span style={{ fontSize: 12, color: "#777" }}>{lastChange}</span>
       </div>
       <div style={{ position: "relative", width: "100%", height: "calc(100vh - 80px)" }}>
@@ -165,9 +171,9 @@ const GanttDemo = () => {
             mount and owns it thereafter (the View -/+ buttons), so these
             shortcut buttons remount rather than fighting it. */}
         <Gantt<DemoMeta>
-          key={zoom}
+          key={`${zoom}-${showOutline}`}
           data={data}
-          config={{ zoom, showThemeToggle: true }}
+          config={{ zoom, showThemeToggle: true, outlineWidth: showOutline ? 240 : 0 }}
           onTaskChange={handleTaskChange}
           onTaskClick={(task) => setLastChange(`clicked ${task.title}`)}
         />

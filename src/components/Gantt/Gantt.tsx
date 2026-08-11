@@ -122,6 +122,7 @@ export const Gantt = <TMeta,>({
           <CalendarProvider
             isLoading={isLoading}
             config={appConfig}
+            leftColumnWidth={outlineWidth}
             onRangeChange={onRangeChange}
             centerDate={centerDateDayJs}>
             <StyledOutsideWrapper id={outsideWrapperId} ref={outsideWrapperRef}>

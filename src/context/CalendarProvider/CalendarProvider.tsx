@@ -40,7 +40,8 @@ const CalendarProvider = <TMeta,>({
   centerDate,
   onRangeChange,
   onFilterData,
-  onClearFilterData
+  onClearFilterData,
+  leftColumnWidth: columnWidth = leftColumnWidth
 }: CalendarProviderProps<TMeta>) => {
   const [fallbackCenterDate] = useState(() => dayjs());
   const effectiveCenterDate = centerDate ?? fallbackCenterDate;
@@ -217,7 +218,7 @@ const CalendarProvider = <TMeta,>({
     const updateViewportWidth = () => {
       const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
       if (wrapperWidth > 0) {
-        setViewportWidth(wrapperWidth - leftColumnWidth);
+        setViewportWidth(wrapperWidth - columnWidth);
       }
     };
     updateViewportWidth();
@@ -226,7 +227,7 @@ const CalendarProvider = <TMeta,>({
     const timeout = setTimeout(updateViewportWidth, 0);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [columnWidth]);
 
   useEffect(() => {
     setCols(getCols(zoom));
@@ -235,12 +236,12 @@ const CalendarProvider = <TMeta,>({
   useEffect(() => {
     const handleResize = () => {
       const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
-      setViewportWidth(wrapperWidth - leftColumnWidth);
+      setViewportWidth(wrapperWidth - columnWidth);
       setCols(getCols(zoom));
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [zoom]);
+  }, [zoom, columnWidth]);
 
   /**
    * Performs one-time initial scroll positioning based on provided start date.
