@@ -53,7 +53,7 @@ const CalendarProvider = <TMeta,>({
   const [referenceDate, setReferenceDate] = useState(effectiveCenterDate);
   const [scrollPosition, setScrollPosition] = useState(() => scrollConfig.center);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [cols, setCols] = useState(getCols(zoom));
+  const [cols, setCols] = useState(() => getCols(zoom, columnWidth));
   const [viewportWidth, setViewportWidth] = useState(0);
 
   const isNextZoom = allZoomLevel[zoom] !== allZoomLevel[allZoomLevel.length - 1];
@@ -230,14 +230,14 @@ const CalendarProvider = <TMeta,>({
   }, [columnWidth]);
 
   useEffect(() => {
-    setCols(getCols(zoom));
-  }, [zoom]);
+    setCols(getCols(zoom, columnWidth));
+  }, [zoom, columnWidth]);
 
   useEffect(() => {
     const handleResize = () => {
       const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
       setViewportWidth(wrapperWidth - columnWidth);
-      setCols(getCols(zoom));
+      setCols(getCols(zoom, columnWidth));
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
