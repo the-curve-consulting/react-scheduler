@@ -9,4 +9,9 @@ export type HeaderProps = {
    * column, so existing callers are unaffected.
    */
   leftOffset?: number;
+  /**
+   * Suppresses the built-in prev/Today/next topbar, for a host that renders its
+   * own controls above the ruler. Defaults to showing it.
+   */
+  hideTopbar?: boolean;
 };

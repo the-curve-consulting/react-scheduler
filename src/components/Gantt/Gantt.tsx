@@ -17,6 +17,7 @@ import { ParsedDatesRange } from "@/utils/getDatesRange";
 import Header from "../Calendar/Header";
 import GanttGrid from "./GanttGrid";
 import GanttOutline from "./GanttOutline/GanttOutline";
+import GanttToolbar from "./GanttToolbar/GanttToolbar";
 import { useGanttRows } from "./useGanttRows";
 import { StyledChartColumn, StyledEmpty, StyledInnerWrapper, StyledOutsideWrapper } from "./styles";
 
@@ -137,6 +138,7 @@ export const Gantt = <TMeta,>({
                 showLinks={appConfig.showLinks ?? true}
                 showBaselines={appConfig.showBaselines ?? true}
                 showThemeToggle={appConfig.showThemeToggle}
+                isDark={themeMode === "dark"}
                 onToggle={toggle}
                 onTaskClick={onTaskClick}
                 onTaskChange={onTaskChange}
@@ -161,6 +163,7 @@ type GanttBodyProps<TMeta> = {
   showLinks: boolean;
   showBaselines: boolean;
   showThemeToggle?: boolean;
+  isDark: boolean;
   onToggle: (id: string) => void;
   onTaskClick?: (task: GanttTask<TMeta>) => void;
   onTaskChange?: (change: GanttTaskChange, task: GanttTask<TMeta>) => void;
@@ -184,6 +187,7 @@ const GanttBody = <TMeta,>({
   showLinks,
   showBaselines,
   showThemeToggle,
+  isDark,
   onToggle,
   onTaskClick,
   onTaskChange,
@@ -203,13 +207,13 @@ const GanttBody = <TMeta,>({
         />
       )}
       <StyledChartColumn>
-        <Header
-          zoom={zoom}
-          topBarWidth={topBarWidth}
-          leftOffset={outlineWidth}
+        <GanttToolbar
+          width={topBarWidth}
           showThemeToggle={showThemeToggle}
-          toggleTheme={onToggleTheme}
+          onToggleTheme={onToggleTheme}
+          isDark={isDark}
         />
+        <Header zoom={zoom} topBarWidth={topBarWidth} leftOffset={outlineWidth} hideTopbar />
         {rows.length === 0 ? (
           <StyledEmpty>{emptyMessage}</StyledEmpty>
         ) : (

@@ -19,7 +19,8 @@ const Header: FC<HeaderProps> = ({
   topBarWidth,
   showThemeToggle,
   toggleTheme,
-  leftOffset = leftColumnWidth
+  leftOffset = leftColumnWidth,
+  hideTopbar = false
 }) => {
   const { week } = useLanguage();
   const { cols, currentCenterDate, viewportWidth } = useCalendar();
@@ -65,7 +66,9 @@ const Header: FC<HeaderProps> = ({
 
   return (
     <StyledOuterWrapper>
-      <Topbar width={topBarWidth} showThemeToggle={showThemeToggle} toggleTheme={toggleTheme} />
+      {!hideTopbar && (
+        <Topbar width={topBarWidth} showThemeToggle={showThemeToggle} toggleTheme={toggleTheme} />
+      )}
       <StyledWrapper
         id={canvasHeaderWrapperId}
         $viewportWidth={viewportWidth}

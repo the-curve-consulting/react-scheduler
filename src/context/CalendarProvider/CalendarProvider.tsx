@@ -303,6 +303,7 @@ const CalendarProvider = <TMeta,>({
 
   const zoomIn = useCallback(() => changeZoom(zoom + 1), [changeZoom, zoom]);
   const zoomOut = useCallback(() => changeZoom(zoom - 1), [changeZoom, zoom]);
+  const setZoomLevel = useCallback((level: ZoomLevel) => changeZoom(level), [changeZoom]);
 
   const handleFilterData = useCallback(() => onFilterData?.(), [onFilterData]);
 
@@ -315,6 +316,7 @@ const CalendarProvider = <TMeta,>({
       handleGoToday,
       zoomIn,
       zoomOut,
+      setZoomLevel,
       zoom,
       isNextZoom,
       isPrevZoom,
@@ -341,6 +343,7 @@ const CalendarProvider = <TMeta,>({
       handleGoToday,
       zoomIn,
       zoomOut,
+      setZoomLevel,
       zoom,
       isNextZoom,
       isPrevZoom,
