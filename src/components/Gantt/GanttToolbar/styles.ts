@@ -18,6 +18,12 @@ export const StyledToolbar = styled.div<{ $width: number }>`
   align-items: center;
   gap: 12px;
   height: ${navHeight}px;
+  /* The chart column is a flex column, so the height above is only a starting
+     size: the toolbar was being shrunk to fit its content (29px against 44px),
+     which lifted every bar 15px relative to a host grid that had cleared the
+     full toolbar-plus-ruler height. */
+  flex-shrink: 0;
+  min-height: ${navHeight}px;
   padding: 0 12px;
   box-sizing: border-box;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
