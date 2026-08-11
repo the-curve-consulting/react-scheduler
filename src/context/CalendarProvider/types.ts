@@ -40,4 +40,11 @@ export type CalendarProviderProps<TMeta = unknown> = {
   onRangeChange?: (range: ParsedDatesRange) => void;
   onFilterData?: () => void;
   onClearFilterData?: () => void;
+  /**
+   * Width of the column beside the chart, subtracted from the wrapper to get
+   * the timeline's own viewport. Defaults to the Scheduler's left column, so
+   * existing callers are unaffected; <Gantt> passes its outline width, which
+   * may be 0 when the host renders its own grid instead.
+   */
+  leftColumnWidth?: number;
 };
