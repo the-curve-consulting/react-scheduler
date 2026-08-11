@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { ThemeProvider } from "styled-components";
 import CalendarProvider, { useCalendar } from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
-import { outsideWrapperId } from "@/constants";
+import { navHeight, outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
 import {
   GanttConfig,
@@ -236,7 +236,13 @@ const GanttBody = <TMeta,>({
           onToggleTheme={onToggleTheme}
           isDark={isDark}
         />
-        <Header zoom={zoom} topBarWidth={topBarWidth} leftOffset={outlineWidth} hideTopbar />
+        <Header
+          zoom={zoom}
+          topBarWidth={topBarWidth}
+          leftOffset={outlineWidth}
+          hideTopbar
+          stickyTop={navHeight}
+        />
         {rows.length === 0 ? (
           <StyledEmpty>{emptyMessage}</StyledEmpty>
         ) : (

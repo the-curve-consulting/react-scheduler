@@ -266,7 +266,12 @@ const CalendarProvider = <TMeta,>({
     const scrollLeft = clampScrollLeft(rawScrollLeft, container);
 
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
+    // Recording where we just scrolled the container to is the whole job of
+    // this effect: the scroll position lives in the DOM and React has to be
+    // told. Guarded by `isInitialized`, so it cannot cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setScrollPosition(scrollLeft);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsInitialized(true);
   }, [clampScrollLeft, effectiveCenterDate, isInitialized, referenceDate, zoom]);
 
@@ -297,6 +302,10 @@ const CalendarProvider = <TMeta,>({
     if (nextCenterDateValue === centerDateRef.current) return;
 
     centerDateRef.current = nextCenterDateValue;
+    // Same again: the caller moved the centre date, so the container is
+    // scrolled and the new position recorded. The ref guard above means this
+    // runs once per actual change of centreDate.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     handleGoToDate(centerDate);
   }, [centerDate, handleGoToDate]);
 
