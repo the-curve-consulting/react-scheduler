@@ -33,8 +33,23 @@ jobs:
       - name: Build package
         run: yarn build
 
+      - name: Choose the dist-tag
+        id: dist-tag
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # npm does not infer this: without --tag it moves `latest` to whatever
+          # it just published, so a prerelease would become the default install
+          # for anyone running `npm install` without a version.
+          if [[ "$version" == *-* ]]; then
+            echo "$version is a prerelease - publishing under 'next'"
+            echo "tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "$version is a stable release - publishing under 'latest'"
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish package to GitHub Packages
-        run: npm publish
+        run: npm publish --tag ${{ steps.dist-tag.outputs.tag }}
         env:
           HUSKY: 0
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,6 +62,8 @@ jobs:
           scope: "@the-curve-consulting"
 
       - name: Publish package to npmjs
-        run: npm publish --registry https://registry.npmjs.org --access public --provenance
+        run: |
+          npm publish --registry https://registry.npmjs.org --access public --provenance \
+            --tag ${{ steps.dist-tag.outputs.tag }}
         env:
           HUSKY: 0
