@@ -79,6 +79,8 @@ export const Gantt = <TMeta,>({
       editable: true,
       showLinks: true,
       showBaselines: true,
+      showToday: true,
+      todayLabel: "Today",
       ...config
     }),
     [config]
@@ -137,6 +139,8 @@ export const Gantt = <TMeta,>({
                 editable={appConfig.editable ?? true}
                 showLinks={appConfig.showLinks ?? true}
                 showBaselines={appConfig.showBaselines ?? true}
+                showToday={appConfig.showToday ?? true}
+                todayLabel={appConfig.todayLabel ?? "Today"}
                 showThemeToggle={appConfig.showThemeToggle}
                 isDark={themeMode === "dark"}
                 onToggle={toggle}
@@ -162,6 +166,8 @@ type GanttBodyProps<TMeta> = {
   editable: boolean;
   showLinks: boolean;
   showBaselines: boolean;
+  showToday: boolean;
+  todayLabel: string;
   showThemeToggle?: boolean;
   isDark: boolean;
   onToggle: (id: string) => void;
@@ -186,6 +192,8 @@ const GanttBody = <TMeta,>({
   editable,
   showLinks,
   showBaselines,
+  showToday,
+  todayLabel,
   showThemeToggle,
   isDark,
   onToggle,
@@ -224,6 +232,8 @@ const GanttBody = <TMeta,>({
             editable={editable}
             showLinks={showLinks}
             showBaselines={showBaselines}
+            showToday={showToday}
+            todayLabel={todayLabel}
             onTaskClick={onTaskClick}
             onTaskChange={onTaskChange}
           />
