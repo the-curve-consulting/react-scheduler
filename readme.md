@@ -205,6 +205,97 @@ export default function Component() {
 
 3. If some problems occur, please see our troubleshooting section below.
 
+### `<Gantt>`
+
+`<Gantt>` is a second top-level component for project plans: a tree of tasks
+against a timeline, with dependency arrows, milestones, progress and baselines.
+
+It is a **sibling of `<Scheduler>`, not a mode of it**. They share the calendar
+provider, the grid and header canvas painters, zoom, theming and i18n, but their
+data means different things — `<Scheduler>` answers "how much of this person's
+day is taken?", so every tile it draws carries an `occupancy` or a `throughput`;
+a Gantt task answers "when does this work happen, and what precedes it?" and has
+no such quantity. Keeping them separate means neither carries the other's fields
+and changes to one cannot reach the other.
+
+```tsx
+import { Gantt } from "@the-curve-consulting/react-scheduler";
+import type { GanttData, GanttTaskChange } from "@the-curve-consulting/react-scheduler";
+
+const data: GanttData = {
+  tasks: [
+    { id: "phase-1", title: "Discovery", kind: "summary", startDate: a, endDate: b },
+    { id: "audit", parentId: "phase-1", title: "Content audit", startDate: a, endDate: b, progress: 100 },
+    { id: "gate", title: "Signed off", kind: "milestone", startDate: c, endDate: c },
+  ],
+  links: [{ id: "l1", predecessorId: "audit", successorId: "gate" }],
+};
+
+<Gantt
+  data={data}
+  config={{ zoom: 1, outlineWidth: 240 }}
+  onTaskChange={(change: GanttTaskChange) => save(change)}
+/>;
+```
+
+#### Props
+
+| Property         | Type                                 | Description                                                                   |
+| ---------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| data             | `GanttData`                          | `{ tasks, links }`                                                            |
+| centerDate       | `string \| Date`                     | date to centre the timeline on at mount                                       |
+| config           | `GanttConfig`                        | `Config` plus the Gantt options below                                         |
+| isLoading        | `boolean`                            | blocks interaction and shows the loading treatment                            |
+| defaultCollapsed | `string[]`                           | task ids that start collapsed                                                 |
+| onRangeChange    | `function`                           | fires on scroll with the dates now on screen                                  |
+| onTaskClick      | `function`                           | a bar, milestone or outline row was clicked                                   |
+| onTaskChange     | `function`                           | a bar was dragged or resized — see below                                      |
+| outlineLabel     | `string`                             | heading above the outline column                                              |
+| emptyMessage     | `string`                             | shown when there are no tasks                                                 |
+
+#### Gantt config
+
+| Property      | Type      | Default | Description                                                                 |
+| ------------- | --------- | ------- | --------------------------------------------------------------------------- |
+| outlineWidth  | `number`  | `240`   | width of the task tree beside the chart; **`0` hides it** so a host can render its own grid |
+| editable      | `boolean` | `true`  | drag to move and resize bars                                                |
+| showLinks     | `boolean` | `true`  | draw dependency arrows                                                      |
+| showBaselines | `boolean` | `true`  | draw a ghost bar under any task carrying a `baseline`                       |
+
+Everything in `Config` (zoom, lang, translations, theme, defaultTheme,
+showThemeToggle) applies as well.
+
+#### Tasks
+
+`kind` is `"task"` (default), `"milestone"` (zero duration, drawn as a diamond)
+or `"summary"` (drawn as a bracket and never draggable — its span belongs to its
+children). Nesting is by `parentId`; parents may appear after their children,
+and sibling order is the order tasks arrive in. A `parentId` that names no
+supplied task is treated as a root rather than stranding the subtree, and a
+cycle in `parentId` is broken rather than recursing.
+
+Optional per task: `progress` (0-100, filled inside the bar), `bgColor`,
+`subtitle`, `assignees` (drawn as initials beside the bar), `baseline`
+(`{ startDate, endDate }`, drawn as a ghost bar), `locked` (suppresses drag),
+and `meta` for your own typed payload.
+
+#### Links
+
+`{ id, predecessorId, successorId, kind }` where `kind` is `finish_to_start`
+(default), `start_to_start`, `finish_to_finish` or `start_to_finish`. Arrows
+route orthogonally, and drop into the gutter between rows when the successor
+starts before the predecessor ends. A link whose end is hidden under a collapsed
+parent is not drawn.
+
+#### Editing
+
+`onTaskChange` reports `{ id, startDate, endDate, reason }`, where `reason` is
+`"move"`, `"resize-start"` or `"resize-end"`. **The component does not move the
+bar itself.** Apply the change to your own data and pass it back, so that any
+rescheduling the plan implies — pushing successors, rolling summaries up —
+happens in one place rather than being split between your code and this
+component's. Drags snap to whole days.
+
 ### Scheduler API
 
 ##### Scheduler Component Props
