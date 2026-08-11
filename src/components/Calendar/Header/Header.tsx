@@ -20,7 +20,8 @@ const Header: FC<HeaderProps> = ({
   showThemeToggle,
   toggleTheme,
   leftOffset = leftColumnWidth,
-  hideTopbar = false
+  hideTopbar = false,
+  stickyTop = 0
 }) => {
   const { week } = useLanguage();
   const { cols, currentCenterDate, viewportWidth } = useCalendar();
@@ -65,7 +66,7 @@ const Header: FC<HeaderProps> = ({
   }, [zoom, handleResize, viewportWidth]);
 
   return (
-    <StyledOuterWrapper>
+    <StyledOuterWrapper $stickyTop={stickyTop}>
       {!hideTopbar && (
         <Topbar width={topBarWidth} showThemeToggle={showThemeToggle} toggleTheme={toggleTheme} />
       )}

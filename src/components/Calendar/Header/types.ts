@@ -14,4 +14,10 @@ export type HeaderProps = {
    * own controls above the ruler. Defaults to showing it.
    */
   hideTopbar?: boolean;
+  /**
+   * Where the ruler comes to rest when the chart is scrolled down, for a caller
+   * that pins its own controls above it. Defaults to the top of the scroll
+   * container, which is where <Scheduler> wants it.
+   */
+  stickyTop?: number;
 };

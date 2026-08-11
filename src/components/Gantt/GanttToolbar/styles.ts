@@ -12,7 +12,11 @@ export const StyledToolbar = styled.div<{ $width: number }>`
      and given an explicit width, exactly as the Header's own topbar is. */
   position: sticky;
   left: 0;
-  z-index: 3;
+  /* Vertically too. The ruler below is sticky in its own right, so a toolbar
+     that scrolled away would let the ruler slide up into its place and take the
+     bars out of line with any host grid beside the chart. */
+  top: 0;
+  z-index: 4;
   width: ${({ $width }) => ($width > 0 ? `${$width}px` : "100%")};
   display: flex;
   align-items: center;

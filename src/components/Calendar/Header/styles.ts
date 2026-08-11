@@ -1,9 +1,9 @@
 import styled from "styled-components";
 import { headerHeight } from "@/constants";
 
-export const StyledOuterWrapper = styled.div`
+export const StyledOuterWrapper = styled.div<{ $stickyTop: number }>`
   position: sticky;
-  top: 0;
+  top: ${({ $stickyTop }) => $stickyTop}px;
   left: 0;
   z-index: 2;
 `;

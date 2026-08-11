@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { ThemeProvider } from "styled-components";
 import CalendarProvider, { useCalendar } from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
-import { outsideWrapperId } from "@/constants";
+import { navHeight, outsideWrapperId } from "@/constants";
 import { darkTheme, GlobalStyle, theme } from "@/styles";
 import {
   GanttConfig,
@@ -105,14 +105,29 @@ export const Gantt = <TMeta,>({
     [appConfig.theme, currentTheme]
   );
 
+  // Watches the element rather than the window, for the same reason the
+  // provider does: the toolbar and the ruler are both pinned to this width, and
+  // a host that collapses a pane beside the chart resizes the element without
+  // the window ever changing.
   useEffect(() => {
-    const handleResize = () => {
-      if (outsideWrapperRef.current) setTopBarWidth(outsideWrapperRef.current.clientWidth);
-    };
+    const wrapper = outsideWrapperRef.current;
+    if (!wrapper) return;
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const measure = () =>
+      setTopBarWidth((current) =>
+        current === wrapper.clientWidth ? current : wrapper.clientWidth
+      );
+
+    measure();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    return () => observer.disconnect();
   }, []);
 
   const centerDateDayJs = useMemo(() => (centerDate ? dayjs(centerDate) : undefined), [centerDate]);
@@ -221,7 +236,13 @@ const GanttBody = <TMeta,>({
           onToggleTheme={onToggleTheme}
           isDark={isDark}
         />
-        <Header zoom={zoom} topBarWidth={topBarWidth} leftOffset={outlineWidth} hideTopbar />
+        <Header
+          zoom={zoom}
+          topBarWidth={topBarWidth}
+          leftOffset={outlineWidth}
+          hideTopbar
+          stickyTop={navHeight}
+        />
         {rows.length === 0 ? (
           <StyledEmpty>{emptyMessage}</StyledEmpty>
         ) : (

@@ -210,38 +210,48 @@ const CalendarProvider = <TMeta,>({
   }, [clampScrollLeft, zoom, scrollPosition, referenceDate, viewportWidth]);
 
   /**
-   * Initializes viewport width once DOM wrapper is available.
+   * Tracks the width of the wrapper the calendar is drawn into.
    *
-   * @returns Cleanup function for delayed width initialization.
+   * Watches the element, not the window. The window is only a proxy for "did my
+   * container change size?", and it is wrong whenever the page rearranges
+   * itself: a collapsing sidebar, a resizable split pane, a details panel
+   * opening. In those cases the calendar kept painting to its old width and the
+   * grid simply stopped part-way across, with no event to tell it otherwise.
+   *
+   * An observer also removes the need for the old setTimeout(0) retry — it
+   * fires once with the current size as soon as it starts observing, so there
+   * is nothing to race.
    */
   useEffect(() => {
-    const updateViewportWidth = () => {
-      const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
-      if (wrapperWidth > 0) {
-        setViewportWidth(wrapperWidth - columnWidth);
-      }
+    const wrapper = document.getElementById(outsideWrapperId);
+    if (!wrapper) return;
+
+    const measure = () => {
+      const wrapperWidth = wrapper.clientWidth;
+      if (wrapperWidth <= 0) return;
+      // Only on a real change: writing the same number back would have the
+      // observer re-entering its own callback.
+      setViewportWidth((current) =>
+        current === wrapperWidth - columnWidth ? current : wrapperWidth - columnWidth
+      );
+      // The column *count* has to move with the width as well. Painting a wider
+      // canvas with the old count draws a grid that stops part-way across and
+      // leaves the bars beyond it sitting on blank background.
+      const nextCols = getCols(zoom, columnWidth);
+      setCols((current) => (current === nextCols ? current : nextCols));
     };
-    updateViewportWidth();
 
-    // Also try after a small delay in case DOM isn't ready
-    const timeout = setTimeout(updateViewportWidth, 0);
+    measure();
 
-    return () => clearTimeout(timeout);
-  }, [columnWidth]);
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
 
-  useEffect(() => {
-    setCols(getCols(zoom, columnWidth));
-  }, [zoom, columnWidth]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const wrapperWidth = document.getElementById(outsideWrapperId)?.clientWidth || 0;
-      setViewportWidth(wrapperWidth - columnWidth);
-      setCols(getCols(zoom, columnWidth));
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [zoom, columnWidth]);
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, [columnWidth, zoom]);
 
   /**
    * Performs one-time initial scroll positioning based on provided start date.
@@ -256,7 +266,12 @@ const CalendarProvider = <TMeta,>({
     const scrollLeft = clampScrollLeft(rawScrollLeft, container);
 
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
+    // Recording where we just scrolled the container to is the whole job of
+    // this effect: the scroll position lives in the DOM and React has to be
+    // told. Guarded by `isInitialized`, so it cannot cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setScrollPosition(scrollLeft);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsInitialized(true);
   }, [clampScrollLeft, effectiveCenterDate, isInitialized, referenceDate, zoom]);
 
@@ -287,6 +302,10 @@ const CalendarProvider = <TMeta,>({
     if (nextCenterDateValue === centerDateRef.current) return;
 
     centerDateRef.current = nextCenterDateValue;
+    // Same again: the caller moved the centre date, so the container is
+    // scrolled and the new position recorded. The ref guard above means this
+    // runs once per actual change of centreDate.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     handleGoToDate(centerDate);
   }, [centerDate, handleGoToDate]);
 
