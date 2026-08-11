@@ -50,6 +50,23 @@ npm version patch
 
 Use `patch`, `minor`, or `major` depending on the change.
 
+To cut a prerelease instead, use a version with a prerelease suffix — for a new
+minor line, `npm version preminor --preid alpha` gives `0.4.0-alpha.0`, and
+`npm version prerelease` bumps it to `0.4.0-alpha.1` and so on.
+
+The workflow reads the version and picks the npm dist-tag from it: anything with
+a `-` in it publishes under `next`, everything else under `latest`. That matters
+because npm does not work this out for itself — without an explicit `--tag` it
+moves `latest` to whatever was published last, which would make a prerelease the
+default install for anyone running `npm install` without a version. Consumers of
+a prerelease should ask for it by name:
+
+```bash
+npm install @the-curve-consulting/react-scheduler@next
+# or pin it
+npm install @the-curve-consulting/react-scheduler@0.4.0-alpha.1
+```
+
 4. Push `master` and the new version tag:
 
 ```bash
