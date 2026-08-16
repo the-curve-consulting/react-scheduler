@@ -10,6 +10,15 @@ import {
   VisibleRange
 } from "./types";
 
+/** Aligns weekly calculations to the complete ISO-week columns shown by the grid. */
+export const getRangeLayoutRange = (zoom: number, visibleRange: VisibleRange): VisibleRange =>
+  zoom === 0
+    ? {
+        startDate: visibleRange.startDate.startOf("isoWeek"),
+        endDate: visibleRange.endDate.endOf("isoWeek")
+      }
+    : visibleRange;
+
 /**
  * Projects complete cached hourly days onto an exact visible time range.
  *
@@ -78,13 +87,14 @@ export const getRangeVisibleLayoutResource = <TMeta>(
   defaultWorkDayHours: number,
   defaultStartHour: number
 ): RangeVisibleLayoutResource<TMeta> => {
+  const layoutRange = getRangeLayoutRange(zoom, visibleRange);
   const visibleProjectRows = resource.data.flatMap((row) => {
     const visibleProjects = row.filter((project) =>
       isProjectVisible(
         project.startDate,
         project.endDate,
-        visibleRange.startDate,
-        visibleRange.endDate
+        layoutRange.startDate,
+        layoutRange.endDate
       )
     );
 
@@ -99,7 +109,7 @@ export const getRangeVisibleLayoutResource = <TMeta>(
     holidayPlacements: getHolidayPlacements(
       zoom,
       resource.holidayRequests,
-      visibleRange,
+      layoutRange,
       defaultWorkDayHours,
       defaultStartHour
     ),

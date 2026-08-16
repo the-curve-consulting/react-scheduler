@@ -112,21 +112,21 @@ export const getOffsetFromScroll = (scrollLeft: number, zoom: number): number =>
  * @param referenceDate Reference date at virtual-scroll center.
  * @param zoom Current zoom level.
  * @param viewportWidth Viewport width in pixels.
- * @returns Start/end dates that should be considered visible (with rendering buffer).
+ * @param buffer Number of additional timeline units to include on both sides.
+ * @returns Complete calendar-cell boundaries covered by the viewport and buffer.
  */
 export const getVisibleRangeFromScroll = (
   scrollLeft: number,
   referenceDate: dayjs.Dayjs,
   zoom: number,
-  viewportWidth: number
+  viewportWidth: number,
+  buffer: number = 2
 ): { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs } => {
   const cellWidth = getCellWidth(zoom);
   const offset = getOffsetFromScroll(scrollLeft, zoom);
-  const visibleUnits = Math.ceil(viewportWidth / cellWidth);
-  const unitsFromCenter = Math.floor(visibleUnits / 2);
-
-  // Add buffer to prevent tiles from flickering at edges
-  const buffer = 2;
+  const visibleUnits = Math.max(Math.ceil(viewportWidth / cellWidth), 1);
+  const unitsBeforeCenter = Math.floor(visibleUnits / 2);
+  const unitsAfterCenter = visibleUnits - unitsBeforeCenter - 1;
 
   let currentCenter: dayjs.Dayjs;
   let startDate: dayjs.Dayjs;
@@ -134,24 +134,24 @@ export const getVisibleRangeFromScroll = (
 
   switch (zoom) {
     case 0: //Weekly
-      currentCenter = referenceDate.add(offset, "weeks");
-      startDate = currentCenter.subtract(unitsFromCenter + buffer, "weeks");
-      endDate = currentCenter.add(unitsFromCenter + buffer, "weeks");
+      currentCenter = referenceDate.add(offset, "weeks").startOf("isoWeek");
+      startDate = currentCenter.subtract(unitsBeforeCenter + buffer, "weeks");
+      endDate = currentCenter.add(unitsAfterCenter + buffer, "weeks").endOf("isoWeek");
       break;
     case 1: //Daily
-      currentCenter = referenceDate.add(offset, "days");
-      startDate = currentCenter.subtract(unitsFromCenter + buffer, "days");
-      endDate = currentCenter.add(unitsFromCenter + buffer, "days");
+      currentCenter = referenceDate.add(offset, "days").startOf("day");
+      startDate = currentCenter.subtract(unitsBeforeCenter + buffer, "days");
+      endDate = currentCenter.add(unitsAfterCenter + buffer, "days").endOf("day");
       break;
     case 2: //Hourly
-      currentCenter = referenceDate.add(offset, "hours");
-      startDate = currentCenter.subtract(unitsFromCenter + buffer, "hours");
-      endDate = currentCenter.add(unitsFromCenter + buffer, "hours");
+      currentCenter = referenceDate.add(offset, "hours").startOf("hour");
+      startDate = currentCenter.subtract(unitsBeforeCenter + buffer, "hours");
+      endDate = currentCenter.add(unitsAfterCenter + buffer, "hours").endOf("hour");
       break;
     default:
-      currentCenter = referenceDate.add(offset, "days");
-      startDate = currentCenter.subtract(unitsFromCenter + buffer, "days");
-      endDate = currentCenter.add(unitsFromCenter + buffer, "days");
+      currentCenter = referenceDate.add(offset, "days").startOf("day");
+      startDate = currentCenter.subtract(unitsBeforeCenter + buffer, "days");
+      endDate = currentCenter.add(unitsAfterCenter + buffer, "days").endOf("day");
   }
 
   return { startDate, endDate };
@@ -324,36 +324,19 @@ export const getCurrentCenterDateFromScroll = (
   referenceDate: dayjs.Dayjs,
   zoom: number
 ): dayjs.Dayjs => {
-  const scrollConfig = getScrollConfig(zoom);
-  const cellWidth = getCellWidth(zoom);
-  const offsetPx = scrollLeft - scrollConfig.center;
-
-  let centerDate: dayjs.Dayjs;
+  // Use the same discrete cell offset as visibleRange. A continuous center
+  // date here can represent a different week than the range during partial
+  // cell scrolling, causing the header/grid and tiles to become unsynchronised.
+  const offset = getOffsetFromScroll(scrollLeft, zoom);
 
   switch (zoom) {
-    case 0: {
-      // Weekly - calculate in weeks (continuous for smooth scrolling)
-      const offsetWeeks = offsetPx / cellWidth;
-      centerDate = referenceDate.add(offsetWeeks, "weeks");
-      break;
-    }
-    case 1: {
-      // Daily - calculate in days (continuous for smooth scrolling)
-      const offsetDays = offsetPx / cellWidth;
-      centerDate = referenceDate.add(offsetDays, "days");
-      break;
-    }
-    case 2: {
-      // Hourly - calculate in hours (continuous for smooth scrolling)
-      const offsetHours = offsetPx / cellWidth;
-      centerDate = referenceDate.add(offsetHours, "hours");
-      break;
-    }
-    default: {
-      const offsetDays = offsetPx / cellWidth;
-      centerDate = referenceDate.add(offsetDays, "days");
-    }
+    case 0:
+      return referenceDate.add(offset, "weeks");
+    case 1:
+      return referenceDate.add(offset, "days");
+    case 2:
+      return referenceDate.add(offset, "hours");
+    default:
+      return referenceDate.add(offset, "days");
   }
-
-  return centerDate;
 };

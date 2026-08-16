@@ -1,26 +1,32 @@
 import type { ReactElement } from "react";
-import dayjs from "dayjs";
+import { HolidayTileClickData, SchedulerProjectData } from "@/types/global";
+import { VisibleLayoutResource, VisibleRange } from "@/utils/visibleGridLayout";
 import {
-  HolidayRequest,
-  HolidayTileClickData,
-  PaginatedSchedulerData,
-  SchedulerProjectData,
-  WorkingDuration
-} from "@/types/global";
+  HourlyVisibleLayoutResource,
+  RangeVisibleLayoutResource
+} from "@/utils/visibleGridLayout/types";
+
+export type HourlyResourceTilesProps<TMeta = unknown> = {
+  visibleLayoutResource: HourlyVisibleLayoutResource<TMeta>;
+  rowOffset: number;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
+};
+
+export type RangeResourceTilesProps<TMeta = unknown> = {
+  visibleLayoutResource: RangeVisibleLayoutResource<TMeta>;
+  zoom: number;
+  rowOffset: number;
+  visibleRange: VisibleRange;
+  onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
+};
 
 export type ResourceTilesProps<TMeta = unknown> = {
-  resourceId: string;
+  visibleLayoutResource: VisibleLayoutResource<TMeta>;
   zoom: number;
-  data: SchedulerProjectData<TMeta>[][];
-  rows: number;
+  rowOffset: number;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
-  visibleStart: number;
-  visibleEnd: number;
-  workingDurations: WorkingDuration[];
-  holidayRequests: HolidayRequest[];
-  defaultWorkDayHours: number;
-  defaultStartHour: number;
+  visibleRange: VisibleRange;
 };
 
 export type ResourceTilesComponent = <TMeta = unknown>(
@@ -29,13 +35,10 @@ export type ResourceTilesComponent = <TMeta = unknown>(
 
 export type TilesProps<TMeta = unknown> = {
   zoom: number;
-  data: PaginatedSchedulerData<TMeta>;
+  visibleLayoutsPerResource: VisibleLayoutResource<TMeta>[];
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
-  visibleRange: { startDate: dayjs.Dayjs; endDate: dayjs.Dayjs };
-  workingDurationsPerPerson: WorkingDuration[][];
-  defaultWorkDayHours: number;
-  defaultStartHour: number;
+  visibleRange: VisibleRange;
 };
 
 export type TilesComponent = <TMeta = unknown>(

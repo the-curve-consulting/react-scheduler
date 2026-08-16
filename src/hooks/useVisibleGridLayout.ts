@@ -3,6 +3,7 @@ import { PaginatedSchedulerData, WorkingDuration } from "@/types/global";
 import visibleGridLayout, {
   ensureDayContextsForRange,
   ensureHourlyDayLayouts,
+  getRangeLayoutRange,
   HourlyDayPlacementCache,
   ResourceDayCache,
   VisibleLayoutResource,
@@ -55,13 +56,15 @@ const useVisibleGridLayout = <TMeta>(
   );
 
   const layout = useMemo(() => {
+    const contextRange = getRangeLayoutRange(zoom, visibleRange);
+
     ensureDayContextsForRange(
       data,
       resourceDayCache,
       sortedWorkingDurationsPerResource,
       defaultWorkDayHours,
       defaultStartHour,
-      visibleRange
+      contextRange
     );
 
     if (zoom === 2) {

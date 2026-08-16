@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SchedulerData } from "@/types/global";
 import { splitToPages } from "@/utils/splitToPages";
-import { getTotalRowsPerPage } from "@/utils/getTotalRowsPerPage";
 import { useCalendar } from "@/context/CalendarProvider";
 import { outsideWrapperId } from "@/constants";
 import useProjectsOnGrid from "@/hooks/useProjectsOnGrid";
@@ -47,11 +46,6 @@ export const usePagination = <TMeta>(data: SchedulerData<TMeta>): UsePaginationD
 
   const end = startIndex + pages[pageNum].length;
 
-  const rowsPerItem = useMemo(
-    () => rowsPerPerson.slice(startIndex, end),
-    [end, rowsPerPerson, startIndex]
-  );
-
   const projectsPerPage = useMemo(
     () => projectsPerPerson.slice(startIndex, end),
     [end, projectsPerPerson, startIndex]
@@ -64,8 +58,6 @@ export const usePagination = <TMeta>(data: SchedulerData<TMeta>): UsePaginationD
     currentPageNum: pageNum,
     pagesAmount: pages.length,
     projectsPerPerson: projectsPerPage,
-    rowsPerItem,
-    totalRowsPerPage: getTotalRowsPerPage(pages[pageNum]),
     next,
     previous,
     reset

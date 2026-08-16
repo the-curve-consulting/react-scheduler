@@ -3,13 +3,10 @@ import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import {
   boxHeight,
-  businessDays,
   canvasId,
   canvasWrapperId,
-  dayStartHour,
   gridInnerWrapperId,
   leftColumnWidth,
-  maxHoursPerWeek,
   outsideWrapperId
 } from "@/constants";
 import { Loader, Tiles } from "@/components";
@@ -27,7 +24,7 @@ import {
 } from "./styles";
 
 const GridInner = <TMeta,>(
-  { data, rows, onTileClick, onHolidayTileClick, workingDurationsPerPerson }: GridProps<TMeta>,
+  { visibleLayoutsPerResource, rows, onTileClick, onHolidayTileClick }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
   const {
@@ -38,7 +35,6 @@ const GridInner = <TMeta,>(
     loadingState,
     viewportWidth,
     cols,
-    config,
     currentCenterDate
   } = useCalendar<TMeta>();
 
@@ -118,14 +114,11 @@ const GridInner = <TMeta,>(
         <StyledCanvas id={canvasId} ref={canvasRef} />
         <StyledTilesLayer $isInteractive={!isBlocking}>
           <Tiles
-            data={data}
+            visibleLayoutsPerResource={visibleLayoutsPerResource}
             zoom={zoom}
             visibleRange={visibleRange}
             onTileClick={onTileClick}
             onHolidayTileClick={onHolidayTileClick}
-            workingDurationsPerPerson={workingDurationsPerPerson}
-            defaultStartHour={config.defaultStartHour ?? dayStartHour}
-            defaultWorkDayHours={(config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays}
           />
         </StyledTilesLayer>
         {isBlocking ? (

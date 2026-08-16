@@ -71,6 +71,7 @@ const visibleGridLayout = <TMeta>(
 
 export { ensureDayContextsForRange } from "./availabilityCache";
 export { ensureHourlyDayLayouts } from "./hourlyDayLayout";
+export { getRangeLayoutRange } from "./resourceLayouts";
 export type {
   CachedResourceDayMap,
   HolidayPlacement,

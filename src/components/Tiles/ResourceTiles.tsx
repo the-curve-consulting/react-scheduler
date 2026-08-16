@@ -1,48 +1,76 @@
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "dayjs";
-import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
-import { secondsInHour } from "@/constants";
 import { HourlyTile, Tile, HolidayTile } from "@/components";
-import { isProjectVisible } from "@/utils/scrollHelpers";
 import { getDailyTileSegments, getWeeklyTileSegments } from "@/utils/getTileSegments";
+import { getHolidayRequestsForDateRange } from "@/utils/holidayRequestHelper";
 import {
-  getWorkingHoursForDate,
-  isOccupancyProject,
-  sortWorkingDurations
-} from "@/utils/workingDurationHelper";
-import {
-  getAvailableWorkWindowFromKinds,
-  getHolidayKind,
-  getHolidayRequestsForDateRange,
-  getHolidayWindow,
-  HolidayKind,
-  WorkWindow
-} from "@/utils/holidayRequestHelper";
-import { PlacedTiles, ResourceTilesComponent, ResourceTilesProps } from "./types";
+  HourlyResourceTilesProps,
+  PlacedTiles,
+  RangeResourceTilesProps,
+  ResourceTilesComponent,
+  ResourceTilesProps
+} from "./types";
 
-const NO_HOLIDAY_KINDS: HolidayKind[] = [];
+const getHourlyResourceTiles = <TMeta,>({
+  visibleLayoutResource,
+  rowOffset,
+  onTileClick
+}: HourlyResourceTilesProps<TMeta>): PlacedTiles =>
+  visibleLayoutResource.visibleHourlyPlacements.map((placement) => (
+    <HourlyTile
+      key={`${placement.project.id}-${placement.startDateTime}`}
+      row={placement.rowIndex + rowOffset}
+      dayData={{
+        startDateTime: placement.startDateTime,
+        endDateTime: placement.endDateTime,
+        data: placement.project
+      }}
+      onTileClick={onTileClick}
+    />
+  ));
+
+const getRangeResourceTiles = <TMeta,>({
+  visibleLayoutResource,
+  zoom,
+  rowOffset,
+  visibleRange,
+  onTileClick
+}: RangeResourceTilesProps<TMeta>): PlacedTiles =>
+  visibleLayoutResource.visibleProjectRows.flatMap((projectsPerRow, rowIndex) =>
+    projectsPerRow.flatMap((project) => {
+      const segments =
+        zoom === 0
+          ? getWeeklyTileSegments(project, visibleRange, visibleLayoutResource.dayContextsByDay)
+          : getDailyTileSegments(project, visibleRange, visibleLayoutResource.dayContextsByDay);
+
+      return segments.map((segment) => (
+        <Tile
+          key={`${project.id}-${segment.startDate.valueOf()}-${segment.endDate.valueOf()}-${
+            segment.working
+          }`}
+          row={rowIndex + rowOffset}
+          data={segment.data}
+          startDate={segment.startDate}
+          endDate={segment.endDate}
+          working={segment.working}
+          zoom={zoom}
+          onTileClick={onTileClick}
+        />
+      ));
+    })
+  );
 
 const ResourceTilesInner = <TMeta,>({
-  resourceId,
-  data,
+  visibleLayoutResource,
   zoom,
-  rows,
+  rowOffset,
   onTileClick,
   onHolidayTileClick,
-  visibleStart,
-  visibleEnd,
-  workingDurations,
-  holidayRequests,
-  defaultStartHour,
-  defaultWorkDayHours
+  visibleRange
 }: ResourceTilesProps<TMeta>) => {
-  const visibleStartDay = dayjs(visibleStart).startOf("day").valueOf();
-  const visibleEndDay = dayjs(visibleEnd).endOf("day").valueOf();
-  const halfDayHours = defaultWorkDayHours / 2;
-
-  const sortedWorkingDurations = useMemo(
-    () => sortWorkingDurations(workingDurations),
-    [workingDurations]
+  const visibleHolidayRequests = useMemo(
+    () => visibleLayoutResource.holidayPlacements.map(({ holidayRequest }) => holidayRequest),
+    [visibleLayoutResource.holidayPlacements]
   );
 
   const handleHolidayTileClick = useCallback(
@@ -51,324 +79,51 @@ const ResourceTilesInner = <TMeta,>({
       const parsedEndDate = endDate.toDate();
 
       onHolidayTileClick?.({
-        resourceId: resourceId,
+        resourceId: visibleLayoutResource.resourceId,
         startDate: parsedStartDate,
         endDate: parsedEndDate,
-        holidayRequests: getHolidayRequestsForDateRange(startDate, endDate, holidayRequests)
+        holidayRequests: getHolidayRequestsForDateRange(startDate, endDate, visibleHolidayRequests)
       });
     },
-    [holidayRequests, onHolidayTileClick, resourceId]
+    [visibleHolidayRequests, onHolidayTileClick, visibleLayoutResource.resourceId]
   );
 
-  const visibleHolidayRanges = useMemo(() => {
-    const visibleStartDate = dayjs(visibleStartDay).startOf("day");
-    const visibleEndDate = dayjs(visibleEndDay).startOf("day");
-
-    return holidayRequests.flatMap((holidayRequest) => {
-      const leaveStart = dayjs(holidayRequest.leave_from).startOf("day");
-      const leaveEnd = dayjs(holidayRequest.leave_to).startOf("day");
-
-      if (leaveStart.isAfter(visibleEndDate) || leaveEnd.isBefore(visibleStartDate)) {
-        return [];
-      }
-
-      return [
-        {
-          holidayRequest,
-          kind: getHolidayKind(holidayRequest),
-          startDate: leaveStart.isBefore(visibleStartDate) ? visibleStartDate : leaveStart,
-          endDate: leaveEnd.isAfter(visibleEndDate) ? visibleEndDate : leaveEnd
-        }
-      ];
-    });
-  }, [visibleStartDay, visibleEndDay, holidayRequests]);
-
-  const holidayKindsByDay = useMemo(() => {
-    const result = new Map<number, HolidayKind[]>();
-
-    for (const { kind, startDate, endDate } of visibleHolidayRanges) {
-      let currentDate = startDate;
-
-      while (!currentDate.isAfter(endDate, "day")) {
-        const dayKey = currentDate.valueOf();
-        let kinds = result.get(dayKey);
-        if (!kinds) {
-          kinds = [];
-          result.set(dayKey, kinds);
-        }
-        kinds.push(kind);
-        currentDate = currentDate.add(1, "day");
-      }
-    }
-
-    return result;
-  }, [visibleHolidayRanges]);
-
-  // Resolve working hours, the holiday-adjusted work window and remaining available
-  // hours for every visible day in a single pass. Days with no holidays skip the
-  // per-day kind lookup entirely (the common case).
-  const { workWindowsByDay, availableHoursByDay } = useMemo(() => {
-    const workWindowsByDay = new Map<number, WorkWindow | null>();
-    const availableHoursByDay = new Map<number, number>();
-    const hasHolidays = holidayRequests.length > 0;
-
-    let currentDate = dayjs(visibleStartDay);
-    const endDate = dayjs(visibleEndDay);
-
-    while (!currentDate.isAfter(endDate, "day")) {
-      const dayKey = currentDate.startOf("day").valueOf();
-      const workingHours = getWorkingHoursForDate(currentDate, sortedWorkingDurations);
-      const holidayKinds = hasHolidays
-        ? holidayKindsByDay.get(dayKey) ?? NO_HOLIDAY_KINDS
-        : NO_HOLIDAY_KINDS;
-      const workWindow = getAvailableWorkWindowFromKinds(
-        currentDate,
-        workingHours,
-        holidayKinds,
-        defaultStartHour,
-        halfDayHours
-      );
-
-      workWindowsByDay.set(dayKey, workWindow);
-      availableHoursByDay.set(
-        dayKey,
-        workWindow ? workWindow.end.diff(workWindow.start, "hour", true) : 0
-      );
-
-      currentDate = currentDate.add(1, "day");
-    }
-
-    return { workWindowsByDay, availableHoursByDay };
-  }, [
-    visibleStartDay,
-    visibleEndDay,
-    sortedWorkingDurations,
-    defaultStartHour,
-    halfDayHours,
-    holidayKindsByDay,
-    holidayRequests
-  ]);
-
-  const holidayTiles: PlacedTiles = useMemo(() => {
-    const rowNo = Math.max(data.length, 1);
-    return visibleHolidayRanges.flatMap(({ holidayRequest, kind, startDate, endDate }) => {
-      const holidayWindow = getHolidayWindow(
-        startDate,
-        endDate,
-        defaultStartHour,
-        kind,
-        halfDayHours,
-        zoom
-      );
-
-      if (holidayWindow === null) return [];
-
-      return [
+  const holidayTiles: PlacedTiles = useMemo(
+    () =>
+      visibleLayoutResource.holidayPlacements.map((placement) => (
         <HolidayTile
-          key={holidayRequest.id}
-          startDate={holidayWindow.startDate}
-          endDate={holidayWindow.endDate}
-          rowIndex={rows}
-          rowNo={rowNo}
+          key={placement.holidayRequest.id}
+          rowIndex={rowOffset}
+          rowNo={visibleLayoutResource.visibleRowsCount}
+          startDate={placement.startDate}
+          endDate={placement.endDate}
           zoom={zoom}
           onTileClick={handleHolidayTileClick}
         />
-      ];
-    });
-  }, [
-    data.length,
-    defaultStartHour,
-    halfDayHours,
-    handleHolidayTileClick,
-    rows,
-    visibleHolidayRanges,
-    zoom
-  ]);
+      )),
+    [
+      handleHolidayTileClick,
+      rowOffset,
+      visibleLayoutResource.holidayPlacements,
+      visibleLayoutResource.visibleRowsCount,
+      zoom
+    ]
+  );
 
-  const tiles = useMemo((): PlacedTiles => {
-    const visibleStartDate = dayjs(visibleStart);
-    const visibleEndDate = dayjs(visibleEnd);
-
-    /**
-     * Calculates how much of the remaining work window one project should occupy.
-     *
-     * Occupancy projects request fixed seconds and are clipped to the remaining
-     * available window. Throughput projects scale from the full holiday-adjusted
-     * day capacity, then are also clipped to the remaining window.
-     *
-     * @param project Project being rendered.
-     * @param currentStartTime First available timestamp after previous same-day tiles.
-     * @param workWindow Holiday-adjusted work window for the current day.
-     * @returns Number of seconds this project can occupy from `currentStartTime`.
-     */
-    const calculateProjectOccupancySeconds = (
-      project: SchedulerProjectData<TMeta>,
-      currentStartTime: dayjs.Dayjs,
-      workWindow: WorkWindow
-    ): number => {
-      const availableSeconds = Math.max(
-        currentStartTime.endOf("day").diff(currentStartTime, "second"),
-        0
+  switch (visibleLayoutResource.mode) {
+    case "hourly":
+      return getHourlyResourceTiles({ visibleLayoutResource, rowOffset, onTileClick }).concat(
+        holidayTiles
       );
-      if (availableSeconds <= 0) return 0;
-
-      if (isOccupancyProject(project)) {
-        return Math.min(project.occupancy, availableSeconds);
-      }
-
-      const availableHours = workWindow.end.diff(workWindow.start, "hour", true);
-      const projectSeconds = project.throughput * availableHours * secondsInHour;
-      return Math.min(projectSeconds, availableSeconds);
-    };
-
-    /**
-     * Builds hourly tiles for one project across the visible date range.
-     *
-     * `startDateTimes` is shared per day so each next project starts after the
-     * previously rendered project on that day, matching the scheduler stacking logic.
-     *
-     * @param project Project being rendered.
-     * @param rowIndex Project row index inside the resource.
-     * @param rowOffset Number of rows reserved before project rows.
-     * @param startDateTimes Last rendered end time keyed by visible day.
-     * @returns Hourly tile elements for the project.
-     */
-    const renderHourlyTilesForProject = (
-      project: SchedulerProjectData<TMeta>,
-      rowIndex: number,
-      rowOffset: number,
-      startDateTimes: Record<string, dayjs.Dayjs>
-    ): PlacedTiles => {
-      const tilesPerProject: PlacedTiles = [];
-      const projectStartDay = dayjs(project.startDate).startOf("day");
-      const projectEndDay = dayjs(project.endDate).endOf("day");
-      const iterationStartDay = projectStartDay.isAfter(visibleStartDate)
-        ? projectStartDay
-        : visibleStartDate;
-      const iterationEndDay = projectEndDay.isBefore(visibleEndDate)
-        ? projectEndDay
-        : visibleEndDate;
-
-      if (iterationStartDay.isAfter(iterationEndDay, "day")) {
-        return tilesPerProject;
-      }
-
-      let currentDate = iterationStartDay;
-
-      while (currentDate.isBefore(iterationEndDay) || currentDate.isSame(iterationEndDay)) {
-        const currentDay = currentDate.startOf("day");
-        const currentDateString = currentDay.format("YYYY-MM-DD");
-        const dayKey = currentDay.valueOf();
-
-        currentDate = currentDate.add(1, "day");
-
-        const workWindow = workWindowsByDay.get(dayKey);
-        if (!workWindow) continue;
-
-        // Ensure if this project is on the same day as the previously rendered,
-        // it starts after the previous project ends
-        const previousEndTime = startDateTimes[currentDateString];
-        const currentStartTime =
-          previousEndTime && previousEndTime.isAfter(workWindow.start)
-            ? previousEndTime
-            : workWindow.start;
-
-        const occupancy = calculateProjectOccupancySeconds(project, currentStartTime, workWindow);
-        if (occupancy === 0) continue;
-        let currentEndTime = currentStartTime.add(occupancy, "second");
-
-        startDateTimes[currentDateString] = currentEndTime;
-        if (currentEndTime.isAfter(visibleEndDate)) {
-          currentEndTime = visibleEndDate;
-        }
-
-        // Skip tiles outside the visible date range to avoid unnecessary rendering
-        if (
-          currentStartTime.isAfter(currentEndTime) ||
-          currentStartTime.isAfter(visibleEndDate) ||
-          currentEndTime.isBefore(visibleStartDate)
-        ) {
-          continue;
-        }
-
-        const dayData: SchedulerProjectDayData<TMeta> = {
-          data: project,
-          startDateTime: currentStartTime,
-          endDateTime: currentEndTime
-        };
-
-        tilesPerProject.push(
-          <HourlyTile
-            key={`${project.id}-${currentDateString}`}
-            row={rowIndex + rowOffset}
-            dayData={dayData}
-            onTileClick={onTileClick}
-          />
-        );
-      }
-
-      return tilesPerProject;
-    };
-
-    if (zoom === 2) {
-      // Hourly view
-      const startDateTimes: Record<string, dayjs.Dayjs> = {};
-      return data
-        .map((projectsPerRow, rowIndex) =>
-          projectsPerRow
-            .filter((project) =>
-              isProjectVisible(project.startDate, project.endDate, visibleStartDate, visibleEndDate)
-            )
-            .map((project) => renderHourlyTilesForProject(project, rowIndex, rows, startDateTimes))
-        )
-        .flat(3)
-        .concat(holidayTiles);
-    }
-
-    // Regular view
-    return data
-      .map((projectsPerRow, rowIndex) =>
-        projectsPerRow
-          .filter((project) =>
-            isProjectVisible(project.startDate, project.endDate, visibleStartDate, visibleEndDate)
-          )
-          .map((project) => {
-            const segments =
-              zoom === 0
-                ? getWeeklyTileSegments(project, visibleStart, visibleEnd, availableHoursByDay)
-                : getDailyTileSegments(project, visibleStart, visibleEnd, availableHoursByDay);
-
-            return segments.map((segment) => (
-              <Tile
-                key={`${project.id}-${segment.startDate.valueOf()}-${segment.endDate.valueOf()}-${
-                  segment.working
-                }`}
-                row={rowIndex + rows}
-                data={segment.data}
-                startDate={segment.startDate}
-                endDate={segment.endDate}
-                working={segment.working}
-                zoom={zoom}
-                onTileClick={onTileClick}
-              />
-            ));
-          })
-      )
-      .flat(3)
-      .concat(holidayTiles);
-  }, [
-    visibleStart,
-    visibleEnd,
-    zoom,
-    data,
-    availableHoursByDay,
-    onTileClick,
-    rows,
-    workWindowsByDay,
-    holidayTiles
-  ]);
-
-  return <>{tiles}</>;
+    case "range":
+      return getRangeResourceTiles({
+        visibleLayoutResource,
+        zoom,
+        rowOffset,
+        visibleRange,
+        onTileClick
+      }).concat(holidayTiles);
+  }
 };
 
 const ResourceTiles = memo(ResourceTilesInner) as ResourceTilesComponent;

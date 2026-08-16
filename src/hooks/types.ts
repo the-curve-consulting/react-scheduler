@@ -18,14 +18,6 @@ export type UsePaginationData<TMeta = unknown> = {
    */
   projectsPerPerson: SchedulerProjectData<TMeta>[][][];
   /**
-   * Amount of rows per item
-   */
-  rowsPerItem: number[];
-  /**
-   * Total amount of rows displayed on current page
-   */
-  totalRowsPerPage: number;
-  /**
    * Callback function to load next page
    */
   next: () => void;

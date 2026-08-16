@@ -3,42 +3,27 @@ import ResourceTiles from "./ResourceTiles";
 import { TilesComponent, TilesProps } from "./types";
 
 const TilesInner = <TMeta,>({
-  data,
+  visibleLayoutsPerResource,
   zoom,
   onTileClick,
   onHolidayTileClick,
-  visibleRange,
-  workingDurationsPerPerson,
-  defaultStartHour,
-  defaultWorkDayHours
+  visibleRange
 }: TilesProps<TMeta>) => {
-  let rows = 0;
-  const visibleStart = visibleRange.startDate.valueOf();
-  const visibleEnd = visibleRange.endDate.valueOf();
+  let rowOffset = 0;
 
-  const calculateRowOffset = (personIndex: number, currentRows: number): number => {
-    if (personIndex === 0) return currentRows;
-    return currentRows + Math.max(data[personIndex - 1].data.length, 1);
-  };
-
-  return data.map((person, personIndex) => {
-    rows = calculateRowOffset(personIndex, rows);
+  return visibleLayoutsPerResource.map((visibleLayout) => {
+    const currentRowOffset = rowOffset;
+    rowOffset += visibleLayout.visibleRowsCount;
 
     return (
       <ResourceTiles
-        key={person.id}
-        resourceId={person.id}
+        key={visibleLayout.resourceId}
+        visibleLayoutResource={visibleLayout}
         zoom={zoom}
-        data={person.data}
-        rows={rows}
-        visibleStart={visibleStart}
-        visibleEnd={visibleEnd}
-        workingDurations={workingDurationsPerPerson[personIndex]}
-        holidayRequests={person.holidayRequests}
+        rowOffset={currentRowOffset}
+        visibleRange={visibleRange}
         onTileClick={onTileClick}
         onHolidayTileClick={onHolidayTileClick}
-        defaultStartHour={defaultStartHour}
-        defaultWorkDayHours={defaultWorkDayHours}
       />
     );
   });

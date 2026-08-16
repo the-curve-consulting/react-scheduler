@@ -14,8 +14,10 @@ import {
 import { getTooltipData } from "@/utils/getTooltipData";
 import { usePagination } from "@/hooks/usePagination";
 import { getDefaultWorkingDurations } from "@/utils/getDefaultWorkingDurations";
+import useVisibleGridLayout from "@/hooks/useVisibleGridLayout";
+import { businessDays, dayStartHour, maxHoursPerWeek } from "@/constants";
 import { Grid, Header, LeftColumn, Tooltip } from "..";
-import { CalendarProps } from "./types";
+import { CalendarProps, RowsData } from "./types";
 import { StyledOuterWrapper, StyledInnerWrapper } from "./styles";
 
 const initialTooltipData: TooltipData = {
@@ -47,22 +49,33 @@ export const Calendar = <TMeta,>({
     currentCenterDate,
     viewportWidth,
     cols,
+    visibleRange,
     config: { showTooltip, showThemeToggle }
   } = useCalendar<TMeta>();
   const gridRef = useRef<HTMLDivElement>(null);
-  const {
-    page,
-    projectsPerPerson,
-    totalRowsPerPage,
-    rowsPerItem,
-    currentPageNum,
-    pagesAmount,
-    next,
-    previous,
-    reset
-  } = usePagination<TMeta>(filteredData);
+  const { page, projectsPerPerson, currentPageNum, pagesAmount, next, previous, reset } =
+    usePagination<TMeta>(filteredData);
 
   const defaultWorkingDurations = useMemo(() => getDefaultWorkingDurations(config), [config]);
+  const visibleLayoutsPerResource = useVisibleGridLayout<TMeta>(
+    zoom,
+    page,
+    visibleRange,
+    defaultWorkingDurations,
+    (config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays,
+    config.defaultStartHour ?? dayStartHour
+  );
+  const rowsData = useMemo<RowsData>(() => {
+    const rowsPerResource = visibleLayoutsPerResource.map(
+      ({ visibleRowsCount }) => visibleRowsCount
+    );
+
+    return {
+      rowsPerResource,
+      totalRows: rowsPerResource.reduce((sum, rows) => sum + rows, 0)
+    };
+  }, [visibleLayoutsPerResource]);
+
   const workingDurationsPerPerson = useMemo<WorkingDuration[][]>(
     () => page.map((row) => row.workingDurations ?? defaultWorkingDurations),
     [defaultWorkingDurations, page]
@@ -145,7 +158,7 @@ export const Calendar = <TMeta,>({
       debouncedHandleMouseOver.current(
         e,
         config,
-        rowsPerItem,
+        rowsData.rowsPerResource,
         projectsPerPerson,
         zoom,
         currentCenterDate,
@@ -169,7 +182,7 @@ export const Calendar = <TMeta,>({
     config,
     handleMouseLeave,
     projectsPerPerson,
-    rowsPerItem,
+    rowsData.rowsPerResource,
     startDate,
     currentCenterDate,
     cols,
@@ -197,7 +210,7 @@ export const Calendar = <TMeta,>({
         data={page}
         pageNum={currentPageNum}
         pagesAmount={pagesAmount}
-        rows={rowsPerItem}
+        rows={rowsData.rowsPerResource}
         onLoadNext={next}
         onLoadPrevious={previous}
         searchInputValue={searchPhrase}
@@ -212,11 +225,9 @@ export const Calendar = <TMeta,>({
           toggleTheme={toggleTheme}
         />
         <Grid
-          data={page}
-          zoom={zoom}
-          rows={totalRowsPerPage}
+          rows={rowsData.totalRows}
           ref={gridRef}
-          workingDurationsPerPerson={workingDurationsPerPerson}
+          visibleLayoutsPerResource={visibleLayoutsPerResource}
           onTileClick={onTileClick}
           onHolidayTileClick={onHolidayTileClick}
         />

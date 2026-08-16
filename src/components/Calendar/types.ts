@@ -15,3 +15,8 @@ export type CalendarProps<TMeta = unknown> = {
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
   toggleTheme?: () => void;
 };
+
+export type RowsData = {
+  totalRows: number;
+  rowsPerResource: number[];
+};

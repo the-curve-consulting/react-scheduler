@@ -60,18 +60,21 @@ const CalendarProvider = <TMeta,>({
   const isPrevZoom = zoom !== 0;
 
   const visibleRange = useMemo(() => {
+    return getVisibleRangeFromScroll(scrollPosition, referenceDate, zoom, viewportWidth, 0);
+  }, [scrollPosition, referenceDate, zoom, viewportWidth]);
+
+  const bufferedRange = useMemo(() => {
     return getVisibleRangeFromScroll(scrollPosition, referenceDate, zoom, viewportWidth);
   }, [scrollPosition, referenceDate, zoom, viewportWidth]);
 
   const currentCenterDate = useMemo(() => {
-    // Calculate center date directly from scroll position using continuous pixel-to-time mapping
-    // This ensures accurate alignment between viewport center and date without discretization
+    // Header, grid and layout data share the same discrete timeline-cell offset.
     return getCurrentCenterDateFromScroll(scrollPosition, referenceDate, zoom);
   }, [scrollPosition, referenceDate, zoom]);
 
   const range = useMemo(
-    () => ({ startDate: visibleRange.startDate, endDate: visibleRange.endDate }),
-    [visibleRange]
+    () => ({ startDate: bufferedRange.startDate, endDate: bufferedRange.endDate }),
+    [bufferedRange]
   );
 
   const startDate = visibleRange.startDate;
@@ -187,16 +190,11 @@ const CalendarProvider = <TMeta,>({
     // Skipping one emission prevents planner from firing a false jump request.
     skipNextRangeEmitRef.current = true;
 
-    // Calculate center date using the OLD zoom (before it changed)
-    const oldVisibleRange = getVisibleRangeFromScroll(
+    // Calculate the logical center using the old zoom before changing scale.
+    const centerDateBeforeChange = getCurrentCenterDateFromScroll(
       scrollPosition,
       referenceDate,
-      previousZoom.current, // Use the OLD zoom
-      viewportWidth
-    );
-    const centerDateBeforeChange = oldVisibleRange.startDate.add(
-      oldVisibleRange.endDate.diff(oldVisibleRange.startDate) / 2,
-      "milliseconds"
+      previousZoom.current
     );
 
     previousZoom.current = zoom;
@@ -207,7 +205,7 @@ const CalendarProvider = <TMeta,>({
     const scrollLeft = clampScrollLeft(rawScrollLeft, container);
     container?.scrollTo({ left: scrollLeft, behavior: "auto" });
     setScrollPosition(scrollLeft);
-  }, [clampScrollLeft, zoom, scrollPosition, referenceDate, viewportWidth]);
+  }, [clampScrollLeft, zoom, scrollPosition, referenceDate]);
 
   /**
    * Tracks the width of the wrapper the calendar is drawn into.
