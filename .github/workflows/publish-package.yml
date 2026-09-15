@@ -12,6 +12,11 @@ jobs:
       contents: read
       packages: write
       id-token: write
+    # setup-node writes an .npmrc that reads ${NODE_AUTH_TOKEN}, and yarn stops
+    # when the variable is not set. setup-node v4 exported this placeholder and
+    # v7 does not. The GitHub Packages step sets the real token.
+    env:
+      NODE_AUTH_TOKEN: XXXXX-XXXXX-XXXXX-XXXXX
 
     steps:
       - name: Checkout repository
