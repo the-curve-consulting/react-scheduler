@@ -41,15 +41,41 @@ export type ColorType =
   | "notWorkingTile"
   | "holidayTile";
 
+export type HeaderFonts = {
+  /** The top row: the month in the day view, the year in the week view. */
+  topRow: string;
+  /** The middle row: the week in the day view, the month in the week view. */
+  middleRow: string;
+  /** The name of the day or the week in the bottom row. */
+  bottomRowName: string;
+  /** The date in the bottom row, and the day and hour rows of the hour view. */
+  bottomRowNumber: string;
+};
+
+export type TileStyle = "solid" | "tinted";
+
 export type Theme = {
   colors: Record<ColorType, string>;
   navHeight: string;
   mode: "light" | "dark";
+  headerFonts: HeaderFonts;
+  headerUppercase: boolean;
+  tileStyle: TileStyle;
+};
+
+const defaultHeaderFonts: HeaderFonts = {
+  topRow: "600 14px Inter",
+  middleRow: "400 10px Inter",
+  bottomRowName: "600 14px Inter",
+  bottomRowNumber: "600 10px Inter"
 };
 
 export const theme: DefaultTheme = {
   mode: "light",
   navHeight: "44px",
+  headerFonts: defaultHeaderFonts,
+  headerUppercase: true,
+  tileStyle: "solid",
   colors: {
     background: "#FFFFFF",
     gridBackground: "#FFFFFF",
@@ -80,6 +106,9 @@ export const theme: DefaultTheme = {
 export const darkTheme: Theme = {
   mode: "dark",
   navHeight: "44px",
+  headerFonts: defaultHeaderFonts,
+  headerUppercase: true,
+  tileStyle: "solid",
   colors: {
     background: "#161B22",
     gridBackground: "#1E252E",

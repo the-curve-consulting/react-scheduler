@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
-import { dayWidth, fonts, headerMonthHeight, topRowTextYPos } from "@/constants";
+import { dayWidth, headerMonthHeight, topRowTextYPos } from "@/constants";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 
 export const drawMonthsOnTop = (
@@ -33,8 +34,8 @@ export const drawMonthsOnTop = (
         width,
         height: headerMonthHeight,
         textYPos: topRowTextYPos,
-        label: `${month.format("MMMM").toUpperCase()} ${month.format("YYYY")}`,
-        font: fonts.topRow
+        label: `${getHeaderLabel(month.format("MMMM"), theme)} ${month.format("YYYY")}`,
+        font: theme.headerFonts.topRow
       },
       theme
     );

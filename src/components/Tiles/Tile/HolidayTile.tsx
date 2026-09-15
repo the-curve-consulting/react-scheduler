@@ -2,6 +2,7 @@ import { memo, type MouseEvent } from "react";
 import { useTheme } from "styled-components";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
+import { getTintedHolidayTileStyle } from "@/utils/getTintedTileStyle";
 import { useCalendar } from "@/context/CalendarProvider";
 import { tileHeight, tileYOffset } from "@/constants";
 import { getCellDateRelativeToCenter } from "@/utils/scrollHelpers";
@@ -10,7 +11,8 @@ import {
   StyledStickyWrapper,
   StyledTextWrapper,
   StyledTileWrapper,
-  tileTextHorizontalMargin
+  tileTextHorizontalMargin,
+  tintedTileInset
 } from "./styles";
 import { HolidayTileComponent, HolidayTileProps } from "./types";
 
@@ -22,7 +24,9 @@ const HolidayTileInner = <TMeta,>({
   endDate,
   onTileClick
 }: HolidayTileProps) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const { colors } = theme;
+  const isTinted = theme.tileStyle === "tinted";
   const { currentCenterDate, cols } = useCalendar<TMeta>();
   const { y, x, width } = getTileProperties(
     rowIndex,
@@ -53,16 +57,22 @@ const HolidayTileInner = <TMeta,>({
 
   return (
     <StyledTileWrapper
+      $tinted={isTinted}
       style={{
         left: `${x}px`,
         top: `${y}px`,
-        backgroundColor: colors.holidayTile,
         width: `${width}px`,
-        height: `${rowNo * (tileHeight + 2 * tileYOffset) - 2 * tileYOffset}px`,
-        color: getTileTextColor(colors.holidayTile)
+        height: `${
+          rowNo * (tileHeight + 2 * tileYOffset) -
+          2 * tileYOffset -
+          (isTinted ? 2 * tintedTileInset : 0)
+        }px`,
+        ...(isTinted
+          ? getTintedHolidayTileStyle(theme)
+          : { backgroundColor: colors.holidayTile, color: getTileTextColor(colors.holidayTile) })
       }}
       onClick={handleTileClick}>
-      <StyledTextWrapper>
+      <StyledTextWrapper $tinted={isTinted}>
         <StyledStickyWrapper $offset={textOffset}>
           <StyledHolidayText bold>Holiday ...</StyledHolidayText>
         </StyledStickyWrapper>

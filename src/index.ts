@@ -20,7 +20,10 @@ export type {
   SchedulerProjectData,
   ZoomLevel,
   HolidayRequest,
-  HolidayTileClickData
+  HolidayTileClickData,
+  HeaderFonts,
+  SchedulerToolbar,
+  TileStyle
 } from "./types/global";
 export type {
   GanttConfig,

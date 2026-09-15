@@ -1,13 +1,8 @@
 import dayjs from "dayjs";
-import {
-  dayWidth,
-  fonts,
-  headerMonthHeight,
-  headerWeekHeight,
-  middleRowTextYPos
-} from "@/constants";
+import { dayWidth, headerMonthHeight, headerWeekHeight, middleRowTextYPos } from "@/constants";
 import { drawRow } from "@/utils/drawRow";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 
 export const drawWeeksInMiddle = (
   ctx: CanvasRenderingContext2D,
@@ -40,8 +35,8 @@ export const drawWeeksInMiddle = (
         width,
         height: headerWeekHeight,
         textYPos: middleRowTextYPos,
-        label: `${weekLabel.toUpperCase()} ${weekNumber}`,
-        font: fonts.middleRow
+        label: `${getHeaderLabel(weekLabel, theme)} ${weekNumber}`,
+        font: theme.headerFonts.middleRow
       },
       theme
     );

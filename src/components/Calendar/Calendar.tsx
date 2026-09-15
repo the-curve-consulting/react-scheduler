@@ -35,7 +35,8 @@ export const Calendar = <TMeta,>({
   onHolidayTileClick,
   onItemClick,
   toggleTheme,
-  topBarWidth
+  topBarWidth,
+  toolbar
 }: CalendarProps<TMeta>) => {
   const [tooltipData, setTooltipData] = useState<TooltipData>(initialTooltipData);
   const [filteredData, setFilteredData] = useState(data);
@@ -210,6 +211,7 @@ export const Calendar = <TMeta,>({
           topBarWidth={topBarWidth}
           showThemeToggle={showThemeToggle}
           toggleTheme={toggleTheme}
+          toolbar={toolbar}
         />
         <Grid
           data={page}

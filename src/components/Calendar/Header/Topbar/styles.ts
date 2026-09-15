@@ -78,10 +78,12 @@ export const Zoom = styled.div`
 
 export const Filters = styled.div`
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 export const OptionsContainer = styled.div`
   display: flex;
-  align-items: "center";
+  align-items: center;
   gap: 1.25rem;
 `;
