@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileTextColor } from "@/utils/getTileTextColor";
+import { getTintedTileStyle } from "@/utils/getTintedTileStyle";
 import { useCalendar } from "@/context/CalendarProvider";
 import { getTileProperties } from "@/utils/getTileProperties";
 import {
@@ -9,7 +10,10 @@ import {
   StyledText,
   StyledTextWrapper,
   StyledTileWrapper,
-  tileTextHorizontalMargin
+  StyledTintedSubtitle,
+  StyledTintedTitle,
+  tileTextHorizontalMargin,
+  tintedTileMinWidthForSubtitle
 } from "./styles";
 import { HourlyTileComponent, HourlyTileProps } from "./types";
 
@@ -25,25 +29,44 @@ const HourlyTileInner = <TMeta,>({ row, dayData, onTileClick }: HourlyTileProps<
     true
   );
 
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const { colors } = theme;
+  const isTinted = theme.tileStyle === "tinted";
+  const colorStyle = isTinted
+    ? getTintedTileStyle(dayData.data.bgColor ?? colors.defaultTile, true, theme)
+    : {
+        backgroundColor: `${dayData.data.bgColor ?? colors.defaultTile}`,
+        color: getTileTextColor(dayData.data.bgColor ?? "")
+      };
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
   return (
     <StyledTileWrapper
+      $tinted={isTinted}
       style={{
         left: `${x}px`,
         top: `${y}px`,
-        backgroundColor: `${dayData.data.bgColor ?? colors.defaultTile}`,
         width: `${width}px`,
-        color: getTileTextColor(dayData.data.bgColor ?? "")
+        ...colorStyle
       }}
       onClick={() => onTileClick?.(dayData.data)}>
-      <StyledTextWrapper>
+      <StyledTextWrapper $tinted={isTinted}>
         <StyledStickyWrapper $offset={textOffset}>
-          <StyledText bold>{dayData.data.title}</StyledText>
-          <StyledText>{dayData.data.subtitle}</StyledText>
-          <StyledDescription>{dayData.data.description}</StyledDescription>
+          {isTinted ? (
+            <>
+              <StyledTintedTitle>{dayData.data.title}</StyledTintedTitle>
+              {dayData.data.subtitle && width >= tintedTileMinWidthForSubtitle && (
+                <StyledTintedSubtitle>{dayData.data.subtitle}</StyledTintedSubtitle>
+              )}
+            </>
+          ) : (
+            <>
+              <StyledText bold>{dayData.data.title}</StyledText>
+              <StyledText>{dayData.data.subtitle}</StyledText>
+              <StyledDescription>{dayData.data.description}</StyledDescription>
+            </>
+          )}
         </StyledStickyWrapper>
       </StyledTextWrapper>
     </StyledTileWrapper>

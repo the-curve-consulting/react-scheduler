@@ -14,7 +14,7 @@ import {
 } from "./styles";
 import { TopbarProps } from "./types";
 
-const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme }) => {
+const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme, toolbar }) => {
   const { topbar } = useLanguage();
   const {
     data,
@@ -55,6 +55,7 @@ const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme }) => {
             )}
           </IconButton>
         )}
+        {toolbar?.start}
       </Filters>
       <NavigationWrapper>
         <NavBtn disabled={!data?.length} onClick={handleGoPrev}>
@@ -68,6 +69,7 @@ const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme }) => {
         </NavBtn>
       </NavigationWrapper>
       <OptionsContainer>
+        {toolbar?.end}
         {showThemeToggle && <Toggle toggleTheme={toggleTheme} />}
         <Zoom>
           {topbar.view}

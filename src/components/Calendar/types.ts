@@ -3,7 +3,8 @@ import {
   HolidayTileClickData,
   SchedulerData,
   SchedulerItemClickData,
-  SchedulerProjectData
+  SchedulerProjectData,
+  SchedulerToolbar
 } from "@/types/global";
 
 export type CalendarProps<TMeta = unknown> = {
@@ -14,4 +15,5 @@ export type CalendarProps<TMeta = unknown> = {
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
   toggleTheme?: () => void;
+  toolbar?: SchedulerToolbar;
 };

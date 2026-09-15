@@ -5,7 +5,8 @@ import {
   SchedulerData,
   SchedulerFetchLoadingState,
   SchedulerItemClickData,
-  SchedulerProjectData
+  SchedulerProjectData,
+  SchedulerToolbar
 } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
 
@@ -47,6 +48,7 @@ export type SchedulerBaseProps<TMeta = unknown> = {
   transformData?: (data: SchedulerData<TMeta>) => SchedulerData<TMeta>;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
   onHolidayClick?: (data: HolidayTileClickData) => void;
+  toolbar?: SchedulerToolbar;
 };
 
 export type SchedulerStaticProps<TMeta = unknown> = SchedulerBaseProps<TMeta> & {

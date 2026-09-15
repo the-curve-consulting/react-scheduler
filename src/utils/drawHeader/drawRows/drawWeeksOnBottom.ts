@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import {
-  fonts,
   headerDayHeight,
   headerHeight,
   headerMonthHeight,
@@ -10,6 +9,7 @@ import {
 import { Theme } from "@/styles";
 import { getBoxFillStyle } from "@/utils/getBoxFillStyle";
 import { getTextStyle } from "@/utils/getTextStyle";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 import { getWeeklyHeaderAnchor } from "./getWeeklyHeaderAnchor";
 
@@ -42,13 +42,13 @@ export const drawWeeksOnBottom = (
         topText: {
           y: dayNameYPos,
           label: week.isoWeek().toString(),
-          font: fonts.bottomRow.name,
+          font: theme.headerFonts.bottomRowName,
           color: getTextStyle({ isCurrent: isCurrWeek }, theme)
         },
         bottomText: {
           y: dayNumYPos,
-          label: weekLabel.toUpperCase(),
-          font: fonts.middleRow,
+          label: getHeaderLabel(weekLabel, theme),
+          font: theme.headerFonts.middleRow,
           color: theme.colors.placeholder
         }
       },

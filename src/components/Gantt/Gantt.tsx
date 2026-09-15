@@ -4,7 +4,7 @@ import { ThemeProvider } from "styled-components";
 import CalendarProvider, { useCalendar } from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
 import { navHeight, outsideWrapperId } from "@/constants";
-import { darkTheme, GlobalStyle, theme } from "@/styles";
+import { GlobalStyle } from "@/styles";
 import {
   GanttConfig,
   GanttData,
@@ -13,7 +13,9 @@ import {
   GanttTask,
   GanttTaskChange
 } from "@/types/gantt";
+import { SchedulerToolbar } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
+import { getMergedTheme } from "@/utils/getMergedTheme";
 import Header from "../Calendar/Header";
 import GanttGrid from "./GanttGrid";
 import GanttOutline from "./GanttOutline/GanttOutline";
@@ -43,6 +45,7 @@ export type GanttProps<TMeta = unknown> = {
   emptyMessage?: string;
   /** Heading above the outline column. */
   outlineLabel?: string;
+  toolbar?: SchedulerToolbar;
 };
 
 const DEFAULT_OUTLINE_WIDTH = 240;
@@ -68,7 +71,8 @@ export const Gantt = <TMeta,>({
   onTaskClick,
   onTaskChange,
   emptyMessage = "Nothing to plan yet",
-  outlineLabel
+  outlineLabel,
+  toolbar
 }: GanttProps<TMeta>) => {
   const appConfig = useMemo<GanttConfig>(
     () => ({
@@ -93,16 +97,11 @@ export const Gantt = <TMeta,>({
   const [topBarWidth, setTopBarWidth] = useState(0);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
 
-  const currentTheme = themeMode === "light" ? theme : darkTheme;
+  const { theme: customTheme, headerFonts, headerUppercase, tileStyle } = appConfig;
   const mergedTheme = useMemo(
-    () => ({
-      ...currentTheme,
-      colors: {
-        ...currentTheme.colors,
-        ...(appConfig.theme ? appConfig.theme[currentTheme.mode] : {})
-      }
-    }),
-    [appConfig.theme, currentTheme]
+    () =>
+      getMergedTheme(themeMode, { theme: customTheme, headerFonts, headerUppercase, tileStyle }),
+    [themeMode, customTheme, headerFonts, headerUppercase, tileStyle]
   );
 
   // Watches the element rather than the window, for the same reason the
@@ -157,6 +156,7 @@ export const Gantt = <TMeta,>({
                 showToday={appConfig.showToday ?? true}
                 todayLabel={appConfig.todayLabel ?? "Today"}
                 showThemeToggle={appConfig.showThemeToggle}
+                toolbar={toolbar}
                 isDark={themeMode === "dark"}
                 onToggle={toggle}
                 onTaskClick={onTaskClick}
@@ -184,6 +184,7 @@ type GanttBodyProps<TMeta> = {
   showToday: boolean;
   todayLabel: string;
   showThemeToggle?: boolean;
+  toolbar?: SchedulerToolbar;
   isDark: boolean;
   onToggle: (id: string) => void;
   onTaskClick?: (task: GanttTask<TMeta>) => void;
@@ -210,6 +211,7 @@ const GanttBody = <TMeta,>({
   showToday,
   todayLabel,
   showThemeToggle,
+  toolbar,
   isDark,
   onToggle,
   onTaskClick,
@@ -235,6 +237,7 @@ const GanttBody = <TMeta,>({
           showThemeToggle={showThemeToggle}
           onToggleTheme={onToggleTheme}
           isDark={isDark}
+          toolbar={toolbar}
         />
         <Header
           zoom={zoom}

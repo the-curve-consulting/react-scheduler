@@ -13,7 +13,8 @@ import { Calendar } from "@/components";
 import CalendarProvider from "@/context/CalendarProvider";
 import LocaleProvider from "@/context/LocaleProvider";
 import { outsideWrapperId } from "@/constants";
-import { darkTheme, GlobalStyle, theme } from "@/styles";
+import { GlobalStyle } from "@/styles";
+import { getMergedTheme } from "@/utils/getMergedTheme";
 import { Config, SchedulerData } from "@/types/global";
 import deleteProjectsByIds from "./dataMutations/deleteProjectsByIds";
 import upsertProjectsInRows from "./dataMutations/upsertProjectsInRows";
@@ -49,7 +50,8 @@ const SchedulerInner = <TMeta,>(
     onClearFilterData,
     onItemClick,
     transformData,
-    isLoading
+    isLoading,
+    toolbar
   } = props;
   const onFetchData = isAsyncSchedulerProps(props) ? props.onFetchData : undefined;
   const sourceData = isAsyncSchedulerProps(props)
@@ -99,9 +101,13 @@ const SchedulerInner = <TMeta,>(
 
   const externalLoading = !!isLoading;
   const effectiveLoading = externalLoading || fetchLoadingState.blocking;
-  const calendarLoadingState = externalLoading
-    ? { any: true, blocking: true, forward: true, backward: true }
-    : fetchLoadingState ?? emptySchedulerFetchLoadingState;
+  const calendarLoadingState = useMemo(
+    () =>
+      externalLoading
+        ? { any: true, blocking: true, forward: true, backward: true }
+        : fetchLoadingState ?? emptySchedulerFetchLoadingState,
+    [externalLoading, fetchLoadingState]
+  );
 
   const centerDateDayJs = useMemo(() => (centerDate ? dayjs(centerDate) : undefined), [centerDate]);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(appConfig.defaultTheme ?? "light");
@@ -110,15 +116,14 @@ const SchedulerInner = <TMeta,>(
     setThemeMode((currentMode) => (currentMode === "light" ? "dark" : "light"));
   };
 
-  const currentTheme = themeMode === "light" ? theme : darkTheme;
-  const customColors = appConfig.theme ? appConfig.theme[currentTheme.mode] : {};
-  const mergedTheme = {
-    ...currentTheme,
-    colors: {
-      ...currentTheme.colors,
-      ...customColors
-    }
-  };
+  const { theme: customTheme, headerFonts, headerUppercase, tileStyle } = appConfig;
+  // The tiles and both canvases read the theme, so a new object on each render
+  // would repaint the header and render every tile again.
+  const mergedTheme = useMemo(
+    () =>
+      getMergedTheme(themeMode, { theme: customTheme, headerFonts, headerUppercase, tileStyle }),
+    [themeMode, customTheme, headerFonts, headerUppercase, tileStyle]
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -159,6 +164,7 @@ const SchedulerInner = <TMeta,>(
                   topBarWidth={topBarWidth}
                   onItemClick={onItemClick}
                   toggleTheme={toggleTheme}
+                  toolbar={toolbar}
                 />
               </StyledInnerWrapper>
             </StyledOutsideWrapper>

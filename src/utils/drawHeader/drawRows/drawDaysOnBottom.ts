@@ -3,7 +3,6 @@ import {
   dayNameYoffset,
   dayNumYOffset,
   dayWidth,
-  fonts,
   headerDayHeight,
   headerHeight,
   headerMonthHeight,
@@ -11,6 +10,7 @@ import {
 } from "@/constants";
 import { parseDay } from "@/utils/dates";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 import { getBoxFillStyle } from "../../getBoxFillStyle";
 import { getTextStyle } from "../../getTextStyle";
@@ -49,8 +49,8 @@ export const drawDaysOnBottom = (
         ),
         topText: {
           y: dayNameYPos,
-          label: day.dayName.toUpperCase(),
-          font: fonts.bottomRow.name,
+          label: getHeaderLabel(day.dayName, theme),
+          font: theme.headerFonts.bottomRowName,
           color: getTextStyle(
             { isCurrent: day.isCurrentDay, isBusinessDay: day.isBusinessDay },
             theme
@@ -59,7 +59,7 @@ export const drawDaysOnBottom = (
         bottomText: {
           y: dayNumYPos,
           label: `${day.dayOfMonth}`,
-          font: fonts.bottomRow.number,
+          font: theme.headerFonts.bottomRowNumber,
           color: getTextStyle(
             {
               isCurrent: day.isCurrentDay,

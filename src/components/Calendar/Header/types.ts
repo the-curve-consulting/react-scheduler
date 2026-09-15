@@ -1,3 +1,5 @@
+import { SchedulerToolbar } from "@/types/global";
+
 export type HeaderProps = {
   zoom: number;
   topBarWidth: number;
@@ -20,4 +22,5 @@ export type HeaderProps = {
    * container, which is where <Scheduler> wants it.
    */
   stickyTop?: number;
+  toolbar?: SchedulerToolbar;
 };

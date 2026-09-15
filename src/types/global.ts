@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
 import dayjs from "dayjs";
 import { LocaleType } from "@/context/LocaleProvider/types";
-import { ColorType } from "@/styles";
+import { ColorType, HeaderFonts, TileStyle } from "@/styles";
+
+export type { HeaderFonts, TileStyle };
 
 export const allZoomLevel = [0, 1, 2] as const;
 
@@ -45,6 +48,26 @@ export type Config = {
   defaultTheme?: "light" | "dark";
   theme?: Theme;
   /**
+   * Canvas fonts for the header rows, for example "600 13px Inter". A font that
+   * is not set keeps its default.
+   */
+  headerFonts?: Partial<HeaderFonts>;
+  /**
+   * Write the header labels in capitals, for example "MON" and "SEPTEMBER".
+   * Set false for "Mon" and "September".
+   * @default true
+   */
+  headerUppercase?: boolean;
+  /**
+   * How a tile shows its colour.
+   * - `solid` - the tile is filled with its colour
+   * - `tinted` - a pale tint of the colour with a bar of the colour on the left
+   *   edge and dark text. A non-working day is a hatched strip with no label,
+   *   and a narrow tile shows only its title.
+   * @default "solid"
+   */
+  tileStyle?: TileStyle;
+  /**
    * max hours per week for showing week overtime. If not set, it will default to
    * the value defined in constants.ts
    */
@@ -68,6 +91,14 @@ export type Config = {
 export type Theme = {
   light?: Partial<Record<ColorType, string>>;
   dark?: Partial<Record<ColorType, string>>;
+};
+
+/** Controls of the host application, shown in the toolbar of the component. */
+export type SchedulerToolbar = {
+  /** Shown at the start of the toolbar, before the navigation. */
+  start?: ReactNode;
+  /** Shown at the end of the toolbar, before the zoom controls. */
+  end?: ReactNode;
 };
 
 export type SchedulerData<TMeta = unknown> = SchedulerRow<TMeta>[];
