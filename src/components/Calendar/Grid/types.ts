@@ -1,17 +1,14 @@
 import React from "react";
 import {
   HolidayTileClickData,
-  PaginatedSchedulerData,
   SchedulerEmptyClickData,
-  SchedulerProjectData,
-  WorkingDuration
+  SchedulerProjectData
 } from "@/types/global";
+import { VisibleLayoutResource } from "@/utils/visibleGridLayout";
 
 export type GridProps<TMeta = unknown> = {
-  zoom: number;
   rows: number;
-  data: PaginatedSchedulerData<TMeta>;
-  workingDurationsPerPerson: WorkingDuration[][];
+  visibleLayoutsPerResource: VisibleLayoutResource<TMeta>[];
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
   onEmptyClick?: (data: SchedulerEmptyClickData) => void;

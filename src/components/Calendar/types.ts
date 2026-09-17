@@ -19,3 +19,8 @@ export type CalendarProps<TMeta = unknown> = {
   toggleTheme?: () => void;
   toolbar?: SchedulerToolbar;
 };
+
+export type RowsData = {
+  totalRows: number;
+  rowsPerResource: number[];
+};

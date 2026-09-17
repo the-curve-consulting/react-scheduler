@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { SchedulerProjectData } from "@/types/global";
+import { ResourceDayContext, VisibleRange } from "@/utils/visibleGridLayout";
 
 export type TileSegment<TMeta = unknown> = {
   data: SchedulerProjectData<TMeta>;
@@ -13,19 +14,19 @@ export type TileSegment<TMeta = unknown> = {
  *
  * @param startDate First day to check.
  * @param endDate Last day to check.
- * @param hoursByDay Map keyed by start-of-day timestamp with working hours as value.
+ * @param dayContextsByDay Map keyed by start-of-day timestamp with ResourceDayContext as value.
  * @returns True when any day in the range has more than zero working hours.
  */
 const hasWorkingHoursInRange = (
   startDate: dayjs.Dayjs,
   endDate: dayjs.Dayjs,
-  hoursByDay: ReadonlyMap<number, number>
+  dayContextsByDay: ReadonlyMap<number, ResourceDayContext>
 ): boolean => {
   let currentDate = startDate.startOf("day");
   const rangeEnd = endDate.startOf("day");
 
   while (!currentDate.isAfter(rangeEnd, "day")) {
-    if ((hoursByDay.get(currentDate.valueOf()) ?? 0) > 0) {
+    if ((dayContextsByDay.get(currentDate.valueOf())?.availableHours ?? 0) > 0) {
       return true;
     }
 
@@ -39,21 +40,19 @@ const hasWorkingHoursInRange = (
  * Splits a project into daily working and non-working tile segments within the visible range.
  *
  * @param project Project tile data to split.
- * @param visibleStartDate Start timestamp of the visible viewport.
- * @param visibleEndDate End timestamp of the visible viewport.
- * @param hoursByDay Map keyed by start-of-day timestamp with working hours as value.
+ * @param visibleRange Start and end dates of the visible viewport.
+ * @param dayContextsByDay Map keyed by start-of-day timestamp with ResourceDayContext as value.
  * @returns Contiguous day-level segments clipped to the project and visible date range.
  */
 export const getDailyTileSegments = <TMeta>(
   project: SchedulerProjectData<TMeta>,
-  visibleStartDate: number,
-  visibleEndDate: number,
-  hoursByDay: ReadonlyMap<number, number>
+  visibleRange: VisibleRange,
+  dayContextsByDay: ReadonlyMap<number, ResourceDayContext>
 ): TileSegment<TMeta>[] => {
   const projectStartDate = dayjs(project.startDate).startOf("day");
   const projectEndDate = dayjs(project.endDate).startOf("day");
-  const visibleStartDateDay = dayjs(visibleStartDate).startOf("day");
-  const visibleEndDateDay = dayjs(visibleEndDate).startOf("day");
+  const visibleStartDateDay = visibleRange.startDate.startOf("day");
+  const visibleEndDateDay = visibleRange.endDate.startOf("day");
 
   let currentDate = visibleStartDateDay.isAfter(projectStartDate)
     ? visibleStartDateDay
@@ -67,10 +66,10 @@ export const getDailyTileSegments = <TMeta>(
 
   const segments: TileSegment<TMeta>[] = [];
   let segmentStartDate = currentDate;
-  let segmentWorking = (hoursByDay.get(currentDate.valueOf()) ?? 0) > 0;
+  let segmentWorking = (dayContextsByDay.get(currentDate.valueOf())?.availableHours ?? 0) > 0;
 
   while (!currentDate.isAfter(endDate, "day")) {
-    const working = (hoursByDay.get(currentDate.valueOf()) ?? 0) > 0;
+    const working = (dayContextsByDay.get(currentDate.valueOf())?.availableHours ?? 0) > 0;
 
     if (working !== segmentWorking) {
       segments.push({
@@ -104,21 +103,19 @@ export const getDailyTileSegments = <TMeta>(
  * non-working days in a week is marked as non-working even if the person works earlier in that week.
  *
  * @param project Project tile data to split.
- * @param visibleStartDate Start timestamp of the visible viewport.
- * @param visibleEndDate End timestamp of the visible viewport.
- * @param hoursByDay Map keyed by start-of-day timestamp with working hours as value.
+ * @param visibleRange Start and end dates of the visible viewport.
+ * @param dayContextsByDay Map keyed by start-of-day timestamp with ResourceDayContext as value.
  * @returns Contiguous week-level segments clipped to the project and visible date range.
  */
 export const getWeeklyTileSegments = <TMeta>(
   project: SchedulerProjectData<TMeta>,
-  visibleStartDate: number,
-  visibleEndDate: number,
-  hoursByDay: ReadonlyMap<number, number>
+  visibleRange: VisibleRange,
+  dayContextsByDay: ReadonlyMap<number, ResourceDayContext>
 ): TileSegment<TMeta>[] => {
   const projectStartDate = dayjs(project.startDate).startOf("day");
   const projectEndDate = dayjs(project.endDate).startOf("day");
-  const visibleStartDateDay = dayjs(visibleStartDate).startOf("day");
-  const visibleEndDateDay = dayjs(visibleEndDate).startOf("day");
+  const visibleStartDateDay = visibleRange.startDate.startOf("isoWeek");
+  const visibleEndDateDay = visibleRange.endDate.endOf("isoWeek").startOf("day");
 
   const startDate = visibleStartDateDay.isAfter(projectStartDate)
     ? visibleStartDateDay
@@ -137,7 +134,7 @@ export const getWeeklyTileSegments = <TMeta>(
   let segmentWorking = hasWorkingHoursInRange(
     startDate,
     currentWeek.endOf("isoWeek").isAfter(endDate, "day") ? endDate : currentWeek.endOf("isoWeek"),
-    hoursByDay
+    dayContextsByDay
   );
 
   while (!currentWeek.isAfter(endWeek, "week")) {
@@ -145,7 +142,7 @@ export const getWeeklyTileSegments = <TMeta>(
     const weekEnd = currentWeek.endOf("isoWeek").isAfter(endDate, "day")
       ? endDate
       : currentWeek.endOf("isoWeek");
-    const working = hasWorkingHoursInRange(weekStart, weekEnd, hoursByDay);
+    const working = hasWorkingHoursInRange(weekStart, weekEnd, dayContextsByDay);
 
     if (working !== segmentWorking) {
       segments.push({

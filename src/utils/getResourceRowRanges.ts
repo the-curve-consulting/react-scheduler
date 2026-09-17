@@ -1,30 +1,28 @@
 export type ResourceRowRange = {
-  id: string;
+  resourceId: string;
   startRow: number;
   rowCount: number;
 };
 
-type RowWithSubRows = {
-  id: string;
-  data: readonly unknown[];
+type RowCountedResource = {
+  resourceId: string;
+  visibleRowsCount: number;
 };
 
 /**
  * Maps each resource to the band of rows that its tiles occupy.
  *
- * A resource with no tiles still occupies one row, so the grid keeps a line
- * for it.
- *
- * @param data Rows of the scheduler, in the order that they are drawn.
+ * @param visibleLayoutsPerResource Layouts in the order that they are drawn.
  * @returns One range for each resource, in the same order.
  */
-export const getResourceRowRanges = (data: readonly RowWithSubRows[]): ResourceRowRange[] => {
+export const getResourceRowRanges = (
+  visibleLayoutsPerResource: readonly RowCountedResource[]
+): ResourceRowRange[] => {
   let startRow = 0;
 
-  return data.map((resource) => {
-    const rowCount = Math.max(resource.data.length, 1);
-    const range = { id: resource.id, startRow, rowCount };
-    startRow += rowCount;
+  return visibleLayoutsPerResource.map((layout) => {
+    const range = { resourceId: layout.resourceId, startRow, rowCount: layout.visibleRowsCount };
+    startRow += layout.visibleRowsCount;
 
     return range;
   });

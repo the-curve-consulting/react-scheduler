@@ -14,13 +14,10 @@ import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import {
   boxHeight,
-  businessDays,
   canvasId,
   canvasWrapperId,
-  dayStartHour,
   gridInnerWrapperId,
   leftColumnWidth,
-  maxHoursPerWeek,
   outsideWrapperId,
   tileYOffset
 } from "@/constants";
@@ -50,12 +47,11 @@ type EmptyCell = {
 
 const GridInner = <TMeta,>(
   {
-    data,
+    visibleLayoutsPerResource,
     rows,
     onTileClick,
     onHolidayTileClick,
-    onEmptyClick,
-    workingDurationsPerPerson
+    onEmptyClick
   }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
@@ -67,12 +63,14 @@ const GridInner = <TMeta,>(
     loadingState,
     viewportWidth,
     cols,
-    config,
     currentCenterDate
   } = useCalendar<TMeta>();
 
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
-  const rowRanges = useMemo(() => getResourceRowRanges(data), [data]);
+  const rowRanges = useMemo(
+    () => getResourceRowRanges(visibleLayoutsPerResource),
+    [visibleLayoutsPerResource]
+  );
   const [hoveredCell, setHoveredCell] = useState<EmptyCell | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
@@ -154,7 +152,7 @@ const GridInner = <TMeta,>(
       );
 
       return {
-        resourceId: range.id,
+        resourceId: range.resourceId,
         date: cellDate,
         left: alignedPos,
         top: row * boxHeight + tileYOffset,
@@ -208,14 +206,11 @@ const GridInner = <TMeta,>(
         <StyledCanvas id={canvasId} ref={canvasRef} />
         <StyledTilesLayer $isInteractive={!isBlocking}>
           <Tiles
-            data={data}
+            visibleLayoutsPerResource={visibleLayoutsPerResource}
             zoom={zoom}
             visibleRange={visibleRange}
             onTileClick={onTileClick}
             onHolidayTileClick={onHolidayTileClick}
-            workingDurationsPerPerson={workingDurationsPerPerson}
-            defaultStartHour={config.defaultStartHour ?? dayStartHour}
-            defaultWorkDayHours={(config.maxHoursPerWeek ?? maxHoursPerWeek) / businessDays}
           />
         </StyledTilesLayer>
         {isBlocking ? (
