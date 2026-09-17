@@ -18,6 +18,7 @@ export type {
   SchedulerRow,
   SchedulerItemClickData,
   SchedulerEmptyClickData,
+  SchedulerTileChange,
   SchedulerProjectData,
   ZoomLevel,
   HolidayRequest,

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
+import { SchedulerProjectData, SchedulerProjectDayData, SchedulerTileChange } from "@/types/global";
 import { DayRun } from "@/utils/getTileSegments";
 
 export type TileProps<TMeta = unknown> = {
@@ -10,7 +10,9 @@ export type TileProps<TMeta = unknown> = {
   working: boolean;
   nonWorkingRuns: DayRun[];
   zoom: number;
+  dragging?: boolean;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
+  onGestureStart?: (event: React.PointerEvent, reason: SchedulerTileChange["reason"]) => void;
 };
 
 export type HourlyTileProps<TMeta = unknown> = {
@@ -34,6 +36,8 @@ export type StyledTextProps = {
 
 export type StyledTintedProps = {
   $tinted?: boolean;
+  $dragging?: boolean;
+  $draggable?: boolean;
 };
 
 export type StyledStickyWrapperProps = {

@@ -8,7 +8,9 @@ const TilesInner = <TMeta,>({
   zoom,
   onTileClick,
   onHolidayTileClick,
-  visibleRange
+  visibleRange,
+  tileGesture,
+  onTileGestureStart
 }: TilesProps<TMeta>) => {
   const rowRanges = getResourceRowRanges(visibleLayoutsPerResource);
 
@@ -21,6 +23,8 @@ const TilesInner = <TMeta,>({
       visibleRange={visibleRange}
       onTileClick={onTileClick}
       onHolidayTileClick={onHolidayTileClick}
+      tileGesture={tileGesture}
+      onTileGestureStart={onTileGestureStart}
     />
   ));
 };

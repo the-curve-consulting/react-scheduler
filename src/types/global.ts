@@ -138,7 +138,28 @@ export type HolidayTileClickData = {
 
 export type SchedulerEmptyClickData = {
   resourceId: string;
-  date: Date;
+  startDate: Date;
+  endDate: Date;
+};
+
+/** A tile that the user dragged to a new place or a new length. */
+export type SchedulerTileChange = {
+  /** The id of the tile the user took hold of. */
+  id: string;
+  /** The group it belongs to, which is its own id when the host set none. */
+  groupId: string;
+  resourceId: string;
+  /**
+   * The dates of the tile after the drag. A host that splits one booking into
+   * several tiles should apply `days` to the dates it holds instead, because
+   * these are the dates of one part.
+   */
+  startDate: Date;
+  endDate: Date;
+  /** How far the drag went, in whole days. Negative is earlier. */
+  days: number;
+  /** Which gesture produced it, so a host can treat a resize differently. */
+  reason: "move" | "resize-start" | "resize-end";
 };
 
 export type SchedulerRow<TMeta = unknown> = {
@@ -172,6 +193,13 @@ export type SchedulerProjectDataBase<TMeta = unknown> = {
    * Unique Id of item
    */
   id: string;
+  /**
+   * Ties tiles that are parts of one thing, so a drag of any of them previews
+   * and reports all of them. A host that splits one booking into several tiles
+   * gives each part the same value. Defaults to the id, which makes every tile
+   * its own group.
+   */
+  groupId?: string;
   /**
    * Represents start date of from which tile will render
    */

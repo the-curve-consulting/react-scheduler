@@ -26,6 +26,7 @@ import { useCalendar } from "@/context/CalendarProvider";
 import { resizeCanvas } from "@/utils/resizeCanvas";
 import { getCellDateRelativeToCenter, getCellWidth, getScrollConfig } from "@/utils/scrollHelpers";
 import { getResourceRangeAtRow, getResourceRowRanges } from "@/utils/getResourceRowRanges";
+import { SchedulerProjectData, SchedulerTileChange } from "@/types/global";
 import { GridComponent, GridProps } from "./types";
 import {
   StyledBlockingContent,
@@ -45,13 +46,42 @@ type EmptyCell = {
   width: number;
 };
 
+/** A drag of a tile, in whole days from where the pointer went down. */
+export type TileGesture = {
+  /** groupId of the tiles being dragged, so every part of one booking moves. */
+  groupId: string;
+  reason: SchedulerTileChange["reason"];
+  days: number;
+};
+
+/** A drag over empty days, from the cell it started on to the cell now under the pointer. */
+type EmptySelection = {
+  anchor: EmptyCell;
+  head: EmptyCell;
+};
+
+const selectionBounds = (selection: EmptySelection) => {
+  const { anchor, head } = selection;
+  const startDate = head.date.isBefore(anchor.date) ? head.date : anchor.date;
+  const endDate = head.date.isBefore(anchor.date) ? anchor.date : head.date;
+
+  return {
+    startDate,
+    endDate,
+    left: Math.min(anchor.left, head.left),
+    width: Math.abs(head.left - anchor.left) + anchor.width,
+    top: anchor.top
+  };
+};
+
 const GridInner = <TMeta,>(
   {
     visibleLayoutsPerResource,
     rows,
     onTileClick,
     onHolidayTileClick,
-    onEmptyClick
+    onEmptyClick,
+    onTileChange
   }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
@@ -72,6 +102,8 @@ const GridInner = <TMeta,>(
     [visibleLayoutsPerResource]
   );
   const [hoveredCell, setHoveredCell] = useState<EmptyCell | null>(null);
+  const [emptySelection, setEmptySelection] = useState<EmptySelection | null>(null);
+  const [tileGesture, setTileGesture] = useState<TileGesture | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
   const lastScrollLeft = useRef(0);
@@ -164,7 +196,16 @@ const GridInner = <TMeta,>(
 
   const handleGridMouseMove = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
+      if (tileGesture) return;
       const cell = resolveEmptyCell(event);
+
+      // A drag stays on the row it started on, because a block belongs to one
+      // resource. Only the day under the pointer moves the selection.
+      setEmptySelection((previous) => {
+        if (!previous || !cell || cell.resourceId !== previous.anchor.resourceId) return previous;
+        if (cell.left === previous.head.left) return previous;
+        return { ...previous, head: cell };
+      });
 
       setHoveredCell((previous) => {
         if (!cell) return previous === null ? previous : null;
@@ -172,19 +213,120 @@ const GridInner = <TMeta,>(
         return cell;
       });
     },
-    [resolveEmptyCell]
+    [resolveEmptyCell, tileGesture]
   );
 
   const handleGridMouseLeave = useCallback(() => setHoveredCell(null), []);
 
-  const handleGridClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+  const handleGridPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return;
       const cell = resolveEmptyCell(event);
       if (!cell) return;
 
-      onEmptyClick?.({ resourceId: cell.resourceId, date: cell.date.toDate() });
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setEmptySelection({ anchor: cell, head: cell });
     },
-    [onEmptyClick, resolveEmptyCell]
+    [resolveEmptyCell]
+  );
+
+  const handleGridPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!emptySelection) return;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      const { startDate, endDate } = selectionBounds(emptySelection);
+      setEmptySelection(null);
+      onEmptyClick?.({
+        resourceId: emptySelection.anchor.resourceId,
+        startDate: startDate.toDate(),
+        endDate: endDate.toDate()
+      });
+    },
+    [emptySelection, onEmptyClick]
+  );
+
+  const beginTileGesture = useCallback(
+    (
+      event: React.PointerEvent,
+      project: SchedulerProjectData<TMeta>,
+      resourceId: string,
+      reason: SchedulerTileChange["reason"]
+    ) => {
+      if (!onTileChange) return;
+      // Without this the grid would start an empty-day selection underneath.
+      event.stopPropagation();
+      event.preventDefault();
+
+      // The preview re-renders the tiles, so the element under the pointer may
+      // be replaced part way through. Window listeners outlive it; pointer
+      // capture on the element would not.
+      const groupId = project.groupId ?? project.id;
+      const dayWidth = getCellWidth(zoom);
+      const originX = event.clientX;
+      // The gesture's own running total. State drives the preview, but the
+      // pointerup handler reads this: setState is async, so by the time the
+      // drag ends the state it can see may be a frame behind the pointer.
+      let latestDays = 0;
+
+      const move = (moveEvent: PointerEvent) => {
+        // Snapped to whole days: a drag that lands mid-day is a date the user
+        // did not choose and the host would only have to round anyway.
+        const days = Math.round((moveEvent.clientX - originX) / dayWidth);
+        if (days === latestDays) return;
+
+        latestDays = days;
+        setTileGesture({ groupId, reason, days });
+      };
+
+      const stop = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", finish);
+        window.removeEventListener("pointercancel", cancel);
+      };
+
+      const finish = () => {
+        stop();
+
+        const days = latestDays;
+        setTileGesture(null);
+        if (days === 0) return;
+
+        const start = dayjs(project.startDate);
+        const end = dayjs(project.endDate);
+        const change: SchedulerTileChange = {
+          id: project.id,
+          groupId,
+          resourceId,
+          days,
+          reason,
+          startDate: reason === "resize-end" ? start.toDate() : start.add(days, "day").toDate(),
+          endDate: reason === "resize-start" ? end.toDate() : end.add(days, "day").toDate()
+        };
+
+        // A resize that would invert the bar is not a shorter block, it is a
+        // mis-drag; clamp it to a single day rather than reporting nonsense.
+        if (dayjs(change.endDate).isBefore(change.startDate, "day")) {
+          if (reason === "resize-start") change.startDate = change.endDate;
+          else change.endDate = change.startDate;
+        }
+
+        onTileChange(change, project);
+      };
+
+      const cancel = () => {
+        stop();
+        setTileGesture(null);
+      };
+
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", finish);
+      window.addEventListener("pointercancel", cancel);
+      setTileGesture({ groupId, reason, days: 0 });
+    },
+    [onTileChange, zoom]
   );
 
   const isLeftLoading = isLoading || loadingState.blocking || loadingState.backward;
@@ -198,7 +340,9 @@ const GridInner = <TMeta,>(
         $viewportWidth={viewportWidth}
         $leftColumnWidth={leftColumnWidth}
         $clickableEmptyCells={!!onEmptyClick && !isBlocking}
-        onClick={onEmptyClick && !isBlocking ? handleGridClick : undefined}
+        $dragging={!!emptySelection || !!tileGesture}
+        onPointerDown={onEmptyClick && !isBlocking ? handleGridPointerDown : undefined}
+        onPointerUp={onEmptyClick && !isBlocking ? handleGridPointerUp : undefined}
         onMouseMove={onEmptyClick && !isBlocking ? handleGridMouseMove : undefined}
         onMouseLeave={onEmptyClick ? handleGridMouseLeave : undefined}
         ref={ref}>
@@ -211,6 +355,8 @@ const GridInner = <TMeta,>(
             visibleRange={visibleRange}
             onTileClick={onTileClick}
             onHolidayTileClick={onHolidayTileClick}
+            tileGesture={tileGesture}
+            onTileGestureStart={onTileChange ? beginTileGesture : undefined}
           />
         </StyledTilesLayer>
         {isBlocking ? (
@@ -218,7 +364,16 @@ const GridInner = <TMeta,>(
             <StyledBlockingContent>Loading data...</StyledBlockingContent>
           </StyledBlockingOverlay>
         ) : null}
-        {hoveredCell && !isBlocking ? (
+        {emptySelection && !isBlocking ? (
+          <StyledEmptyCellHighlight
+            style={{
+              left: `${selectionBounds(emptySelection).left}px`,
+              top: `${selectionBounds(emptySelection).top}px`,
+              width: `${selectionBounds(emptySelection).width}px`
+            }}>
+            +
+          </StyledEmptyCellHighlight>
+        ) : hoveredCell && !isBlocking && !tileGesture ? (
           <StyledEmptyCellHighlight
             style={{
               left: `${hoveredCell.left}px`,

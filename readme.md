@@ -213,7 +213,10 @@ export default function Component() {
         onTileClick={handleTileClick}
         onHolidayClick={handleHolidayClick}
         onItemClick={(item) => console.log(item)}
-        onEmptyClick={({ resourceId, date }) => console.log("add work", resourceId, date)}
+        onEmptyClick={({ resourceId, startDate, endDate }) =>
+          console.log("add work", resourceId, startDate, endDate)
+        }
+        onTileChange={(change) => console.log(change.reason, change.days, change.groupId)}
         onFilterData={() => setSelectedUserIds(["user-1", "user-2"])}
         onClearFilterData={() => setSelectedUserIds([])}
         config={{
@@ -339,24 +342,25 @@ component's. Drags snap to whole days.
 
 ##### Scheduler Component Props
 
-| Property Name     | Type               | Arguments                                | Description                                                                                                                       |
-| ----------------- | ------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| data              | `SchedulerData`    | -                                        | scheduler rows to display in static mode                                                                                          |
-| initialData       | `SchedulerData`    | -                                        | optional initial cache seed for async mode when using `onFetchData`                                                               |
-| isLoading         | `boolean`          | -                                        | external loading flag; forces blocking loading state                                                                              |
-| startDate         | `string`           | ISO date string                          | initial date to center scheduler on mount                                                                                         |
-| dataSourceKey     | `string`           | -                                        | async cache identity; changing it invalidates cached prefetched data                                                              |
-| onRangeChange     | `function`         | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
-| onFetchData       | `function`         | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
-| onTileClick       | `function`         | clicked resource data                    | detects resource click                                                                                                            |
-| onHolidayClick    | `function`         | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
-| onItemClick       | `function`         | clicked left column item data            | detects item click on left column                                                                                                 |
-| onEmptyClick      | `function`         | `resourceId` and `date` of the cell      | detects a click on a day of a resource row that holds no tile; the grid marks the cell under the pointer while this is set        |
-| onFilterData      | `function`         | -                                        | callback firing when filter button was clicked                                                                                    |
-| onClearFilterData | `function`         | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
-| transformData     | `function`         | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                     |
-| config            | `Config`           | -                                        | object with scheduler config properties                                                                                           |
-| toolbar           | `SchedulerToolbar` | -                                        | controls of the application in the top bar, see [Toolbar](#toolbar)                                                               |
+| Property Name     | Type               | Arguments                                | Description                                                                                                                          |
+| ----------------- | ------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| data              | `SchedulerData`    | -                                        | scheduler rows to display in static mode                                                                                             |
+| initialData       | `SchedulerData`    | -                                        | optional initial cache seed for async mode when using `onFetchData`                                                                  |
+| isLoading         | `boolean`          | -                                        | external loading flag; forces blocking loading state                                                                                 |
+| startDate         | `string`           | ISO date string                          | initial date to center scheduler on mount                                                                                            |
+| dataSourceKey     | `string`           | -                                        | async cache identity; changing it invalidates cached prefetched data                                                                 |
+| onRangeChange     | `function`         | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                           |
+| onFetchData       | `function`         | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                        |
+| onTileClick       | `function`         | clicked resource data                    | detects resource click                                                                                                               |
+| onHolidayClick    | `function`         | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                              |
+| onItemClick       | `function`         | clicked left column item data            | detects item click on left column                                                                                                    |
+| onEmptyClick      | `function`         | `resourceId`, `startDate`, `endDate`     | detects a click or a drag over days of a resource row that hold no tile; the grid marks the days under the pointer while this is set |
+| onTileChange      | `function`         | `SchedulerTileChange`, clicked tile data | detects a drag of a tile to a new place or a new length; the grid previews the drag while this is set                                |
+| onFilterData      | `function`         | -                                        | callback firing when filter button was clicked                                                                                       |
+| onClearFilterData | `function`         | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`)    |
+| transformData     | `function`         | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                        |
+| config            | `Config`           | -                                        | object with scheduler config properties                                                                                              |
+| toolbar           | `SchedulerToolbar` | -                                        | controls of the application in the top bar, see [Toolbar](#toolbar)                                                                  |
 
 `Scheduler` supports two exclusive data modes:
 
