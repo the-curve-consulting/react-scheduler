@@ -12,6 +12,7 @@ import {
   StyledTextWrapper,
   StyledTileWrapper,
   StyledTintedSubtitle,
+  StyledResizeHandle,
   StyledTintedTitle,
   tileTextHorizontalMargin,
   tintedTileMinWidthForSubtitle
@@ -26,7 +27,9 @@ const TileInner = <TMeta,>({
   endDate,
   working,
   nonWorkingRuns,
-  onTileClick
+  dragging,
+  onTileClick,
+  onGestureStart
 }: TileProps<TMeta>) => {
   const { currentCenterDate, cols } = useCalendar<TMeta>();
   const {
@@ -59,7 +62,22 @@ const TileInner = <TMeta,>({
         width: `${width}px`,
         ...colorStyle
       }}
+      $dragging={!!dragging}
+      $draggable={!!onGestureStart}
+      onPointerDown={onGestureStart ? (event) => onGestureStart(event, "move") : undefined}
       onClick={() => onTileClick?.(data)}>
+      {onGestureStart && (
+        <StyledResizeHandle
+          $edge="start"
+          onPointerDown={(event) => onGestureStart(event, "resize-start")}
+        />
+      )}
+      {onGestureStart && (
+        <StyledResizeHandle
+          $edge="end"
+          onPointerDown={(event) => onGestureStart(event, "resize-end")}
+        />
+      )}
       <StyledTextWrapper $tinted={isTinted}>
         <StyledStickyWrapper $offset={textOffset}>
           {isTinted ? (

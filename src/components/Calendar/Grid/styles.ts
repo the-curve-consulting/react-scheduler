@@ -12,6 +12,7 @@ export const StyledInnerWrapper = styled.div<{
   $viewportWidth: number;
   $leftColumnWidth: number;
   $clickableEmptyCells?: boolean;
+  $dragging?: boolean;
 }>`
   position: sticky;
   left: ${(props) => props.$leftColumnWidth}px;
@@ -20,6 +21,7 @@ export const StyledInnerWrapper = styled.div<{
   overflow: hidden;
   z-index: 1;
   cursor: ${({ $clickableEmptyCells }) => ($clickableEmptyCells ? "pointer" : "auto")};
+  user-select: ${({ $dragging }) => ($dragging ? "none" : "auto")};
 `;
 
 export const StyledCanvas = styled.canvas``;

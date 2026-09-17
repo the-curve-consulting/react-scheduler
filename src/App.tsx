@@ -432,6 +432,7 @@ function App() {
             onFilterData={handleFilterData}
             onItemClick={handleItemClick}
             onEmptyClick={(emptyCell) => console.log(emptyCell)}
+            onTileChange={(change) => console.log(change)}
           />
         </StyledSchedulerFrame>
       )}

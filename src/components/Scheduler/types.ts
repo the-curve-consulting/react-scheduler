@@ -7,6 +7,7 @@ import {
   SchedulerFetchLoadingState,
   SchedulerItemClickData,
   SchedulerProjectData,
+  SchedulerTileChange,
   SchedulerToolbar
 } from "@/types/global";
 import { ParsedDatesRange } from "@/utils/getDatesRange";
@@ -49,8 +50,10 @@ export type SchedulerBaseProps<TMeta = unknown> = {
   transformData?: (data: SchedulerData<TMeta>) => SchedulerData<TMeta>;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
   onHolidayClick?: (data: HolidayTileClickData) => void;
-  /** Called when the user clicks a day in a resource row that holds no tile. */
+  /** Called when the user clicks or drags over days in a resource row that hold no tile. */
   onEmptyClick?: (data: SchedulerEmptyClickData) => void;
+  /** Called when the user drags a tile to a new place or a new length. */
+  onTileChange?: (change: SchedulerTileChange, data: SchedulerProjectData<TMeta>) => void;
   toolbar?: SchedulerToolbar;
 };
 

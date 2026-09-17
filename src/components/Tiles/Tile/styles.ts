@@ -7,6 +7,16 @@ export const tileTextHorizontalMargin = 16;
 export const tintedTileInset = 4;
 export const tintedTileMinWidthForSubtitle = 250;
 
+export const StyledResizeHandle = styled.span<{ $edge: "start" | "end" }>`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  ${({ $edge }) => ($edge === "start" ? "left: 0;" : "right: 0;")}
+  cursor: ew-resize;
+  z-index: 1;
+`;
+
 export const StyledTileWrapper = styled.button<StyledTintedProps>`
   ${marginPaddingReset}
   height: ${tileHeight}px;
@@ -17,8 +27,14 @@ export const StyledTileWrapper = styled.button<StyledTintedProps>`
   text-align: left;
   color: ${({ theme }) => theme.colors.textPrimary};
   width: 100%;
-  cursor: pointer;
+  cursor: ${({ $draggable }) => ($draggable ? "grab" : "pointer")};
   overflow: hidden;
+  ${({ $dragging }) =>
+    $dragging &&
+    css`
+      cursor: grabbing;
+      opacity: 0.75;
+    `}
 
   ${({ $tinted }) =>
     $tinted &&
