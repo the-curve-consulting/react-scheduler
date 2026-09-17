@@ -294,6 +294,16 @@ const GridInner = <TMeta,>(
         setTileGesture(null);
         if (days === 0) return;
 
+        // A drag ends with a click on the tile, which would open whatever the
+        // host opens on a click. Swallow that one click, and drop the guard on
+        // the next tick in case the pointer left the tile and none arrives.
+        const swallowClick = (clickEvent: Event) => {
+          clickEvent.stopPropagation();
+          clickEvent.preventDefault();
+        };
+        window.addEventListener("click", swallowClick, { capture: true, once: true });
+        window.setTimeout(() => window.removeEventListener("click", swallowClick, true), 0);
+
         const start = dayjs(project.startDate);
         const end = dayjs(project.endDate);
         const change: SchedulerTileChange = {
