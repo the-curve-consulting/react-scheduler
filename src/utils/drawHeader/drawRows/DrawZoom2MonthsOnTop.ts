@@ -1,12 +1,7 @@
 import dayjs from "dayjs";
-import {
-  fonts,
-  hoursInDay,
-  topRowTextYPos,
-  zoom2ColumnWidth,
-  zoom2HeaderTopRowHeight
-} from "@/constants";
+import { hoursInDay, topRowTextYPos, zoom2ColumnWidth, zoom2HeaderTopRowHeight } from "@/constants";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 
 export const drawZoom2MonthsOnTop = (
@@ -27,7 +22,7 @@ export const drawZoom2MonthsOnTop = (
 
   for (let i = 0; i < monthsToShow; i++) {
     const month = firstMonth.add(i, "months");
-    const monthLabel = month.format("MMMM").toUpperCase();
+    const monthLabel = getHeaderLabel(month.format("MMMM"), theme);
     const daysInMonth = month.daysInMonth();
     const width = daysInMonth * hoursInDay * zoom2ColumnWidth;
 
@@ -40,7 +35,7 @@ export const drawZoom2MonthsOnTop = (
         height: zoom2HeaderTopRowHeight,
         textYPos: topRowTextYPos,
         label: monthLabel,
-        font: fonts.topRow
+        font: theme.headerFonts.topRow
       },
       theme
     );

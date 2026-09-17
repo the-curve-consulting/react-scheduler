@@ -16,14 +16,6 @@ export const zoom2HeaderBottomRowHeight = 40;
 export const zoom2HeaderHeight =
   zoom2HeaderTopRowHeight + zoom2HeaderMiddleRowHeight + zoom2HeaderBottomRowHeight;
 export const navHeight = 44;
-export const fonts = {
-  topRow: "600 14px Inter",
-  middleRow: "400 10px Inter",
-  bottomRow: {
-    name: "600 14px Inter",
-    number: "600 10px Inter"
-  }
-};
 export const dayNameYoffset = 1.6;
 export const dayNumYOffset = 4.5;
 export const monthsInYear = 12;

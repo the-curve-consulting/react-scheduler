@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import {
-  fonts,
   hoursInDay,
   zoom2ColumnWidth,
   zoom2HeaderMiddleRowHeight,
   zoom2HeaderTopRowHeight
 } from "@/constants";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 
 export const drawZoom2DaysInMiddle = (
@@ -29,7 +29,7 @@ export const drawZoom2DaysInMiddle = (
 
   for (let i = 0; i < daysToShow; i++) {
     const day = firstDay.add(i, "days");
-    const dayLabel = day.format("dddd DD.MM.YYYY").toUpperCase();
+    const dayLabel = getHeaderLabel(day.format("dddd DD.MM.YYYY"), theme);
 
     drawRow(
       {
@@ -40,7 +40,7 @@ export const drawZoom2DaysInMiddle = (
         height: zoom2HeaderMiddleRowHeight,
         textYPos: zoom2HeaderTopRowHeight + zoom2HeaderMiddleRowHeight / 2 + 2,
         label: dayLabel,
-        font: fonts.bottomRow.number
+        font: theme.headerFonts.bottomRowNumber
       },
       theme
     );

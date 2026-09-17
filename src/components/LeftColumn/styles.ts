@@ -9,7 +9,7 @@ export const StyledWrapper = styled.div`
   position: sticky;
   left: 0;
   background-color: ${({ theme }) => theme.colors.background};
-  box-shadow: 0 4px 15px rgba(39, 55, 75, 0.16);
+  border-right: 1px solid ${({ theme }) => theme.colors.border};
   z-index: 3;
 `;
 

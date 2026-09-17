@@ -21,7 +21,8 @@ const Header: FC<HeaderProps> = ({
   toggleTheme,
   leftOffset = leftColumnWidth,
   hideTopbar = false,
-  stickyTop = 0
+  stickyTop = 0,
+  toolbar
 }) => {
   const { week } = useLanguage();
   const { cols, currentCenterDate, viewportWidth } = useCalendar();
@@ -58,17 +59,22 @@ const Header: FC<HeaderProps> = ({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.style.letterSpacing = "1px";
+    canvas.style.letterSpacing = theme.headerUppercase ? "1px" : "0px";
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     handleResize(ctx);
-  }, [zoom, handleResize, viewportWidth]);
+  }, [zoom, handleResize, viewportWidth, theme.headerUppercase]);
 
   return (
     <StyledOuterWrapper $stickyTop={stickyTop}>
       {!hideTopbar && (
-        <Topbar width={topBarWidth} showThemeToggle={showThemeToggle} toggleTheme={toggleTheme} />
+        <Topbar
+          width={topBarWidth}
+          showThemeToggle={showThemeToggle}
+          toggleTheme={toggleTheme}
+          toolbar={toolbar}
+        />
       )}
       <StyledWrapper
         id={canvasHeaderWrapperId}

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { fonts, headerMonthHeight, singleDayWidth, topRowTextYPos } from "@/constants";
+import { headerMonthHeight, singleDayWidth, topRowTextYPos } from "@/constants";
 import { Theme } from "@/styles";
 import { daysInYear } from "@/utils/dates";
 import { drawRow } from "@/utils/drawRow";
@@ -37,7 +37,7 @@ export const drawYearsOnTop = (
         height: headerMonthHeight,
         textYPos: topRowTextYPos,
         label: (year + index).toString(),
-        font: fonts.topRow
+        font: theme.headerFonts.topRow
       },
       theme
     );

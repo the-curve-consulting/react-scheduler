@@ -1,4 +1,15 @@
-import { ForwardedRef, forwardRef, memo, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  ForwardedRef,
+  forwardRef,
+  memo,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
+import dayjs from "dayjs";
 import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import {
@@ -7,24 +18,41 @@ import {
   canvasWrapperId,
   gridInnerWrapperId,
   leftColumnWidth,
-  outsideWrapperId
+  outsideWrapperId,
+  tileYOffset
 } from "@/constants";
 import { Loader, Tiles } from "@/components";
 import { useCalendar } from "@/context/CalendarProvider";
 import { resizeCanvas } from "@/utils/resizeCanvas";
-import { getScrollConfig } from "@/utils/scrollHelpers";
+import { getCellDateRelativeToCenter, getCellWidth, getScrollConfig } from "@/utils/scrollHelpers";
+import { getResourceRangeAtRow, getResourceRowRanges } from "@/utils/getResourceRowRanges";
 import { GridComponent, GridProps } from "./types";
 import {
   StyledBlockingContent,
   StyledBlockingOverlay,
   StyledCanvas,
+  StyledEmptyCellHighlight,
   StyledInnerWrapper,
   StyledTilesLayer,
   StyledWrapper
 } from "./styles";
 
+type EmptyCell = {
+  resourceId: string;
+  date: dayjs.Dayjs;
+  left: number;
+  top: number;
+  width: number;
+};
+
 const GridInner = <TMeta,>(
-  { visibleLayoutsPerResource, rows, onTileClick, onHolidayTileClick }: GridProps<TMeta>,
+  {
+    visibleLayoutsPerResource,
+    rows,
+    onTileClick,
+    onHolidayTileClick,
+    onEmptyClick
+  }: GridProps<TMeta>,
   ref: ForwardedRef<HTMLDivElement>
 ) => {
   const {
@@ -39,6 +67,11 @@ const GridInner = <TMeta,>(
   } = useCalendar<TMeta>();
 
   const scrollConfig = useMemo(() => getScrollConfig(zoom), [zoom]);
+  const rowRanges = useMemo(
+    () => getResourceRowRanges(visibleLayoutsPerResource),
+    [visibleLayoutsPerResource]
+  );
+  const [hoveredCell, setHoveredCell] = useState<EmptyCell | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
   const lastScrollLeft = useRef(0);
@@ -99,6 +132,61 @@ const GridInner = <TMeta,>(
     return () => container.removeEventListener("scroll", throttledScroll);
   }, [handleScrollChange]);
 
+  const resolveEmptyCell = useCallback(
+    (event: MouseEvent<HTMLDivElement>): EmptyCell | null => {
+      if (!onEmptyClick) return null;
+      // Every tile is a button, so a target inside one is not empty space.
+      if ((event.target as HTMLElement).closest("button")) return null;
+
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const row = Math.floor((event.clientY - bounds.top) / boxHeight);
+      const range = getResourceRangeAtRow(rowRanges, row);
+      if (!range) return null;
+
+      const positionX = event.clientX - bounds.left;
+      const { alignedPos, cellDate } = getCellDateRelativeToCenter(
+        positionX,
+        currentCenterDate,
+        zoom,
+        cols
+      );
+
+      return {
+        resourceId: range.resourceId,
+        date: cellDate,
+        left: alignedPos,
+        top: row * boxHeight + tileYOffset,
+        width: getCellWidth(zoom)
+      };
+    },
+    [cols, currentCenterDate, onEmptyClick, rowRanges, zoom]
+  );
+
+  const handleGridMouseMove = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const cell = resolveEmptyCell(event);
+
+      setHoveredCell((previous) => {
+        if (!cell) return previous === null ? previous : null;
+        if (previous && previous.left === cell.left && previous.top === cell.top) return previous;
+        return cell;
+      });
+    },
+    [resolveEmptyCell]
+  );
+
+  const handleGridMouseLeave = useCallback(() => setHoveredCell(null), []);
+
+  const handleGridClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const cell = resolveEmptyCell(event);
+      if (!cell) return;
+
+      onEmptyClick?.({ resourceId: cell.resourceId, date: cell.date.toDate() });
+    },
+    [onEmptyClick, resolveEmptyCell]
+  );
+
   const isLeftLoading = isLoading || loadingState.blocking || loadingState.backward;
   const isRightLoading = isLoading || loadingState.blocking || loadingState.forward;
   const isBlocking = isLoading || loadingState.blocking;
@@ -109,6 +197,10 @@ const GridInner = <TMeta,>(
         id={gridInnerWrapperId}
         $viewportWidth={viewportWidth}
         $leftColumnWidth={leftColumnWidth}
+        $clickableEmptyCells={!!onEmptyClick && !isBlocking}
+        onClick={onEmptyClick && !isBlocking ? handleGridClick : undefined}
+        onMouseMove={onEmptyClick && !isBlocking ? handleGridMouseMove : undefined}
+        onMouseLeave={onEmptyClick ? handleGridMouseLeave : undefined}
         ref={ref}>
         <Loader isLoading={isLeftLoading} position="left" />
         <StyledCanvas id={canvasId} ref={canvasRef} />
@@ -125,6 +217,16 @@ const GridInner = <TMeta,>(
           <StyledBlockingOverlay>
             <StyledBlockingContent>Loading data...</StyledBlockingContent>
           </StyledBlockingOverlay>
+        ) : null}
+        {hoveredCell && !isBlocking ? (
+          <StyledEmptyCellHighlight
+            style={{
+              left: `${hoveredCell.left}px`,
+              top: `${hoveredCell.top}px`,
+              width: `${hoveredCell.width}px`
+            }}>
+            +
+          </StyledEmptyCellHighlight>
         ) : null}
         <Loader isLoading={isRightLoading} position="right" />
       </StyledInnerWrapper>

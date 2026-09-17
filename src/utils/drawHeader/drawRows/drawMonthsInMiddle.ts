@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import {
-  fonts,
   headerMonthHeight,
   headerWeekHeight,
   middleRowTextYPos,
@@ -9,6 +8,7 @@ import {
 } from "@/constants";
 import { getDaysInMonths } from "@/utils/dates";
 import { Theme } from "@/styles";
+import { getHeaderLabel } from "../getHeaderLabel";
 import { drawRow } from "../../drawRow";
 import { getWeeklyHeaderAnchor } from "./getWeeklyHeaderAnchor";
 
@@ -36,8 +36,8 @@ export const drawMonthsInMiddle = (
         width,
         height: headerWeekHeight,
         textYPos: middleRowTextYPos,
-        label: dayjs().month(index).format("MMMM").toUpperCase(),
-        font: fonts.bottomRow.number
+        label: getHeaderLabel(dayjs().month(index).format("MMMM"), theme),
+        font: theme.headerFonts.bottomRowNumber
       },
       theme
     );

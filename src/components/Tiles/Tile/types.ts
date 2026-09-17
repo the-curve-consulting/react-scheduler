@@ -30,6 +30,10 @@ export type StyledTextProps = {
   bold?: boolean;
 };
 
+export type StyledTintedProps = {
+  $tinted?: boolean;
+};
+
 export type StyledStickyWrapperProps = {
   $offset: number;
 };

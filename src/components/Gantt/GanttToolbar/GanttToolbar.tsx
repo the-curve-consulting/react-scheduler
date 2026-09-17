@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { useCalendar } from "@/context/CalendarProvider";
-import { ZoomLevel } from "@/types/global";
+import { SchedulerToolbar, ZoomLevel } from "@/types/global";
 import {
   StyledGroup,
   StyledNavButton,
@@ -35,13 +35,15 @@ export const GanttToolbar = ({
   width,
   showThemeToggle,
   onToggleTheme,
-  isDark
+  isDark,
+  toolbar
 }: {
   /** Visible width of the scroll container, so the bar can be pinned to it. */
   width: number;
   showThemeToggle?: boolean;
   onToggleTheme?: () => void;
   isDark?: boolean;
+  toolbar?: SchedulerToolbar;
 }) => {
   const { handleGoNext, handleGoPrev, handleGoToday, zoom, setZoomLevel, visibleRange } =
     useCalendar();
@@ -56,6 +58,7 @@ export const GanttToolbar = ({
 
   return (
     <StyledToolbar $width={width}>
+      {toolbar?.start}
       <StyledGroup>
         <StyledNavButton type="button" onClick={handleGoPrev} aria-label="Previous">
           <Chevron direction="left" />
@@ -71,6 +74,8 @@ export const GanttToolbar = ({
       <StyledRange>{range}</StyledRange>
 
       <StyledSpacer />
+
+      {toolbar?.end}
 
       <StyledSegmentedControl role="group" aria-label="Zoom">
         {ZOOM_OPTIONS.map((option) => (

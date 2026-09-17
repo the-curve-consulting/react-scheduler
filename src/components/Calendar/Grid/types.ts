@@ -1,5 +1,9 @@
 import React from "react";
-import { HolidayTileClickData, SchedulerProjectData } from "@/types/global";
+import {
+  HolidayTileClickData,
+  SchedulerEmptyClickData,
+  SchedulerProjectData
+} from "@/types/global";
 import { VisibleLayoutResource } from "@/utils/visibleGridLayout";
 
 export type GridProps<TMeta = unknown> = {
@@ -7,6 +11,7 @@ export type GridProps<TMeta = unknown> = {
   visibleLayoutsPerResource: VisibleLayoutResource<TMeta>[];
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
+  onEmptyClick?: (data: SchedulerEmptyClickData) => void;
 };
 
 export type GridComponent = <TMeta = unknown>(

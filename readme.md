@@ -213,6 +213,7 @@ export default function Component() {
         onTileClick={handleTileClick}
         onHolidayClick={handleHolidayClick}
         onItemClick={(item) => console.log(item)}
+        onEmptyClick={({ resourceId, date }) => console.log("add work", resourceId, date)}
         onFilterData={() => setSelectedUserIds(["user-1", "user-2"])}
         onClearFilterData={() => setSelectedUserIds([])}
         config={{
@@ -277,18 +278,19 @@ const data: GanttData = {
 
 #### Props
 
-| Property         | Type             | Description                                        |
-| ---------------- | ---------------- | -------------------------------------------------- |
-| data             | `GanttData`      | `{ tasks, links }`                                 |
-| centerDate       | `string \| Date` | date to centre the timeline on at mount            |
-| config           | `GanttConfig`    | `Config` plus the Gantt options below              |
-| isLoading        | `boolean`        | blocks interaction and shows the loading treatment |
-| defaultCollapsed | `string[]`       | task ids that start collapsed                      |
-| onRangeChange    | `function`       | fires on scroll with the dates now on screen       |
-| onTaskClick      | `function`       | a bar, milestone or outline row was clicked        |
-| onTaskChange     | `function`       | a bar was dragged or resized — see below           |
-| outlineLabel     | `string`         | heading above the outline column                   |
-| emptyMessage     | `string`         | shown when there are no tasks                      |
+| Property         | Type               | Description                                                         |
+| ---------------- | ------------------ | ------------------------------------------------------------------- |
+| data             | `GanttData`        | `{ tasks, links }`                                                  |
+| centerDate       | `string \| Date`   | date to centre the timeline on at mount                             |
+| config           | `GanttConfig`      | `Config` plus the Gantt options below                               |
+| isLoading        | `boolean`          | blocks interaction and shows the loading treatment                  |
+| defaultCollapsed | `string[]`         | task ids that start collapsed                                       |
+| onRangeChange    | `function`         | fires on scroll with the dates now on screen                        |
+| onTaskClick      | `function`         | a bar, milestone or outline row was clicked                         |
+| onTaskChange     | `function`         | a bar was dragged or resized — see below                            |
+| outlineLabel     | `string`           | heading above the outline column                                    |
+| emptyMessage     | `string`           | shown when there are no tasks                                       |
+| toolbar          | `SchedulerToolbar` | controls of the application in the toolbar, see [Toolbar](#toolbar) |
 
 #### Gantt config
 
@@ -337,22 +339,24 @@ component's. Drags snap to whole days.
 
 ##### Scheduler Component Props
 
-| Property Name     | Type            | Arguments                                | Description                                                                                                                       |
-| ----------------- | --------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| data              | `SchedulerData` | -                                        | scheduler rows to display in static mode                                                                                          |
-| initialData       | `SchedulerData` | -                                        | optional initial cache seed for async mode when using `onFetchData`                                                               |
-| isLoading         | `boolean`       | -                                        | external loading flag; forces blocking loading state                                                                              |
-| startDate         | `string`        | ISO date string                          | initial date to center scheduler on mount                                                                                         |
-| dataSourceKey     | `string`        | -                                        | async cache identity; changing it invalidates cached prefetched data                                                              |
-| onRangeChange     | `function`      | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
-| onFetchData       | `function`      | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
-| onTileClick       | `function`      | clicked resource data                    | detects resource click                                                                                                            |
-| onHolidayClick    | `function`      | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
-| onItemClick       | `function`      | clicked left column item data            | detects item click on left column                                                                                                 |
-| onFilterData      | `function`      | -                                        | callback firing when filter button was clicked                                                                                    |
-| onClearFilterData | `function`      | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
-| transformData     | `function`      | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                     |
-| config            | `Config`        | -                                        | object with scheduler config properties                                                                                           |
+| Property Name     | Type               | Arguments                                | Description                                                                                                                       |
+| ----------------- | ------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| data              | `SchedulerData`    | -                                        | scheduler rows to display in static mode                                                                                          |
+| initialData       | `SchedulerData`    | -                                        | optional initial cache seed for async mode when using `onFetchData`                                                               |
+| isLoading         | `boolean`          | -                                        | external loading flag; forces blocking loading state                                                                              |
+| startDate         | `string`           | ISO date string                          | initial date to center scheduler on mount                                                                                         |
+| dataSourceKey     | `string`           | -                                        | async cache identity; changing it invalidates cached prefetched data                                                              |
+| onRangeChange     | `function`         | updated `startDate` and `endDate`        | callback fired when visible date range changes (called every scroll event)                                                        |
+| onFetchData       | `function`         | `range`, `direction`, `reason`, `signal` | async data source used for initial fetch, edge prefetch and hard jumps (called when insufficient cached data)                     |
+| onTileClick       | `function`         | clicked resource data                    | detects resource click                                                                                                            |
+| onHolidayClick    | `function`         | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
+| onItemClick       | `function`         | clicked left column item data            | detects item click on left column                                                                                                 |
+| onEmptyClick      | `function`         | `resourceId` and `date` of the cell      | detects a click on a day of a resource row that holds no tile; the grid marks the cell under the pointer while this is set        |
+| onFilterData      | `function`         | -                                        | callback firing when filter button was clicked                                                                                    |
+| onClearFilterData | `function`         | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
+| transformData     | `function`         | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                     |
+| config            | `Config`           | -                                        | object with scheduler config properties                                                                                           |
+| toolbar           | `SchedulerToolbar` | -                                        | controls of the application in the top bar, see [Toolbar](#toolbar)                                                               |
 
 `Scheduler` supports two exclusive data modes:
 
@@ -445,20 +449,50 @@ const project: SchedulerProjectData<TimesheetMeta> = {
 
 ---
 
-| Property Name     | Type                | Default           | Description                                                                                                                                                            |
-| ----------------- | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| zoom              | `0` or `1` or `2`   | 0                 | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                       |
-| filterButtonState | `number`            | 0                 | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event) |
-| maxRecordsPerPage | `number`            | 50                | number of rows (projects) from `SchedulerData` visible per page                                                                                                        |
-| lang              | `en`, `lt` or `pl`  | en                | scheduler's language                                                                                                                                                   |
-| showTooltip       | `boolean`           | `true`            | show tooltip when hovering over tiles                                                                                                                                  |
-| translations      | `LocaleType[]`      | `undefined`       | option to add specific langs translations                                                                                                                              |
-| showThemeToggle   | `boolean`           | `false`           | show toggle button to switch between light/dark mode                                                                                                                   |
-| defaultTheme      | `light` or `dark`   | `light`           | scheduler's default theme                                                                                                                                              |
-| theme             | `Theme`             | `undefined`       | custom light/dark theme color overrides                                                                                                                                |
-| maxHoursPerWeek   | `number`            | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations and default holiday half-day duration                                            |
-| defaultStartHour  | `number`            | `9`               | start hour used when placing entries and partial-day holidays in hourly view                                                                                           |
-| dataLoading       | `DataLoadingConfig` | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                       |
+| Property Name     | Type                   | Default           | Description                                                                                                                                                                                        |
+| ----------------- | ---------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| zoom              | `0` or `1` or `2`      | 0                 | `0` - display grid divided into weeks `1` - display grid divided into days `2` - display grid divided into hours                                                                                   |
+| filterButtonState | `number`               | 0                 | `< 0` - hides filter button, `0` - state for when filters were not set, `> 0` - state for when some filters were set (allows to also handle `onClearFilterData` event)                             |
+| maxRecordsPerPage | `number`               | 50                | number of rows (projects) from `SchedulerData` visible per page                                                                                                                                    |
+| lang              | `en`, `lt` or `pl`     | en                | scheduler's language                                                                                                                                                                               |
+| showTooltip       | `boolean`              | `true`            | show tooltip when hovering over tiles                                                                                                                                                              |
+| translations      | `LocaleType[]`         | `undefined`       | option to add specific langs translations                                                                                                                                                          |
+| showThemeToggle   | `boolean`              | `false`           | show toggle button to switch between light/dark mode                                                                                                                                               |
+| defaultTheme      | `light` or `dark`      | `light`           | scheduler's default theme                                                                                                                                                                          |
+| theme             | `Theme`                | `undefined`       | custom light/dark theme color overrides                                                                                                                                                            |
+| maxHoursPerWeek   | `number`               | `40`              | fallback maximum week capacity used to derive default Monday-Friday working durations and default holiday half-day duration                                                                        |
+| defaultStartHour  | `number`               | `9`               | start hour used when placing entries and partial-day holidays in hourly view                                                                                                                       |
+| dataLoading       | `DataLoadingConfig`    | built-in defaults | controls prefetching and cache window used by `onFetchData` flow                                                                                                                                   |
+| headerFonts       | `Partial<HeaderFonts>` | built-in fonts    | canvas fonts of the header rows, for example `"600 13px Inter"`; see [HeaderFonts](#headerfonts)                                                                                                   |
+| headerUppercase   | `boolean`              | `true`            | writes the header labels in capitals ("MON", "SEPTEMBER"); `false` gives "Mon" and "September"                                                                                                     |
+| tileStyle         | `solid` or `tinted`    | `solid`           | `solid` fills a tile with its colour; `tinted` gives a pale tint with a bar of the colour and dark text, a hatched non-working day with no label, and only the title on a tile narrower than 250px |
+
+##### Toolbar
+
+`toolbar` puts controls of your application in the top bar of `<Scheduler>` or `<Gantt>`, so a page does not need a second row of controls. `start` goes before the navigation and `end` goes before the zoom controls. The component keeps its own navigation and zoom.
+
+```jsx
+<Scheduler
+  config={config}
+  toolbar={{
+    start: <PeopleFilter />,
+    end: <ScenarioSelect />
+  }}
+/>
+```
+
+The toolbar is inside the component, so a popover that opens to the left of a `start` control can go under the left column. Open it to the right.
+
+Pass a `config` object that keeps its identity between renders, for example a constant or a `useMemo`. The theme and the calendar context are built from it, and a new object on every render draws the header again and renders every tile again.
+
+##### HeaderFonts
+
+| Property Name   | Type     | Default            | Description                                          |
+| --------------- | -------- | ------------------ | ---------------------------------------------------- |
+| topRow          | `string` | `"600 14px Inter"` | the month in the day view, the year in the week view |
+| middleRow       | `string` | `"400 10px Inter"` | the week in the day view, the month in the week view |
+| bottomRowName   | `string` | `"600 14px Inter"` | the name of the day or the week                      |
+| bottomRowNumber | `string` | `"600 10px Inter"` | the date, and the day and hour rows of the hour view |
 
 ##### DataLoadingConfig
 

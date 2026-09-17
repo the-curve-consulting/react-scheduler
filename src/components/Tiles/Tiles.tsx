@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { getResourceRowRanges } from "@/utils/getResourceRowRanges";
 import ResourceTiles from "./ResourceTiles";
 import { TilesComponent, TilesProps } from "./types";
 
@@ -9,24 +10,19 @@ const TilesInner = <TMeta,>({
   onHolidayTileClick,
   visibleRange
 }: TilesProps<TMeta>) => {
-  let rowOffset = 0;
+  const rowRanges = getResourceRowRanges(visibleLayoutsPerResource);
 
-  return visibleLayoutsPerResource.map((visibleLayout) => {
-    const currentRowOffset = rowOffset;
-    rowOffset += visibleLayout.visibleRowsCount;
-
-    return (
-      <ResourceTiles
-        key={visibleLayout.resourceId}
-        visibleLayoutResource={visibleLayout}
-        zoom={zoom}
-        rowOffset={currentRowOffset}
-        visibleRange={visibleRange}
-        onTileClick={onTileClick}
-        onHolidayTileClick={onHolidayTileClick}
-      />
-    );
-  });
+  return visibleLayoutsPerResource.map((visibleLayout, resourceIndex) => (
+    <ResourceTiles
+      key={visibleLayout.resourceId}
+      visibleLayoutResource={visibleLayout}
+      zoom={zoom}
+      rowOffset={rowRanges[resourceIndex].startRow}
+      visibleRange={visibleRange}
+      onTileClick={onTileClick}
+      onHolidayTileClick={onHolidayTileClick}
+    />
+  ));
 };
 
 const Tiles = memo(TilesInner) as TilesComponent;
