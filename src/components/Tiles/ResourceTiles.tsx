@@ -53,6 +53,7 @@ const getRangeResourceTiles = <TMeta,>({
           startDate={segment.startDate}
           endDate={segment.endDate}
           working={segment.working}
+          nonWorkingRuns={segment.nonWorkingRuns}
           zoom={zoom}
           onTileClick={onTileClick}
         />
