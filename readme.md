@@ -213,6 +213,7 @@ export default function Component() {
         onTileClick={handleTileClick}
         onHolidayClick={handleHolidayClick}
         onItemClick={(item) => console.log(item)}
+        onEmptyClick={({ resourceId, date }) => console.log("add work", resourceId, date)}
         onFilterData={() => setSelectedUserIds(["user-1", "user-2"])}
         onClearFilterData={() => setSelectedUserIds([])}
         config={{
@@ -350,6 +351,7 @@ component's. Drags snap to whole days.
 | onTileClick       | `function`         | clicked resource data                    | detects resource click                                                                                                            |
 | onHolidayClick    | `function`         | clicked holiday range data               | detects holiday tile click and returns the clicked row id, clicked range, and matching holiday requests                           |
 | onItemClick       | `function`         | clicked left column item data            | detects item click on left column                                                                                                 |
+| onEmptyClick      | `function`         | `resourceId` and `date` of the cell      | detects a click on a day of a resource row that holds no tile; the grid marks the cell under the pointer while this is set        |
 | onFilterData      | `function`         | -                                        | callback firing when filter button was clicked                                                                                    |
 | onClearFilterData | `function`         | -                                        | callback firing when clear filters button was clicked (clearing button is visible **only** when filterButtonState is set to `>0`) |
 | transformData     | `function`         | `SchedulerData`                          | transforms cached scheduler data before rendering, useful for local filtering                                                     |

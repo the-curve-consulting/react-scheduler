@@ -136,6 +136,11 @@ export type HolidayTileClickData = {
   holidayRequests: HolidayRequest[];
 };
 
+export type SchedulerEmptyClickData = {
+  resourceId: string;
+  date: Date;
+};
+
 export type SchedulerRow<TMeta = unknown> = {
   id: string;
   label: SchedulerRowLabel;

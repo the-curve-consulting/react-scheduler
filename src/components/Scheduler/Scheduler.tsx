@@ -49,6 +49,7 @@ const SchedulerInner = <TMeta,>(
     onFilterData,
     onClearFilterData,
     onItemClick,
+    onEmptyClick,
     transformData,
     isLoading,
     toolbar
@@ -163,6 +164,7 @@ const SchedulerInner = <TMeta,>(
                   onHolidayTileClick={onHolidayClick}
                   topBarWidth={topBarWidth}
                   onItemClick={onItemClick}
+                  onEmptyClick={onEmptyClick}
                   toggleTheme={toggleTheme}
                   toolbar={toolbar}
                 />
