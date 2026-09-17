@@ -2,7 +2,8 @@ import { memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileProperties } from "@/utils/getTileProperties";
 import { getTileTextColor } from "@/utils/getTileTextColor";
-import { getTintedTileStyle } from "@/utils/getTintedTileStyle";
+import { getPlainTileStyle, getTintedTileStyle, NonWorkingBand } from "@/utils/getTintedTileStyle";
+import { getCellWidth } from "@/utils/scrollHelpers";
 import { useCalendar } from "@/context/CalendarProvider";
 import {
   StyledDescription,
@@ -24,6 +25,7 @@ const TileInner = <TMeta,>({
   startDate,
   endDate,
   working,
+  nonWorkingRuns,
   onTileClick
 }: TileProps<TMeta>) => {
   const { currentCenterDate, cols } = useCalendar<TMeta>();
@@ -37,9 +39,14 @@ const TileInner = <TMeta,>({
   const { colors } = theme;
   const isTinted = theme.tileStyle === "tinted";
   const backgroundColor = isWorking ? data.bgColor ?? colors.defaultTile : colors.notWorkingTile;
+  const dayWidth = getCellWidth(zoom);
+  const nonWorkingBands: NonWorkingBand[] = nonWorkingRuns.map((run) => ({
+    left: run.startDate.diff(startDate, "day") * dayWidth,
+    width: (run.endDate.diff(run.startDate, "day") + 1) * dayWidth
+  }));
   const colorStyle = isTinted
-    ? getTintedTileStyle(data.bgColor ?? colors.defaultTile, isWorking, theme)
-    : { backgroundColor, color: getTileTextColor(backgroundColor) };
+    ? getTintedTileStyle(data.bgColor ?? colors.defaultTile, isWorking, theme, nonWorkingBands)
+    : getPlainTileStyle(backgroundColor, getTileTextColor(backgroundColor), theme, nonWorkingBands);
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 

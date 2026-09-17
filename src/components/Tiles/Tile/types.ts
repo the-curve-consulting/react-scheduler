@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { SchedulerProjectData, SchedulerProjectDayData } from "@/types/global";
+import { DayRun } from "@/utils/getTileSegments";
 
 export type TileProps<TMeta = unknown> = {
   row: number;
@@ -7,6 +8,7 @@ export type TileProps<TMeta = unknown> = {
   startDate: dayjs.Dayjs;
   endDate: dayjs.Dayjs;
   working: boolean;
+  nonWorkingRuns: DayRun[];
   zoom: number;
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
 };

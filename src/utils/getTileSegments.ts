@@ -2,11 +2,18 @@ import dayjs from "dayjs";
 import { SchedulerProjectData } from "@/types/global";
 import { ResourceDayContext, VisibleRange } from "@/utils/visibleGridLayout";
 
+export type DayRun = {
+  startDate: dayjs.Dayjs;
+  endDate: dayjs.Dayjs;
+};
+
 export type TileSegment<TMeta = unknown> = {
   data: SchedulerProjectData<TMeta>;
   startDate: dayjs.Dayjs;
   endDate: dayjs.Dayjs;
   working: boolean;
+  /** Days inside the segment that the resource does not work, for the tile to mark. */
+  nonWorkingRuns: DayRun[];
 };
 
 /**
@@ -37,12 +44,16 @@ const hasWorkingHoursInRange = (
 };
 
 /**
- * Splits a project into daily working and non-working tile segments within the visible range.
+ * Builds one tile segment for a project across the visible range.
  *
- * @param project Project tile data to split.
+ * A block of work that covers a weekend is one bar, and the days that the
+ * resource does not work are marked inside it. Separate tiles each side of a
+ * weekend read as two shorter blocks, and repeat the title of the project.
+ *
+ * @param project Project tile data to place.
  * @param visibleRange Start and end dates of the visible viewport.
  * @param dayContextsByDay Map keyed by start-of-day timestamp with ResourceDayContext as value.
- * @returns Contiguous day-level segments clipped to the project and visible date range.
+ * @returns One segment clipped to the project and visible date range, or none.
  */
 export const getDailyTileSegments = <TMeta>(
   project: SchedulerProjectData<TMeta>,
@@ -54,46 +65,51 @@ export const getDailyTileSegments = <TMeta>(
   const visibleStartDateDay = visibleRange.startDate.startOf("day");
   const visibleEndDateDay = visibleRange.endDate.startOf("day");
 
-  let currentDate = visibleStartDateDay.isAfter(projectStartDate)
+  const startDate = visibleStartDateDay.isAfter(projectStartDate)
     ? visibleStartDateDay
     : projectStartDate;
-
   const endDate = visibleEndDateDay.isBefore(projectEndDate) ? visibleEndDateDay : projectEndDate;
 
-  if (currentDate.isAfter(endDate, "day")) {
+  if (startDate.isAfter(endDate, "day")) {
     return [];
   }
 
-  const segments: TileSegment<TMeta>[] = [];
-  let segmentStartDate = currentDate;
-  let segmentWorking = (dayContextsByDay.get(currentDate.valueOf())?.availableHours ?? 0) > 0;
+  const nonWorkingRuns: DayRun[] = [];
+  let currentDate = startDate;
+  let runStartDate: dayjs.Dayjs | null = null;
+  let anyWorkingDay = false;
 
   while (!currentDate.isAfter(endDate, "day")) {
     const working = (dayContextsByDay.get(currentDate.valueOf())?.availableHours ?? 0) > 0;
 
-    if (working !== segmentWorking) {
-      segments.push({
-        data: project,
-        startDate: segmentStartDate,
-        endDate: currentDate.subtract(1, "day"),
-        working: segmentWorking
-      });
+    if (working) {
+      anyWorkingDay = true;
 
-      segmentStartDate = currentDate;
-      segmentWorking = working;
+      if (runStartDate) {
+        nonWorkingRuns.push({ startDate: runStartDate, endDate: currentDate.subtract(1, "day") });
+        runStartDate = null;
+      }
+    } else if (!runStartDate) {
+      runStartDate = currentDate;
     }
 
     currentDate = currentDate.add(1, "day");
   }
 
-  segments.push({
-    data: project,
-    startDate: segmentStartDate,
-    endDate,
-    working: segmentWorking
-  });
+  if (runStartDate) {
+    nonWorkingRuns.push({ startDate: runStartDate, endDate });
+  }
 
-  return segments;
+  return [
+    {
+      data: project,
+      startDate,
+      endDate,
+      working: anyWorkingDay,
+      // A bar with no working day at all keeps the plain non-working tile.
+      nonWorkingRuns: anyWorkingDay ? nonWorkingRuns : []
+    }
+  ];
 };
 
 /**
@@ -149,7 +165,8 @@ export const getWeeklyTileSegments = <TMeta>(
         data: project,
         startDate: segmentStartDate,
         endDate: weekStart.subtract(1, "day"),
-        working: segmentWorking
+        working: segmentWorking,
+        nonWorkingRuns: []
       });
 
       segmentStartDate = weekStart;
@@ -163,7 +180,8 @@ export const getWeeklyTileSegments = <TMeta>(
     data: project,
     startDate: segmentStartDate,
     endDate,
-    working: segmentWorking
+    working: segmentWorking,
+    nonWorkingRuns: []
   });
 
   return segments;
