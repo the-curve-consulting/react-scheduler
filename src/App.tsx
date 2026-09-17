@@ -431,6 +431,7 @@ function App() {
             onHolidayClick={handleHolidayClick}
             onFilterData={handleFilterData}
             onItemClick={handleItemClick}
+            onEmptyClick={(emptyCell) => console.log(emptyCell)}
           />
         </StyledSchedulerFrame>
       )}

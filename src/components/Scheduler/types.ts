@@ -3,6 +3,7 @@ import {
   Config,
   HolidayTileClickData,
   SchedulerData,
+  SchedulerEmptyClickData,
   SchedulerFetchLoadingState,
   SchedulerItemClickData,
   SchedulerProjectData,
@@ -48,6 +49,8 @@ export type SchedulerBaseProps<TMeta = unknown> = {
   transformData?: (data: SchedulerData<TMeta>) => SchedulerData<TMeta>;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
   onHolidayClick?: (data: HolidayTileClickData) => void;
+  /** Called when the user clicks a day in a resource row that holds no tile. */
+  onEmptyClick?: (data: SchedulerEmptyClickData) => void;
   toolbar?: SchedulerToolbar;
 };
 

@@ -2,6 +2,7 @@ import {
   Config,
   HolidayTileClickData,
   SchedulerData,
+  SchedulerEmptyClickData,
   SchedulerItemClickData,
   SchedulerProjectData,
   SchedulerToolbar
@@ -14,6 +15,7 @@ export type CalendarProps<TMeta = unknown> = {
   onTileClick?: (data: SchedulerProjectData<TMeta>) => void;
   onHolidayTileClick?: (data: HolidayTileClickData) => void;
   onItemClick?: (data: SchedulerItemClickData<TMeta>) => void;
+  onEmptyClick?: (data: SchedulerEmptyClickData) => void;
   toggleTheme?: () => void;
   toolbar?: SchedulerToolbar;
 };

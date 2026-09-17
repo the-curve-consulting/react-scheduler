@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { getResourceRowRanges } from "@/utils/getResourceRowRanges";
 import ResourceTiles from "./ResourceTiles";
 import { TilesComponent, TilesProps } from "./types";
 
@@ -12,36 +13,27 @@ const TilesInner = <TMeta,>({
   defaultStartHour,
   defaultWorkDayHours
 }: TilesProps<TMeta>) => {
-  let rows = 0;
   const visibleStart = visibleRange.startDate.valueOf();
   const visibleEnd = visibleRange.endDate.valueOf();
+  const rowRanges = getResourceRowRanges(data);
 
-  const calculateRowOffset = (personIndex: number, currentRows: number): number => {
-    if (personIndex === 0) return currentRows;
-    return currentRows + Math.max(data[personIndex - 1].data.length, 1);
-  };
-
-  return data.map((person, personIndex) => {
-    rows = calculateRowOffset(personIndex, rows);
-
-    return (
-      <ResourceTiles
-        key={person.id}
-        resourceId={person.id}
-        zoom={zoom}
-        data={person.data}
-        rows={rows}
-        visibleStart={visibleStart}
-        visibleEnd={visibleEnd}
-        workingDurations={workingDurationsPerPerson[personIndex]}
-        holidayRequests={person.holidayRequests}
-        onTileClick={onTileClick}
-        onHolidayTileClick={onHolidayTileClick}
-        defaultStartHour={defaultStartHour}
-        defaultWorkDayHours={defaultWorkDayHours}
-      />
-    );
-  });
+  return data.map((person, personIndex) => (
+    <ResourceTiles
+      key={person.id}
+      resourceId={person.id}
+      zoom={zoom}
+      data={person.data}
+      rows={rowRanges[personIndex].startRow}
+      visibleStart={visibleStart}
+      visibleEnd={visibleEnd}
+      workingDurations={workingDurationsPerPerson[personIndex]}
+      holidayRequests={person.holidayRequests}
+      onTileClick={onTileClick}
+      onHolidayTileClick={onHolidayTileClick}
+      defaultStartHour={defaultStartHour}
+      defaultWorkDayHours={defaultWorkDayHours}
+    />
+  ));
 };
 
 const Tiles = memo(TilesInner) as TilesComponent;
