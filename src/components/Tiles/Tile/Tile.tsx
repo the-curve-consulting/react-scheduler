@@ -48,8 +48,20 @@ const TileInner = <TMeta,>({
     width: (run.endDate.diff(run.startDate, "day") + 1) * dayWidth
   }));
   const colorStyle = isTinted
-    ? getTintedTileStyle(data.bgColor ?? colors.defaultTile, isWorking, theme, nonWorkingBands)
-    : getPlainTileStyle(backgroundColor, getTileTextColor(backgroundColor), theme, nonWorkingBands);
+    ? getTintedTileStyle(
+        data.bgColor ?? colors.defaultTile,
+        isWorking,
+        theme,
+        nonWorkingBands,
+        data.striped
+      )
+    : getPlainTileStyle(
+        backgroundColor,
+        getTileTextColor(backgroundColor),
+        theme,
+        nonWorkingBands,
+        isWorking && data.striped
+      );
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 

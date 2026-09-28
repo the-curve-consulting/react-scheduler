@@ -225,6 +225,12 @@ export type SchedulerProjectDataBase<TMeta = unknown> = {
    */
   bgColor?: string;
   /**
+   * Draws the tile with diagonal stripes of its colour, for example to mark
+   * work that is not confirmed. The stripes run the other way from the hatch
+   * of a day that the resource does not work. Optional
+   */
+  striped?: boolean;
+  /**
    * Optional custom data that can be passed to the Scheduler and use in callbacks
    */
   meta?: TMeta;

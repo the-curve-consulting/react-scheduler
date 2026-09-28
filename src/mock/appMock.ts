@@ -51,7 +51,8 @@ export const generateProjects = (
         title,
         subtitle: getRandomWords(),
         description: getRandomWords(amountOfDscWords),
-        bgColor
+        bgColor,
+        striped: projectIndex % 4 === 3
       });
     }
   }
