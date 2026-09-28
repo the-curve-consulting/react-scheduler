@@ -721,6 +721,7 @@ item that will be visible on the grid as tile and that will be accessible as arg
 | occupancy | `number` | fixed number of seconds the resource takes per working day |
 | throughput | `number` | fraction of the person's holiday-adjusted working day that the resource takes, e.g. `0.8` means 80% of available working hours |
 | bgColor | `string (optional)` | tile color |
+| striped | `boolean (optional)` | draws diagonal stripes of the tile color, for example to mark work that is not confirmed |
 | meta | `TMeta (optional)` | custom project payload preserved by scheduler and exposed in typed callbacks |
 
 Provide either `occupancy` or `throughput` for a resource item.

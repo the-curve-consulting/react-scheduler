@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useTheme } from "styled-components";
 import { getTileTextColor } from "@/utils/getTileTextColor";
-import { getTintedTileStyle } from "@/utils/getTintedTileStyle";
+import { getPlainTileStyle, getTintedTileStyle } from "@/utils/getTintedTileStyle";
 import { useCalendar } from "@/context/CalendarProvider";
 import { getTileProperties } from "@/utils/getTileProperties";
 import {
@@ -33,11 +33,20 @@ const HourlyTileInner = <TMeta,>({ row, dayData, onTileClick }: HourlyTileProps<
   const { colors } = theme;
   const isTinted = theme.tileStyle === "tinted";
   const colorStyle = isTinted
-    ? getTintedTileStyle(dayData.data.bgColor ?? colors.defaultTile, true, theme)
-    : {
-        backgroundColor: `${dayData.data.bgColor ?? colors.defaultTile}`,
-        color: getTileTextColor(dayData.data.bgColor ?? "")
-      };
+    ? getTintedTileStyle(
+        dayData.data.bgColor ?? colors.defaultTile,
+        true,
+        theme,
+        [],
+        dayData.data.striped
+      )
+    : getPlainTileStyle(
+        dayData.data.bgColor ?? colors.defaultTile,
+        getTileTextColor(dayData.data.bgColor ?? ""),
+        theme,
+        [],
+        dayData.data.striped
+      );
   const maxTextOffset = Math.max(width - tileTextHorizontalMargin * 2, 0);
   const textOffset = Math.min(Math.max(0, -x), maxTextOffset);
 
